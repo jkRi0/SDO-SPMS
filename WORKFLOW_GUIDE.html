@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Workflow Guide - Landbank Button</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f5f7fa; padding: 2rem; }
+        .step { background: white; padding: 1.5rem; margin: 1rem 0; border-radius: 8px; border-left: 4px solid #3b7ca8; }
+        .step h4 { color: #3b7ca8; margin-bottom: 1rem; }
+        .role { display: inline-block; background: #3b7ca8; color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.85rem; }
+        .status-ok { color: green; font-weight: bold; }
+        .status-pending { color: orange; font-weight: bold; }
+        .status-missing { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>How to Enable "Proceed to Landbank" Button</h1>
+    <p class="text-muted">Complete the entire workflow to unlock the Landbank button in the Cashier module</p>
+    <hr>
+
+    <div class="step">
+        <h4><span class="role">Procurement</span> Step 1: Create & Approve Transaction</h4>
+        <p>Go to Procurement dashboard → Click "New Transaction" → Fill in:</p>
+        <ul>
+            <li>Program Title: <span class="status-missing">Required</span></li>
+            <li>Proponent: <span class="status-missing">Required</span></li>
+            <li>Supplier: <span class="status-missing">Required</span></li>
+            <li>Date (Coverage): <span class="status-missing">Required</span></li>
+            <li>PO Amount: <span class="status-missing">Required</span></li>
+        </ul>
+        <p>After creation, the status should be: <span class="status-ok">FOR SUPPLY REVIEW</span></p>
+    </div>
+
+    <div class="step">
+        <h4><span class="role">Supply</span> Step 2: Verify & Approve</h4>
+        <p>Go to Supply dashboard → Find the transaction → Click "View/Update"</p>
+        <p>Set the following fields:</p>
+        <ul>
+            <li><strong>Supply Status:</strong> Set to any value EXCEPT "PENDING" or "FOR CORRECTION" (e.g., "APPROVED FOR BUDGET")</li>
+            <li><strong>Supply Remarks:</strong> Optional</li>
+            <li><strong>Supply Date:</strong> Set the date</li>
+        </ul>
+        <p>Click "Save Changes"</p>
+    </div>
+
+    <div class="step">
+        <h4><span class="role">Accounting (Pre-Budget)</span> Step 3: Pre-Budget Approval</h4>
+        <p>Go to Accounting dashboard → Find the transaction → Click "View/Update"</p>
+        <p>Set the following fields:</p>
+        <ul>
+            <li><strong>Accounting (Pre-Budget) Status:</strong> Set to any value EXCEPT "PENDING" or "FOR CORRECTION" (e.g., "APPROVED")</li>
+            <li><strong>Accounting (Pre-Budget) Remarks:</strong> Optional</li>
+            <li><strong>Accounting (Pre-Budget) Date:</strong> Set the date</li>
+        </ul>
+        <p>Click "Save Changes"</p>
+    </div>
+
+    <div class="step">
+        <h4><span class="role">Budget</span> Step 4: Prepare DV & Fill Budget Details</h4>
+        <p>Go to Budget dashboard → Find the transaction → Click "View/Update"</p>
+        <p><strong>IMPORTANT - Fill these fields:</strong></p>
+        <ul>
+            <li><strong>Budget Status:</strong> Set to any value EXCEPT "PENDING" or "FOR CORRECTION" (e.g., "DV APPROVED")</li>
+            <li><strong>Budget DV Number:</strong> <span class="status-missing">REQUIRED - Enter a DV number (e.g., "DV-2026-001")</span></li>
+            <li><strong>Budget DV Date:</strong> <span class="status-missing">REQUIRED - Set the date</span></li>
+            <li><strong>Budget Remarks:</strong> Optional</li>
+        </ul>
+        <p>Click "Save Changes"</p>
+    </div>
+
+    <div class="step">
+        <h4><span class="role">Accounting (Post-Budget)</span> Step 5: Post-Budget Approval</h4>
+        <p>Go to Accounting dashboard → Find the transaction → Click "View/Update"</p>
+        <p>Set the following fields:</p>
+        <ul>
+            <li><strong>Accounting (Post-Budget) Status:</strong> Set to <span class="status-ok">"FOR PAYMENT"</span> or <span class="status-ok">"FOR CASHIER – PAYMENT PROCESSING"</span></li>
+            <li><strong>Accounting (Post-Budget) Remarks:</strong> Optional</li>
+            <li><strong>Accounting (Post-Budget) Date:</strong> Set the date</li>
+        </ul>
+        <p>Click "Save Changes"</p>
+    </div>
+
+    <div class="step">
+        <h4><span class="role">Cashier</span> Step 6: Process Payment & Proceed to Landbank</h4>
+        <p>Go to Cashier dashboard → Find the transaction → Click "View/Update"</p>
+        <p>If all steps above are complete, you should see:</p>
+        <p style="background: #d4edda; padding: 1rem; border-radius: 6px;">
+            <strong style="color: green;">✓ All requirements from Procurement, Supply, Accounting, and Budget are complete.</strong><br>
+            <button class="btn btn-success mt-2">Proceed to Landbank Site</button>
+        </p>
+        <p>Fill in (optional but recommended):</p>
+        <ul>
+            <li>Cashier Status</li>
+            <li>Cashier OR Number</li>
+            <li>Cashier OR Date</li>
+            <li>Cashier Landbank Ref (if applicable)</li>
+            <li>Cashier Payment Date</li>
+        </ul>
+    </div>
+
+    <hr>
+    <div class="alert alert-info">
+        <h5>Troubleshooting</h5>
+        <p><strong>Button still shows "Cannot proceed yet"?</strong></p>
+        <p>Check the following:</p>
+        <ol>
+            <li>ALL statuses must be filled (not empty/null)</li>
+            <li>NO status should be "PENDING" or "FOR CORRECTION"</li>
+            <li>Budget DV Number and DV Date MUST be filled</li>
+            <li>Accounting (Post-Budget) Status must be "FOR PAYMENT" or "FOR CASHIER – PAYMENT PROCESSING"</li>
+        </ol>
+        <p>Use this tool to check: <a href="landbank_checker.php" class="btn btn-sm btn-primary">Check Transaction Status</a></p>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,1689 @@
+user:
+<user_query>
+We have a project system called: Supplier Payment Monitoring System
+
+We are the in Deped Division, Our head wants to have a system that tracks the transaction between their suppliers and the deped. The transactions have a flow. The supplier starts at the Procurement, then to the Supply Unit, then after that to the Accounting Unit, then to Budget Unit, then back to the Accounting Unit, Then last is to the Cashier Unit. 
+
+The Deped flow before, they have only the EXCEL to track the transaction. 
+Here are the flow:  
+
+Procurement : This is the entry point, it provides the purchase order, inputs the date, title of the requested program, and the Amount. They are the one who checks the documents from the supplier. They add status or remarks, like for example "no signature, "checking". The other units see this all. Because before in the excel they see that. 
+
+Supply Unit : They are the one who checks, verify, and provide remarks and status
+
+Accounting Unit : After producing by the procurement then verify by supply, it cannot proceed agad agad. They also provide remarks and status. like for example: "CASH RECIEVED", or when they forward that to the budget unit. Provide also date.
+
+Budget Unit : Provide the disbursement voucher then they bring back to the accounting.
+
+Accounting Unit : Provide status. Like for example : Disbursement Voucher, Date and remarks. Example of remarks: "FOR PAYMENT".
+
+Cashier Unit : Provide Status, date, remarks/ status. Like for example: "FOR OFFICIAL RECIEPT". Provide the OFFICIAL RECIEPT base on the needed. 
+
+Then in cashier unit, we want to have them a button that proceeds to their site, their site is the landbank. But they can only proceed when the documents are completed. Because the cashier unit is the last one for this transaction. We want to have their different landing page/dashboard. We need to do this in role-based access. Also, the different supplier can only view or see their own transaction. So it has also different dashboard for different supplier. The suppliers can register their account. So if the deped has another supplier it can easily log in and track their transaction to the deped.
+
+</user_query>
+
+assistant:
+[Thinking] **Summarizing role-based dashboards**
+
+The user seems to be looking for dashboard summaries. I could suggest database tables, but since they didn't specify a tech stack, it might not be necessary. I want to keep things concise. They mentioned "FLOW OF SPMS (SUPPLIER PAYMENT MONITORING SYSTEM CASHIER UNIT)" in an earlier message, which signals a need for a flowchart focusing on the cashier component. I'll include the entire flow but emphasize the cashier part and provide a narrative they can use in their documents.
+### Overview
+
+You already have a very clear manual process; the system should mirror that, add role-based access, and add validation so Cashier can only proceed when documents are complete.
+
+Below is a simple but complete **end‑to‑end flow**, then a **detailed Cashier Unit flow**, all written so you can reuse it in documentation or requirements.
+
+---
+
+### 1. Roles and dashboards
+
+- **Roles**
+  - **Supplier**: can register, log in, and see only their own transactions.
+  - **Procurement Unit**: create and edit the initial transaction; see all.
+  - **Supply Unit**: review and update status/remarks; see all.
+  - **Accounting Unit**: has two stages (before and after Budget); see all.
+  - **Budget Unit**: encode disbursement voucher details; see all.
+  - **Cashier Unit**: final payment and official receipt encoding; see all.
+  - (Optional) **Admin**: manage users, roles, and master data.
+
+- **Dashboard concept (per role)**
+  - Each role sees:
+    - **Summary cards** (e.g., “For review”, “For payment”, “Completed”).
+    - **Filtered list** of transactions relevant to that unit’s step.
+    - **Search/filter** by supplier, PO number, program title, date, status.
+
+---
+
+### 2. Standard transaction data (common fields)
+
+Each transaction typically has:
+
+- **Basic info**
+  - Supplier name
+  - Purchase Order (PO) number
+  - Program title / project title
+  - Amount
+  - Date created / PO date
+- **Per-unit fields**
+  - **Procurement**: status, remarks, date reviewed
+  - **Supply**: status, remarks, date reviewed
+  - **Accounting (Pre‑Budget)**: status, remarks, date, whether forwarded to Budget
+  - **Budget**: DV number, DV date, status, remarks
+  - **Accounting (Post‑Budget)**: status (e.g., “FOR PAYMENT”), date, remarks
+  - **Cashier**: status, date, OR number, OR date, remarks, Landbank reference, etc.
+
+---
+
+### 3. End‑to‑end flow (unit by unit)
+
+#### 3.1 Procurement Unit (Entry point)
+
+- **Actions**
+  - Create a new transaction:
+    - Input: Supplier, PO number, date, program title, amount.
+    - Set initial **Procurement status** (e.g., “UNDER REVIEW”).
+    - Add **remarks** (e.g., “NO SIGNATURE”, “CHECKING”, “COMPLETE”).
+  - Edit remarks/status as documents are corrected.
+  - Once okay, update status to **“FOR SUPPLY REVIEW”**.
+
+- **Visibility**
+  - All other units and the supplier can see these Procurement fields as read‑only.
+
+#### 3.2 Supply Unit
+
+- **Actions**
+  - See transactions where Procurement status is **“FOR SUPPLY REVIEW”** (or similar).
+  - Verify documents, attachments, and items.
+  - Update **Supply status** (e.g., “VERIFIED”, “FOR CORRECTION”).
+  - Input **Supply remarks** and **date**.
+  - When complete, set status to **“FOR ACCOUNTING (PRE‑BUDGET)”**.
+
+#### 3.3 Accounting Unit (Pre‑Budget)
+
+- **Actions**
+  - See transactions in status **“FOR ACCOUNTING (PRE‑BUDGET)”**.
+  - Check completeness (Procurement + Supply checks).
+  - Update **Accounting pre‑budget status** (e.g., “RECEIVED BY ACCOUNTING”, “FORWARD TO BUDGET”).
+  - Add remarks (e.g., “CASH RECEIVED”, “FOR BUDGET PREPARATION”), plus date.
+  - When ready, mark as **“FOR BUDGET”** so Budget Unit can work on it.
+
+#### 3.4 Budget Unit
+
+- **Actions**
+  - See transactions in status **“FOR BUDGET”**.
+  - Prepare the **Disbursement Voucher (DV)**.
+  - Input:
+    - DV number
+    - DV date
+    - Budget status (e.g., “DV PREPARED”)
+    - Budget remarks (if any)
+  - When DV is final, set **overall flow status** to **“DV PREPARED – RETURN TO ACCOUNTING”**.
+
+#### 3.5 Accounting Unit (Post‑Budget)
+
+- **Actions**
+  - See transactions with status **“DV PREPARED – RETURN TO ACCOUNTING”**.
+  - Final check of DV and documents.
+  - Update **Accounting post‑budget fields**:
+    - Status: e.g., “FOR PAYMENT”, “ON HOLD”, etc.
+    - Date
+    - Remarks (e.g., “FOR PAYMENT – QUEUED”, “PENDING DOCUMENTS”).
+  - When ready for Cashier, set status to **“FOR CASHIER – PAYMENT PROCESSING”**.
+
+---
+
+### 4. Cashier Unit module (detailed)
+
+This is the last step and where the **Landbank** link/button should appear, but only when everything is complete.
+
+#### 4.1 Cashier dashboard
+
+- **Main elements**
+  - **Summary cards**:
+    - For example: “For Payment”, “For OR Issuance”, “Completed Payments”.
+  - **Transaction table**:
+    - Columns: Supplier, PO number, Program title, Amount, Status, Latest unit (Accounting/Budget), Date updated, Action buttons.
+  - Filters:
+    - Status (For Payment, For OR, Completed)
+    - Date range
+    - Supplier
+    - PO number / DV number
+
+- **What Cashier can see**
+  - Read‑only:
+    - Procurement, Supply, Accounting, Budget details.
+  - Editable (Cashier only):
+    - Cashier status
+    - Cashier remarks
+    - OR number and OR date
+    - Landbank reference number / transaction ID (after bank payment)
+    - Date of payment
+
+#### 4.2 Cashier transaction detail page
+
+When Cashier clicks a transaction:
+
+- **Header information**
+  - Supplier, PO number, program title, total amount.
+  - Current overall status (e.g., “FOR CASHIER – PAYMENT PROCESSING”).
+- **Timeline / status history**
+  - A simple vertical timeline: Procurement → Supply → Accounting (Pre) → Budget → Accounting (Post) → Cashier, showing:
+    - Status per unit
+    - Date per unit
+    - Key remarks (short, expandable).
+
+- **Cashier action section**
+  - Fields and controls:
+    - Cashier status (dropdown):
+      - “FOR PAYMENT”
+      - “PAYMENT IN PROCESS”
+      - “FOR OFFICIAL RECEIPT”
+      - “PAID – COMPLETED”
+      - “ON HOLD”
+    - Cashier remarks (textarea).
+    - OR number and OR date.
+    - Landbank reference number (after successful payment).
+    - **Proceed to Landbank** button (linking to Landbank site).
+
+---
+
+### 5. Rules for “Proceed to Landbank” button (Cashier)
+
+To meet your requirement: **Cashier can only proceed when documents are complete and they are the last unit**.
+
+- **System validation before enabling the button**
+  - The button is **enabled** only if:
+    - Procurement status is in an acceptable final state (e.g., “COMPLETE” or “OK”).
+    - Supply status is “VERIFIED” (or equivalent “OK” status).
+    - Accounting (pre‑budget) has forwarded to Budget.
+    - Budget has a valid DV (DV number + DV date not empty).
+    - Accounting (post‑budget) status is “FOR PAYMENT” or “FOR CASHIER – PAYMENT PROCESSING”.
+    - No unit has a “FOR CORRECTION” or “PENDING” status.
+  - If any requirement is missing:
+    - Button is **disabled**.
+    - Show a clear message, e.g., **“Cannot proceed: missing DV number from Budget Unit.”**
+
+- **On click: Proceed to Landbank**
+  - System logs:
+    - Date and time of click.
+    - User (Cashier) who initiated it.
+  - Redirects to the **Landbank site** in a new tab.
+  - Optionally sets status to **“PAYMENT IN PROCESS”**.
+  - After payment, Cashier manually enters:
+    - Landbank reference
+    - Payment date
+    - Updates status to **“FOR OFFICIAL RECEIPT”** or directly to **“PAID – COMPLETED”**, depending on your internal rules.
+
+---
+
+### 6. Supplier portal / supplier dashboard
+
+- **Registration and login**
+  - Supplier creates an account (or is pre‑registered by admin).
+  - Supplier user is tied to **one supplier record**.
+- **What supplier sees**
+  - Only **their own transactions**, never others.
+  - For each transaction:
+    - PO number, program title, amount.
+    - Overall status (e.g., “Under Procurement Checking”, “In Budget”, “For Payment”, “Paid – OR 12345”).
+    - Key dates (created, last updated, paid date).
+    - Remarks from each unit (read‑only).
+- **No editing by supplier**
+  - Suppliers only **view** and **track**. They cannot change statuses; changes are only done by DepEd units.
+
+---
+
+### 7. Role-based access (summary)
+
+- **Suppliers**
+  - View only their own transactions; read‑only data.
+- **Procurement**
+  - Can create and edit Procurement fields; cannot edit other units’ fields.
+- **Supply**
+  - Can edit Supply fields only.
+- **Accounting**
+  - Can edit Accounting (pre and post budget) fields only.
+- **Budget**
+  - Can edit DV and Budget fields only.
+- **Cashier**
+  - Can edit Cashier fields and control the **Proceed to Landbank** action.
+- **All internal units**
+  - Can view full transaction details and history.
+
+---
+
+If you want, I can next:
+- Turn this into a **formal system requirements document** (with tables for fields and statuses), or  
+- Design a **database schema and simple UI wireframes** specifically for the Cashier module and supplier dashboard.
+
+user:
+<user_query>
+please use html, css with bootstrap and javascript for this system. With php.
+</user_query>
+
+assistant:
+[Thinking] **Planning a web app implementation**
+
+The user wants to implement a system using HTML, CSS with Bootstrap, JavaScript, and PHP but hasn't clarified if they're looking for a full project or just templates. I need to take action by starting to scaffold a basic multi-role PHP web app, maybe suggesting MySQL for the database. The user's path indicates there might already be a project, so I'll inspect the files first. This task is complex and likely requires a clear plan while keeping explanations concise.
+**Designing a project skeleton**
+
+I’m planning to create a minimal but functional skeleton for a web app using PHP without any frameworks, MySQL, and Bootstrap CSS/JS via CDN. The essentials will include a `db.php` for the database connection and a schema covering tables for `users`, `roles`, `suppliers`, `transactions`, and `transaction_statuses`. I'll create an `index.php` for login, a `register_supplier.php`, and either multiple `dashboard_*.php` pages for each role or a single `dashboard.php`. First, I need to check the repository’s structure using LS.
+[Tool call] LS
+  target_directory: C:\Users\Hazel\.cursor\projects\c-SPMS
+
+[Tool result] LS
+
+assistant:
+[Thinking] **Creating project structure**
+
+I don't have any project files yet, just an empty structure. To make new files, I need to use ApplyPatch. The requirement states that I have to use Read at least once before editing, even if the file doesn't exist. I could read a likely file, like `index.php`, to satisfy that rule before I create. My plan is to have a minimal but functional prototype with files like `config.php`, `init_db.sql`, `header.php`, and others for a simple SPMS with flows focused on roles.
+**Designing a minimal system**
+
+To keep things simple and coherent due to time and scope, I’m focusing on a minimal system design. I’ll create tables like `roles` for ID and name, `users` with fields for ID, username, and role, and `suppliers` for their information. The `transactions` table will include several fields like ID, supplier ID, PO number, and various statuses. I’ll write an SQL file to set up the database and include a sample admin user. For login checks, I’m using PHP’s built-in password functions, without going into complex hashing methods, assuming PHP version 7 or higher.
+**Creating view files and logic**
+
+I’m working on creating view files for the system: a `login.php` for a basic login form, `register_supplier.php` for supplier registration, and `dashboard.php`, which will display content based on user roles like procurement and admin. I also plan to implement a "Proceed to Landbank" button in `cashier_transaction.php`, which will only be visible if certain status conditions are met, using a placeholder URL for Landbank. Plus, I’ll need a `config.php` for the database credentials. Since the user might need just snippets, I’ll ensure to create all necessary files in the repo, starting with a Read call for `index.php`. Then, I'll add files via ApplyPatch, one for each file.
+**Streamlining file creation**
+
+I realize I have quite a few calls planned, but that’s manageable. I need to provide updates on progress. To save time, I might group the header and footer into the same file, though separating them is usually better. Here’s the minimum file set I’ve settled on: `config.php`, `db.php` for the database connection, `auth.php` for session management, `init_db.sql`, `login.php`, `register_supplier.php`, `dashboard.php`, `transaction_new.php` for adding transactions, and `transaction_view.php` to update fields based on roles. It's still a lot, but I think it's manageable, so I’ll begin with a Read call.
+[Tool call] Read
+  path: C:\Users\Hazel\.cursor\projects\c-SPMS\index.php
+
+[Tool result] Read
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\config.php
++<?php
++// Basic configuration file for SPMS
++// NOTE: Update these values to match your local MySQL setup.
++
++define('DB_HOST', 'localhost');
++define('DB_NAME', 'spms_db');
++define('DB_USER', 'root');
++define('DB_PASS', '');
++
++// Base URL of the application (optional, used for redirects/links)
++// Example: 'http://localhost/c-SPMS'
++define('BASE_URL', '');
++
++// Landbank URL used for the cashier "Proceed to Landbank" button
++define('LANDBANK_URL', 'https://www.landbank.com');
++
++// Start session for the whole application
++if (session_status() === PHP_SESSION_NONE) {
++    session_start();
++}
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\db.php
++<?php
++require_once __DIR__ . '/config.php';
++
++/**
++ * Returns a PDO connection to the SPMS database.
++ *
++ * @return PDO
++ */
++function get_db()
++{
++    static $pdo = null;
++
++    if ($pdo === null) {
++        $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4';
++        try {
++            $pdo = new PDO($dsn, DB_USER, DB_PASS, [
++                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
++                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
++            ]);
++        } catch (PDOException $e) {
++            die('Database connection failed: ' . htmlspecialchars($e->getMessage()));
++        }
++    }
++
++    return $pdo;
++}
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\auth.php
++<?php
++require_once __DIR__ . '/db.php';
++
++/**
++ * Redirect to login page if user is not authenticated.
++ */
++function require_login()
++{
++    if (empty($_SESSION['user_id'])) {
++        header('Location: login.php');
++        exit;
++    }
++}
++
++/**
++ * Redirect if the user does not have one of the allowed roles.
++ *
++ * @param array $allowed_roles
++ */
++function require_role(array $allowed_roles)
++{
++    require_login();
++    if (empty($_SESSION['role']) || !in_array($_SESSION['role'], $allowed_roles, true)) {
++        http_response_code(403);
++        echo 'Access denied.';
++        exit;
++    }
++}
++
++/**
++ * Returns the current logged in user record.
++ */
++function current_user()
++{
++    if (empty($_SESSION['user_id'])) {
++        return null;
++    }
++
++    static $cachedUser = null;
++    if ($cachedUser !== null) {
++        return $cachedUser;
++    }
++
++    $db = get_db();
++    $stmt = $db->prepare('SELECT u.*, r.name AS role_name 
++                          FROM users u 
++                          LEFT JOIN roles r ON u.role_id = r.id 
++                          WHERE u.id = ?');
++    $stmt->execute([$_SESSION['user_id']]);
++    $cachedUser = $stmt->fetch();
++
++    return $cachedUser;
++}
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\header.php
++<?php
++require_once __DIR__ . '/config.php';
++?>
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1">
++    <title>Supplier Payment Monitoring System</title>
++    <!-- Bootstrap CSS -->
++    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
++          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
++    <style>
++        body {
++            background-color: #f5f7fb;
++        }
++        .navbar-brand {
++            font-weight: 600;
++        }
++        .card {
++            border-radius: 12px;
++            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
++        }
++    </style>
++</head>
++<body>
++<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
++    <div class="container-fluid">
++        <a class="navbar-brand" href="dashboard.php">SPMS - DepEd Division</a>
++        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
++                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
++            <span class="navbar-toggler-icon"></span>
++        </button>
++        <div class="collapse navbar-collapse" id="navbarContent">
++            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
++                <?php if (!empty($_SESSION['role'])): ?>
++                    <li class="nav-item">
++                        <a class="nav-link" href="dashboard.php">Dashboard</a>
++                    </li>
++                <?php endif; ?>
++            </ul>
++            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
++                <?php if (!empty($_SESSION['user_id'])): ?>
++                    <li class="nav-item">
++                        <span class="navbar-text me-2">
++                            <?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?>
++                            (<?php echo htmlspecialchars($_SESSION['role'] ?? ''); ?>)
++                        </span>
++                    </li>
++                    <li class="nav-item">
++                        <a class="btn btn-outline-light btn-sm" href="logout.php">Logout</a>
++                    </li>
++                <?php else: ?>
++                    <li class="nav-item">
++                        <a class="btn btn-outline-light btn-sm me-2" href="login.php">Login</a>
++                    </li>
++                    <li class="nav-item">
++                        <a class="btn btn-light btn-sm" href="register_supplier.php">Supplier Register</a>
++                    </li>
++                <?php endif; ?>
++            </ul>
++        </div>
++    </div>
++</nav>
++<div class="container mb-5">
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\footer.php
++    </div> <!-- /.container -->
++
++    <!-- Bootstrap JS (with Popper) -->
++    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
++            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
++            crossorigin="anonymous"></script>
++</body>
++</html>
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\init_db.sql
++-- SQL schema for Supplier Payment Monitoring System (SPMS)
++
++CREATE TABLE roles (
++    id INT AUTO_INCREMENT PRIMARY KEY,
++    name VARCHAR(50) NOT NULL UNIQUE
++);
++
++CREATE TABLE suppliers (
++    id INT AUTO_INCREMENT PRIMARY KEY,
++    name VARCHAR(255) NOT NULL,
++    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
++);
++
++CREATE TABLE users (
++    id INT AUTO_INCREMENT PRIMARY KEY,
++    username VARCHAR(100) NOT NULL UNIQUE,
++    password_hash VARCHAR(255) NOT NULL,
++    role_id INT NOT NULL,
++    supplier_id INT DEFAULT NULL,
++    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
++    FOREIGN KEY (role_id) REFERENCES roles(id),
++    FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
++);
++
++CREATE TABLE transactions (
++    id INT AUTO_INCREMENT PRIMARY KEY,
++    supplier_id INT NOT NULL,
++    po_number VARCHAR(100) NOT NULL,
++    program_title VARCHAR(255) NOT NULL,
++    amount DECIMAL(15,2) NOT NULL,
++    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
++
++    -- Procurement
++    proc_status VARCHAR(100) DEFAULT NULL,
++    proc_remarks TEXT DEFAULT NULL,
++    proc_date DATE DEFAULT NULL,
++
++    -- Supply Unit
++    supply_status VARCHAR(100) DEFAULT NULL,
++    supply_remarks TEXT DEFAULT NULL,
++    supply_date DATE DEFAULT NULL,
++
++    -- Accounting (Pre-Budget)
++    acct_pre_status VARCHAR(100) DEFAULT NULL,
++    acct_pre_remarks TEXT DEFAULT NULL,
++    acct_pre_date DATE DEFAULT NULL,
++
++    -- Budget Unit
++    budget_dv_number VARCHAR(100) DEFAULT NULL,
++    budget_dv_date DATE DEFAULT NULL,
++    budget_status VARCHAR(100) DEFAULT NULL,
++    budget_remarks TEXT DEFAULT NULL,
++
++    -- Accounting (Post-Budget)
++    acct_post_status VARCHAR(100) DEFAULT NULL,
++    acct_post_remarks TEXT DEFAULT NULL,
++    acct_post_date DATE DEFAULT NULL,
++
++    -- Cashier Unit
++    cashier_status VARCHAR(100) DEFAULT NULL,
++    cashier_remarks TEXT DEFAULT NULL,
++    cashier_or_number VARCHAR(100) DEFAULT NULL,
++    cashier_or_date DATE DEFAULT NULL,
++    cashier_landbank_ref VARCHAR(150) DEFAULT NULL,
++    cashier_payment_date DATE DEFAULT NULL,
++
++    FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
++);
++
++-- Seed basic roles
++INSERT INTO roles (name) VALUES
++('admin'),
++('supplier'),
++('procurement'),
++('supply'),
++('accounting'),
++('budget'),
++('cashier');
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\login.php
++<?php
++require_once __DIR__ . '/config.php';
++require_once __DIR__ . '/db.php';
++
++$error = '';
++
++if ($_SERVER['REQUEST_METHOD'] === 'POST') {
++    $username = trim($_POST['username'] ?? '');
++    $password = $_POST['password'] ?? '';
++
++    if ($username === '' || $password === '') {
++        $error = 'Please enter username and password.';
++    } else {
++        $db = get_db();
++        $stmt = $db->prepare('SELECT u.*, r.name AS role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE username = ?');
++        $stmt->execute([$username]);
++        $user = $stmt->fetch();
++
++        if ($user && password_verify($password, $user['password_hash'])) {
++            $_SESSION['user_id'] = $user['id'];
++            $_SESSION['username'] = $user['username'];
++            $_SESSION['role'] = $user['role_name'];
++            $_SESSION['supplier_id'] = $user['supplier_id'];
++
++            header('Location: dashboard.php');
++            exit;
++        } else {
++            $error = 'Invalid username or password.';
++        }
++    }
++}
++
++include __DIR__ . '/header.php';
++?>
++
++<div class="row justify-content-center">
++    <div class="col-md-6 col-lg-4">
++        <div class="card">
++            <div class="card-body">
++                <h5 class="card-title mb-3 text-center">Login</h5>
++                <?php if ($error): ?>
++                    <div class="alert alert-danger py-2"><?php echo htmlspecialchars($error); ?></div>
++                <?php endif; ?>
++                <form method="post" novalidate>
++                    <div class="mb-3">
++                        <label for="username" class="form-label">Username</label>
++                        <input type="text" class="form-control" id="username" name="username" required>
++                    </div>
++                    <div class="mb-3">
++                        <label for="password" class="form-label">Password</label>
++                        <input type="password" class="form-control" id="password" name="password" required>
++                    </div>
++                    <div class="d-grid">
++                        <button type="submit" class="btn btn-primary">Login</button>
++                    </div>
++                </form>
++                <p class="mt-3 mb-0 text-center">
++                    Supplier? <a href="register_supplier.php">Register here</a>
++                </p>
++            </div>
++        </div>
++    </div>
++</div>
++
++<?php include __DIR__ . '/footer.php'; ?>
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\logout.php
++<?php
++require_once __DIR__ . '/config.php';
++
++$_SESSION = [];
++session_destroy();
++
++header('Location: login.php');
++exit;
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\register_supplier.php
++<?php
++require_once __DIR__ . '/config.php';
++require_once __DIR__ . '/db.php';
++
++$error = '';
++$success = '';
++
++if ($_SERVER['REQUEST_METHOD'] === 'POST') {
++    $supplier_name = trim($_POST['supplier_name'] ?? '');
++    $username = trim($_POST['username'] ?? '');
++    $password = $_POST['password'] ?? '';
++    $password_confirm = $_POST['password_confirm'] ?? '';
++
++    if ($supplier_name === '' || $username === '' || $password === '') {
++        $error = 'All fields are required.';
++    } elseif ($password !== $password_confirm) {
++        $error = 'Passwords do not match.';
++    } else {
++        $db = get_db();
++        $db->beginTransaction();
++        try {
++            // Create supplier
++            $stmt = $db->prepare('INSERT INTO suppliers (name) VALUES (?)');
++            $stmt->execute([$supplier_name]);
++            $supplier_id = $db->lastInsertId();
++
++            // Get supplier role id
++            $roleStmt = $db->prepare('SELECT id FROM roles WHERE name = ?');
++            $roleStmt->execute(['supplier']);
++            $role = $roleStmt->fetch();
++            if (!$role) {
++                throw new Exception('Supplier role not found. Please import init_db.sql.');
++            }
++
++            // Create user
++            $stmt = $db->prepare('INSERT INTO users (username, password_hash, role_id, supplier_id) VALUES (?,?,?,?)');
++            $stmt->execute([
++                $username,
++                password_hash($password, PASSWORD_DEFAULT),
++                $role['id'],
++                $supplier_id
++            ]);
++
++            $db->commit();
++            $success = 'Registration successful. You can now log in.';
++        } catch (Exception $e) {
++            $db->rollBack();
++            if (str_contains($e->getMessage(), 'Duplicate entry')) {
++                $error = 'Username already exists.';
++            } else {
++                $error = 'Error during registration. Please contact admin.';
++            }
++        }
++    }
++}
++
++include __DIR__ . '/header.php';
++?>
++
++<div class="row justify-content-center">
++    <div class="col-md-8 col-lg-6">
++        <div class="card">
++            <div class="card-body">
++                <h5 class="card-title mb-3 text-center">Supplier Registration</h5>
++                <?php if ($error): ?>
++                    <div class="alert alert-danger py-2"><?php echo htmlspecialchars($error); ?></div>
++                <?php endif; ?>
++                <?php if ($success): ?>
++                    <div class="alert alert-success py-2"><?php echo htmlspecialchars($success); ?></div>
++                <?php endif; ?>
++                <form method="post" novalidate>
++                    <div class="mb-3">
++                        <label for="supplier_name" class="form-label">Supplier Name</label>
++                        <input type="text" class="form-control" id="supplier_name" name="supplier_name" required>
++                    </div>
++                    <div class="mb-3">
++                        <label for="username" class="form-label">Username</label>
++                        <input type="text" class="form-control" id="username" name="username" required>
++                    </div>
++                    <div class="row">
++                        <div class="col-md-6 mb-3">
++                            <label for="password" class="form-label">Password</label>
++                            <input type="password" class="form-control" id="password" name="password" required>
++                        </div>
++                        <div class="col-md-6 mb-3">
++                            <label for="password_confirm" class="form-label">Confirm Password</label>
++                            <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
++                        </div>
++                    </div>
++                    <div class="d-grid">
++                        <button type="submit" class="btn btn-success">Register</button>
++                    </div>
++                    <p class="mt-3 mb-0 text-center">
++                        Already have an account? <a href="login.php">Login</a>
++                    </p>
++                </form>
++            </div>
++        </div>
++    </div>
++</div>
++
++<?php include __DIR__ . '/footer.php'; ?>
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\dashboard.php
++<?php
++require_once __DIR__ . '/config.php';
++require_once __DIR__ . '/db.php';
++require_once __DIR__ . '/auth.php';
++
++require_login();
++
++$user = current_user();
++$role = $_SESSION['role'] ?? '';
++
++$db = get_db();
++
++// Simple counts for dashboard
++$totalTransactions = (int)$db->query('SELECT COUNT(*) AS c FROM transactions')->fetch()['c'];
++
++if ($role === 'supplier' && !empty($_SESSION['supplier_id'])) {
++    $stmt = $db->prepare('SELECT COUNT(*) AS c FROM transactions WHERE supplier_id = ?');
++    $stmt->execute([$_SESSION['supplier_id']]);
++    $myTransactions = (int)$stmt->fetch()['c'];
++} else {
++    $myTransactions = $totalTransactions;
++}
++
++include __DIR__ . '/header.php';
++?>
++
++<div class="row mb-4">
++    <div class="col">
++        <h4 class="mb-0">Welcome, <?php echo htmlspecialchars($user['username'] ?? ''); ?></h4>
++        <small class="text-muted text-uppercase"><?php echo htmlspecialchars($role); ?> Dashboard</small>
++    </div>
++</div>
++
++<div class="row g-3 mb-4">
++    <div class="col-md-4">
++        <div class="card border-0">
++            <div class="card-body">
++                <h6 class="text-muted">Total Transactions</h6>
++                <h3><?php echo $totalTransactions; ?></h3>
++            </div>
++        </div>
++    </div>
++    <div class="col-md-4">
++        <div class="card border-0">
++            <div class="card-body">
++                <h6 class="text-muted">
++                    <?php echo $role === 'supplier' ? 'My Transactions' : 'All Transactions'; ?>
++                </h6>
++                <h3><?php echo $myTransactions; ?></h3>
++            </div>
++        </div>
++    </div>
++</div>
++
++<?php if ($role === 'procurement'): ?>
++    <div class="mb-3 d-flex justify-content-between align-items-center">
++        <h5 class="mb-0">Procurement - Transactions</h5>
++        <a href="transaction_new.php" class="btn btn-primary btn-sm">New Transaction</a>
++    </div>
++    <?php include __DIR__ . '/partials_transactions_table.php'; ?>
++
++<?php elseif ($role === 'supply'): ?>
++    <h5 class="mb-3">Supply Unit - For Verification</h5>
++    <?php include __DIR__ . '/partials_transactions_table.php'; ?>
++
++<?php elseif ($role === 'accounting'): ?>
++    <h5 class="mb-3">Accounting Unit - All Transactions</h5>
++    <?php include __DIR__ . '/partials_transactions_table.php'; ?>
++
++<?php elseif ($role === 'budget'): ?>
++    <h5 class="mb-3">Budget Unit - For DV Preparation</h5>
++    <?php include __DIR__ . '/partials_transactions_table.php'; ?>
++
++<?php elseif ($role === 'cashier'): ?>
++    <h5 class="mb-3">Cashier Unit - For Payment / OR</h5>
++    <?php include __DIR__ . '/partials_transactions_table.php'; ?>
++
++<?php elseif ($role === 'supplier'): ?>
++    <h5 class="mb-3">My Transactions</h5>
++    <?php include __DIR__ . '/partials_transactions_table.php'; ?>
++
++<?php else: ?>
++    <div class="alert alert-info">
++        No specific dashboard implemented for this role yet.
++    </div>
++<?php endif; ?>
++
++<?php include __DIR__ . '/footer.php'; ?>
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\partials_transactions_table.php
++<?php
++// Shared transaction table for different dashboards
++// Expects $db and $_SESSION context
++
++$role = $_SESSION['role'] ?? '';
++$supplierId = $_SESSION['supplier_id'] ?? null;
++
++$where = [];
++$params = [];
++
++if ($role === 'supplier' && $supplierId) {
++    $where[] = 't.supplier_id = ?';
++    $params[] = $supplierId;
++}
++
++// Example: show only items relevant to each unit (can be refined later)
++if ($role === 'supply') {
++    $where[] = 'proc_status IS NOT NULL';
++}
++if ($role === 'budget') {
++    $where[] = 'acct_pre_status IS NOT NULL';
++}
++if ($role === 'cashier') {
++    $where[] = 'acct_post_status IN ("FOR PAYMENT", "FOR CASHIER – PAYMENT PROCESSING")';
++}
++
++$sql = 'SELECT t.*, s.name AS supplier_name
++        FROM transactions t
++        JOIN suppliers s ON t.supplier_id = s.id';
++if ($where) {
++    $sql .= ' WHERE ' . implode(' AND ', $where);
++}
++$sql .= ' ORDER BY t.created_at DESC';
++
++$stmt = $db->prepare($sql);
++$stmt->execute($params);
++$transactions = $stmt->fetchAll();
++?>
++
++<div class="card">
++    <div class="card-body table-responsive">
++        <table class="table table-sm table-hover align-middle">
++            <thead class="table-light">
++            <tr>
++                <th>PO #</th>
++                <th>Supplier</th>
++                <th>Program Title</th>
++                <th>Amount</th>
++                <th>Current Status</th>
++                <th>Created</th>
++                <th></th>
++            </tr>
++            </thead>
++            <tbody>
++            <?php if (!$transactions): ?>
++                <tr>
++                    <td colspan="7" class="text-center text-muted">No transactions found.</td>
++                </tr>
++            <?php else: ?>
++                <?php foreach ($transactions as $t): ?>
++                    <?php
++                    // Derive a simple current status text from the flow
++                    $status = $t['cashier_status']
++                        ?: $t['acct_post_status']
++                        ?: $t['budget_status']
++                        ?: $t['acct_pre_status']
++                        ?: $t['supply_status']
++                        ?: $t['proc_status']
++                        ?: 'NEW';
++                    ?>
++                    <tr>
++                        <td><?php echo htmlspecialchars($t['po_number']); ?></td>
++                        <td><?php echo htmlspecialchars($t['supplier_name']); ?></td>
++                        <td><?php echo htmlspecialchars($t['program_title']); ?></td>
++                        <td><?php echo number_format($t['amount'], 2); ?></td>
++                        <td><?php echo htmlspecialchars($status); ?></td>
++                        <td><?php echo htmlspecialchars($t['created_at']); ?></td>
++                        <td class="text-end">
++                            <a class="btn btn-outline-primary btn-sm"
++                               href="transaction_view.php?id=<?php echo (int)$t['id']; ?>">
++                                View / Update
++                            </a>
++                        </td>
++                    </tr>
++                <?php endforeach; ?>
++            <?php endif; ?>
++            </tbody>
++        </table>
++    </div>
++</div>
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\transaction_new.php
++<?php
++require_once __DIR__ . '/config.php';
++require_once __DIR__ . '/db.php';
++require_once __DIR__ . '/auth.php';
++
++require_role(['procurement']);
++
++$db = get_db();
++$error = '';
++$success = '';
++
++if ($_SERVER['REQUEST_METHOD'] === 'POST') {
++    $supplier_name = trim($_POST['supplier_name'] ?? '');
++    $po_number = trim($_POST['po_number'] ?? '');
++    $program_title = trim($_POST['program_title'] ?? '');
++    $amount = trim($_POST['amount'] ?? '');
++    $proc_status = trim($_POST['proc_status'] ?? '');
++    $proc_remarks = trim($_POST['proc_remarks'] ?? '');
++
++    if ($supplier_name === '' || $po_number === '' || $program_title === '' || $amount === '') {
++        $error = 'Please fill in all required fields.';
++    } else {
++        try {
++            $db->beginTransaction();
++
++            // Find or create supplier
++            $stmt = $db->prepare('SELECT id FROM suppliers WHERE name = ?');
++            $stmt->execute([$supplier_name]);
++            $supplier = $stmt->fetch();
++
++            if ($supplier) {
++                $supplier_id = $supplier['id'];
++            } else {
++                $stmt = $db->prepare('INSERT INTO suppliers (name) VALUES (?)');
++                $stmt->execute([$supplier_name]);
++                $supplier_id = $db->lastInsertId();
++            }
++
++            // Insert transaction
++            $stmt = $db->prepare('INSERT INTO transactions 
++                (supplier_id, po_number, program_title, amount, proc_status, proc_remarks, proc_date)
++                VALUES (?,?,?,?,?,?,CURDATE())');
++            $stmt->execute([
++                $supplier_id,
++                $po_number,
++                $program_title,
++                $amount,
++                $proc_status ?: 'FOR SUPPLY REVIEW',
++                $proc_remarks
++            ]);
++
++            $db->commit();
++            $success = 'Transaction created successfully.';
++        } catch (Exception $e) {
++            $db->rollBack();
++            $error = 'Error creating transaction.';
++        }
++    }
++}
++
++include __DIR__ . '/header.php';
++?>
++
++<div class="row justify-content-center">
++    <div class="col-lg-8">
++        <div class="card">
++            <div class="card-body">
++                <h5 class="card-title mb-3">New Transaction (Procurement)</h5>
++                <?php if ($error): ?>
++                    <div class="alert alert-danger py-2"><?php echo htmlspecialchars($error); ?></div>
++                <?php endif; ?>
++                <?php if ($success): ?>
++                    <div class="alert alert-success py-2"><?php echo htmlspecialchars($success); ?></div>
++                <?php endif; ?>
++                <form method="post" novalidate>
++                    <div class="mb-3">
++                        <label class="form-label">Supplier Name</label>
++                        <input type="text" name="supplier_name" class="form-control" required>
++                    </div>
++                    <div class="row">
++                        <div class="col-md-4 mb-3">
++                            <label class="form-label">PO Number</label>
++                            <input type="text" name="po_number" class="form-control" required>
++                        </div>
++                        <div class="col-md-4 mb-3">
++                            <label class="form-label">Amount</label>
++                            <input type="number" step="0.01" name="amount" class="form-control" required>
++                        </div>
++                    </div>
++                    <div class="mb-3">
++                        <label class="form-label">Program Title</label>
++                        <input type="text" name="program_title" class="form-control" required>
++                    </div>
++                    <div class="row">
++                        <div class="col-md-6 mb-3">
++                            <label class="form-label">Procurement Status</label>
++                            <input type="text" name="proc_status" class="form-control"
++                                   placeholder="e.g., FOR SUPPLY REVIEW">
++                        </div>
++                        <div class="col-md-6 mb-3">
++                            <label class="form-label">Procurement Remarks</label>
++                            <input type="text" name="proc_remarks" class="form-control"
++                                   placeholder='e.g., "NO SIGNATURE", "CHECKING"'>
++                        </div>
++                    </div>
++                    <div class="d-grid">
++                        <button type="submit" class="btn btn-primary">Save Transaction</button>
++                    </div>
++                </form>
++            </div>
++        </div>
++    </div>
++</div>
++
++<?php include __DIR__ . '/footer.php'; ?>
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\transaction_view.php
++<?php
++require_once __DIR__ . '/config.php';
++require_once __DIR__ . '/db.php';
++require_once __DIR__ . '/auth.php';
++
++require_login();
++
++$db = get_db();
++$role = $_SESSION['role'] ?? '';
++$supplierId = $_SESSION['supplier_id'] ?? null;
++
++$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
++if ($id <= 0) {
++    header('Location: dashboard.php');
++    exit;
++}
++
++// Load transaction
++$stmt = $db->prepare('SELECT t.*, s.name AS supplier_name 
++                      FROM transactions t 
++                      JOIN suppliers s ON t.supplier_id = s.id 
++                      WHERE t.id = ?');
++$stmt->execute([$id]);
++$transaction = $stmt->fetch();
++
++if (!$transaction) {
++    header('Location: dashboard.php');
++    exit;
++}
++
++// Suppliers can only view their own
++if ($role === 'supplier' && $supplierId && $transaction['supplier_id'] != $supplierId) {
++    http_response_code(403);
++    echo 'Access denied.';
++    exit;
++}
++
++$error = '';
++$success = '';
++
++if ($_SERVER['REQUEST_METHOD'] === 'POST') {
++    try {
++        $fields = [];
++        $params = [];
++
++        if ($role === 'procurement') {
++            $fields[] = 'proc_status = ?';
++            $fields[] = 'proc_remarks = ?';
++            $fields[] = 'proc_date = CURDATE()';
++            $params[] = trim($_POST['proc_status'] ?? '');
++            $params[] = trim($_POST['proc_remarks'] ?? '');
++        } elseif ($role === 'supply') {
++            $fields[] = 'supply_status = ?';
++            $fields[] = 'supply_remarks = ?';
++            $fields[] = 'supply_date = CURDATE()';
++            $params[] = trim($_POST['supply_status'] ?? '');
++            $params[] = trim($_POST['supply_remarks'] ?? '');
++        } elseif ($role === 'accounting') {
++            // Detect whether acting pre- or post-budget based on posted flag
++            $stage = $_POST['stage'] ?? 'pre';
++            if ($stage === 'pre') {
++                $fields[] = 'acct_pre_status = ?';
++                $fields[] = 'acct_pre_remarks = ?';
++                $fields[] = 'acct_pre_date = CURDATE()';
++                $params[] = trim($_POST['acct_pre_status'] ?? '');
++                $params[] = trim($_POST['acct_pre_remarks'] ?? '');
++            } else {
++                $fields[] = 'acct_post_status = ?';
++                $fields[] = 'acct_post_remarks = ?';
++                $fields[] = 'acct_post_date = CURDATE()';
++                $params[] = trim($_POST['acct_post_status'] ?? '');
++                $params[] = trim($_POST['acct_post_remarks'] ?? '');
++            }
++        } elseif ($role === 'budget') {
++            $fields[] = 'budget_dv_number = ?';
++            $fields[] = 'budget_dv_date = ?';
++            $fields[] = 'budget_status = ?';
++            $fields[] = 'budget_remarks = ?';
++            $params[] = trim($_POST['budget_dv_number'] ?? '');
++            $params[] = trim($_POST['budget_dv_date'] ?? '');
++            $params[] = trim($_POST['budget_status'] ?? '');
++            $params[] = trim($_POST['budget_remarks'] ?? '');
++        } elseif ($role === 'cashier') {
++            $fields[] = 'cashier_status = ?';
++            $fields[] = 'cashier_remarks = ?';
++            $fields[] = 'cashier_or_number = ?';
++            $fields[] = 'cashier_or_date = ?';
++            $fields[] = 'cashier_landbank_ref = ?';
++            $fields[] = 'cashier_payment_date = ?';
++            $params[] = trim($_POST['cashier_status'] ?? '');
++            $params[] = trim($_POST['cashier_remarks'] ?? '');
++            $params[] = trim($_POST['cashier_or_number'] ?? '');
++            $params[] = trim($_POST['cashier_or_date'] ?? '');
++            $params[] = trim($_POST['cashier_landbank_ref'] ?? '');
++            $params[] = trim($_POST['cashier_payment_date'] ?? '');
++        }
++
++        if ($fields) {
++            $params[] = $id;
++            $sql = 'UPDATE transactions SET ' . implode(', ', $fields) . ' WHERE id = ?';
++            $stmt = $db->prepare($sql);
++            $stmt->execute($params);
++            $success = 'Transaction updated successfully.';
++
++            // Reload data
++            $stmt = $db->prepare('SELECT t.*, s.name AS supplier_name 
++                                  FROM transactions t 
++                                  JOIN suppliers s ON t.supplier_id = s.id 
++                                  WHERE t.id = ?');
++            $stmt->execute([$id]);
++            $transaction = $stmt->fetch();
++        }
++    } catch (Exception $e) {
++        $error = 'Error updating transaction.';
++    }
++}
++
++// Determine if cashier can proceed to Landbank
++$canProceedLandbank = false;
++if ($role === 'cashier') {
++    $allOk =
++        !empty($transaction['proc_status']) &&
++        !empty($transaction['supply_status']) &&
++        !empty($transaction['acct_pre_status']) &&
++        !empty($transaction['budget_dv_number']) &&
++        !empty($transaction['budget_dv_date']) &&
++        in_array($transaction['acct_post_status'], ['FOR PAYMENT', 'FOR CASHIER – PAYMENT PROCESSING'], true);
++    $hasPending =
++        in_array($transaction['proc_status'], ['FOR CORRECTION', 'PENDING'], true) ||
++        in_array($transaction['supply_status'], ['FOR CORRECTION', 'PENDING'], true) ||
++        in_array($transaction['acct_pre_status'], ['FOR CORRECTION', 'PENDING'], true) ||
++        in_array($transaction['budget_status'], ['FOR CORRECTION', 'PENDING'], true) ||
++        in_array($transaction['acct_post_status'], ['FOR CORRECTION', 'PENDING'], true);
++
++    $canProceedLandbank = $allOk && !$hasPending;
++}
++
++include __DIR__ . '/header.php';
++?>
++
++<div class="row mb-3">
++    <div class="col-md-8">
++        <h5>Transaction Details</h5>
++        <small class="text-muted">
++            PO # <?php echo htmlspecialchars($transaction['po_number']); ?> |
++            Supplier: <?php echo htmlspecialchars($transaction['supplier_name']); ?>
++        </small>
++    </div>
++    <div class="col-md-4 text-md-end mt-2 mt-md-0">
++        <a href="dashboard.php" class="btn btn-secondary btn-sm">Back to Dashboard</a>
++    </div>
++</div>
++
++<?php if ($error): ?>
++    <div class="alert alert-danger py-2"><?php echo htmlspecialchars($error); ?></div>
++<?php endif; ?>
++<?php if ($success): ?>
++    <div class="alert alert-success py-2"><?php echo htmlspecialchars($success); ?></div>
++<?php endif; ?>
++
++<div class="row g-3">
++    <div class="col-lg-7">
++        <div class="card mb-3">
++            <div class="card-body">
++                <h6 class="mb-3">Basic Information</h6>
++                <div class="row mb-2">
++                    <div class="col-md-6">
++                        <strong>Program Title:</strong><br>
++                        <?php echo htmlspecialchars($transaction['program_title']); ?>
++                    </div>
++                    <div class="col-md-3">
++                        <strong>Amount:</strong><br>
++                        <?php echo number_format($transaction['amount'], 2); ?>
++                    </div>
++                    <div class="col-md-3">
++                        <strong>Created At:</strong><br>
++                        <?php echo htmlspecialchars($transaction['created_at']); ?>
++                    </div>
++                </div>
++            </div>
++        </div>
++
++        <div class="card">
++            <div class="card-body">
++                <h6 class="mb-3">Update (<?php echo htmlspecialchars(strtoupper($role)); ?>)</h6>
++                <?php if ($role === 'supplier'): ?>
++                    <p class="text-muted mb-0">Suppliers can only view the status of their transactions.</p>
++                <?php else: ?>
++                    <form method="post" novalidate>
++                        <?php if ($role === 'procurement'): ?>
++                            <div class="mb-3">
++                                <label class="form-label">Procurement Status</label>
++                                <input type="text" name="proc_status" class="form-control"
++                                       value="<?php echo htmlspecialchars($transaction['proc_status'] ?? ''); ?>">
++                            </div>
++                            <div class="mb-3">
++                                <label class="form-label">Procurement Remarks</label>
++                                <textarea name="proc_remarks" class="form-control"
++                                          rows="2"><?php echo htmlspecialchars($transaction['proc_remarks'] ?? ''); ?></textarea>
++                            </div>
++                        <?php elseif ($role === 'supply'): ?>
++                            <div class="mb-3">
++                                <label class="form-label">Supply Status</label>
++                                <input type="text" name="supply_status" class="form-control"
++                                       value="<?php echo htmlspecialchars($transaction['supply_status'] ?? ''); ?>">
++                            </div>
++                            <div class="mb-3">
++                                <label class="form-label">Supply Remarks</label>
++                                <textarea name="supply_remarks" class="form-control"
++                                          rows="2"><?php echo htmlspecialchars($transaction['supply_remarks'] ?? ''); ?></textarea>
++                            </div>
++                        <?php elseif ($role === 'accounting'): ?>
++                            <div class="mb-2">
++                                <div class="form-check form-check-inline">
++                                    <input class="form-check-input" type="radio" name="stage" id="stagePre"
++                                           value="pre" checked>
++                                    <label class="form-check-label" for="stagePre">Pre-Budget</label>
++                                </div>
++                                <div class="form-check form-check-inline">
++                                    <input class="form-check-input" type="radio" name="stage" id="stagePost"
++                                           value="post">
++                                    <label class="form-check-label" for="stagePost">Post-Budget</label>
++                                </div>
++                            </div>
++                            <div class="mb-3">
++                                <label class="form-label">Accounting Status</label>
++                                <input type="text" name="acct_pre_status" class="form-control"
++                                       placeholder="Pre-Budget status (e.g., FOR BUDGET)"
++                                       value="<?php echo htmlspecialchars($transaction['acct_pre_status'] ?? ''); ?>">
++                                <input type="text" name="acct_post_status" class="form-control mt-2"
++                                       placeholder="Post-Budget status (e.g., FOR PAYMENT)"
++                                       value="<?php echo htmlspecialchars($transaction['acct_post_status'] ?? ''); ?>">
++                            </div>
++                            <div class="mb-3">
++                                <label class="form-label">Accounting Remarks</label>
++                                <textarea name="acct_pre_remarks" class="form-control"
++                                          rows="2"
++                                          placeholder="Pre-Budget remarks"><?php echo htmlspecialchars($transaction['acct_pre_remarks'] ?? ''); ?></textarea>
++                                <textarea name="acct_post_remarks" class="form-control mt-2"
++                                          rows="2"
++                                          placeholder="Post-Budget remarks"><?php echo htmlspecialchars($transaction['acct_post_remarks'] ?? ''); ?></textarea>
++                            </div>
++                        <?php elseif ($role === 'budget'): ?>
++                            <div class="row">
++                                <div class="col-md-6 mb-3">
++                                    <label class="form-label">DV Number</label>
++                                    <input type="text" name="budget_dv_number" class="form-control"
++                                           value="<?php echo htmlspecialchars($transaction['budget_dv_number'] ?? ''); ?>">
++                                </div>
++                                <div class="col-md-6 mb-3">
++                                    <label class="form-label">DV Date</label>
++                                    <input type="date" name="budget_dv_date" class="form-control"
++                                           value="<?php echo htmlspecialchars($transaction['budget_dv_date'] ?? ''); ?>">
++                                </div>
++                            </div>
++                            <div class="mb-3">
++                                <label class="form-label">Budget Status</label>
++                                <input type="text" name="budget_status" class="form-control"
++                                       value="<?php echo htmlspecialchars($transaction['budget_status'] ?? ''); ?>">
++                            </div>
++                            <div class="mb-3">
++                                <label class="form-label">Budget Remarks</label>
++                                <textarea name="budget_remarks" class="form-control"
++                                          rows="2"><?php echo htmlspecialchars($transaction['budget_remarks'] ?? ''); ?></textarea>
++                            </div>
++                        <?php elseif ($role === 'cashier'): ?>
++                            <div class="mb-3">
++                                <label class="form-label">Cashier Status</label>
++                                <input type="text" name="cashier_status" class="form-control"
++                                       value="<?php echo htmlspecialchars($transaction['cashier_status'] ?? 'FOR PAYMENT'); ?>">
++                            </div>
++                            <div class="mb-3">
++                                <label class="form-label">Cashier Remarks</label>
++                                <textarea name="cashier_remarks" class="form-control"
++                                          rows="2"><?php echo htmlspecialchars($transaction['cashier_remarks'] ?? ''); ?></textarea>
++                            </div>
++                            <div class="row">
++                                <div class="col-md-6 mb-3">
++                                    <label class="form-label">OR Number</label>
++                                    <input type="text" name="cashier_or_number" class="form-control"
++                                           value="<?php echo htmlspecialchars($transaction['cashier_or_number'] ?? ''); ?>">
++                                </div>
++                                <div class="col-md-6 mb-3">
++                                    <label class="form-label">OR Date</label>
++                                    <input type="date" name="cashier_or_date" class="form-control"
++                                           value="<?php echo htmlspecialchars($transaction['cashier_or_date'] ?? ''); ?>">
++                                </div>
++                            </div>
++                            <div class="row">
++                                <div class="col-md-6 mb-3">
++                                    <label class="form-label">Landbank Reference</label>
++                                    <input type="text" name="cashier_landbank_ref" class="form-control"
++                                           value="<?php echo htmlspecialchars($transaction['cashier_landbank_ref'] ?? ''); ?>">
++                                </div>
++                                <div class="col-md-6 mb-3">
++                                    <label class="form-label">Payment Date</label>
++                                    <input type="date" name="cashier_payment_date" class="form-control"
++                                           value="<?php echo htmlspecialchars($transaction['cashier_payment_date'] ?? ''); ?>">
++                                </div>
++                            </div>
++                        <?php endif; ?>
++
++                        <?php if ($role !== 'supplier'): ?>
++                            <div class="d-grid">
++                                <button type="submit" class="btn btn-primary">Save Updates</button>
++                            </div>
++                        <?php endif; ?>
++                    </form>
++                <?php endif; ?>
++            </div>
++        </div>
++    </div>
++
++    <div class="col-lg-5">
++        <div class="card mb-3">
++            <div class="card-body">
++                <h6 class="mb-3">Flow Timeline</h6>
++                <ul class="list-group list-group-flush small">
++                    <li class="list-group-item">
++                        <strong>Procurement:</strong>
++                        <?php echo htmlspecialchars($transaction['proc_status'] ?? '—'); ?>
++                        <?php if ($transaction['proc_date']): ?>
++                            <br><span class="text-muted">Date: <?php echo htmlspecialchars($transaction['proc_date']); ?></span>
++                        <?php endif; ?>
++                        <?php if ($transaction['proc_remarks']): ?>
++                            <br><span class="text-muted">Remarks: <?php echo htmlspecialchars($transaction['proc_remarks']); ?></span>
++                        <?php endif; ?>
++                    </li>
++                    <li class="list-group-item">
++                        <strong>Supply Unit:</strong>
++                        <?php echo htmlspecialchars($transaction['supply_status'] ?? '—'); ?>
++                        <?php if ($transaction['supply_date']): ?>
++                            <br><span class="text-muted">Date: <?php echo htmlspecialchars($transaction['supply_date']); ?></span>
++                        <?php endif; ?>
++                        <?php if ($transaction['supply_remarks']): ?>
++                            <br><span class="text-muted">Remarks: <?php echo htmlspecialchars($transaction['supply_remarks']); ?></span>
++                        <?php endif; ?>
++                    </li>
++                    <li class="list-group-item">
++                        <strong>Accounting (Pre-Budget):</strong>
++                        <?php echo htmlspecialchars($transaction['acct_pre_status'] ?? '—'); ?>
++                        <?php if ($transaction['acct_pre_date']): ?>
++                            <br><span class="text-muted">Date: <?php echo htmlspecialchars($transaction['acct_pre_date']); ?></span>
++                        <?php endif; ?>
++                        <?php if ($transaction['acct_pre_remarks']): ?>
++                            <br><span class="text-muted">Remarks: <?php echo htmlspecialchars($transaction['acct_pre_remarks']); ?></span>
++                        <?php endif; ?>
++                    </li>
++                    <li class="list-group-item">
++                        <strong>Budget Unit:</strong>
++                        <?php echo htmlspecialchars($transaction['budget_status'] ?? '—'); ?>
++                        <?php if ($transaction['budget_dv_number']): ?>
++                            <br><span class="text-muted">DV #: <?php echo htmlspecialchars($transaction['budget_dv_number']); ?></span>
++                        <?php endif; ?>
++                        <?php if ($transaction['budget_dv_date']): ?>
++                            <br><span class="text-muted">DV Date: <?php echo htmlspecialchars($transaction['budget_dv_date']); ?></span>
++                        <?php endif; ?>
++                        <?php if ($transaction['budget_remarks']): ?>
++                            <br><span class="text-muted">Remarks: <?php echo htmlspecialchars($transaction['budget_remarks']); ?></span>
++                        <?php endif; ?>
++                    </li>
++                    <li class="list-group-item">
++                        <strong>Accounting (Post-Budget):</strong>
++                        <?php echo htmlspecialchars($transaction['acct_post_status'] ?? '—'); ?>
++                        <?php if ($transaction['acct_post_date']): ?>
++                            <br><span class="text-muted">Date: <?php echo htmlspecialchars($transaction['acct_post_date']); ?></span>
++                        <?php endif; ?>
++                        <?php if ($transaction['acct_post_remarks']): ?>
++                            <br><span class="text-muted">Remarks: <?php echo htmlspecialchars($transaction['acct_post_remarks']); ?></span>
++                        <?php endif; ?>
++                    </li>
++                    <li class="list-group-item">
++                        <strong>Cashier Unit:</strong>
++                        <?php echo htmlspecialchars($transaction['cashier_status'] ?? '—'); ?>
++                        <?php if ($transaction['cashier_or_number']): ?>
++                            <br><span class="text-muted">OR #: <?php echo htmlspecialchars($transaction['cashier_or_number']); ?></span>
++                        <?php endif; ?>
++                        <?php if ($transaction['cashier_or_date']): ?>
++                            <br><span class="text-muted">OR Date: <?php echo htmlspecialchars($transaction['cashier_or_date']); ?></span>
++                        <?php endif; ?>
++                        <?php if ($transaction['cashier_landbank_ref']): ?>
++                            <br><span class="text-muted">Landbank Ref: <?php echo htmlspecialchars($transaction['cashier_landbank_ref']); ?></span>
++                        <?php endif; ?>
++                        <?php if ($transaction['cashier_payment_date']): ?>
++                            <br><span class="text-muted">Payment Date: <?php echo htmlspecialchars($transaction['cashier_payment_date']); ?></span>
++                        <?php endif; ?>
++                        <?php if ($transaction['cashier_remarks']): ?>
++                            <br><span class="text-muted">Remarks: <?php echo htmlspecialchars($transaction['cashier_remarks']); ?></span>
++                        <?php endif; ?>
++                    </li>
++                </ul>
++            </div>
++        </div>
++
++        <?php if ($role === 'cashier'): ?>
++            <div class="card">
++                <div class="card-body">
++                    <h6 class="mb-2">Proceed to Landbank</h6>
++                    <?php if ($canProceedLandbank): ?>
++                        <p class="small text-muted">
++                            All requirements from Procurement, Supply, Accounting, and Budget are complete.
++                        </p>
++                        <a href="<?php echo htmlspecialchars(LANDBANK_URL); ?>" target="_blank"
++                           class="btn btn-success w-100">
++                            Proceed to Landbank Site
++                        </a>
++                    <?php else: ?>
++                        <div class="alert alert-warning small mb-2">
++                            Cannot proceed yet. Please ensure:
++                            <ul class="mb-0">
++                                <li>Procurement and Supply statuses are set and not pending.</li>
++                                <li>Accounting (Pre-Budget) completed and forwarded.</li>
++                                <li>Budget DV number and date are filled in.</li>
++                                <li>Accounting (Post-Budget) status is "FOR PAYMENT" or "FOR CASHIER – PAYMENT PROCESSING".</li>
++                            </ul>
++                        </div>
++                        <button class="btn btn-secondary w-100" type="button" disabled>Proceed to Landbank Site</button>
++                    <?php endif; ?>
++                </div>
++            </div>
++        <?php endif; ?>
++    </div>
++</div>
++
++<?php include __DIR__ . '/footer.php'; ?>
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\index.php
++<?php
++// Simple landing page: redirect to login or dashboard
++require_once __DIR__ . '/config.php';
++
++if (!empty($_SESSION['user_id'])) {
++    header('Location: dashboard.php');
++} else {
++    header('Location: login.php');
++}
++exit;
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+### SPMS prototype using HTML, Bootstrap, JavaScript, and PHP
+
+I’ve created a **working PHP + MySQL skeleton** of your Supplier Payment Monitoring System, with **role‑based dashboards** and the **Cashier “Proceed to Landbank” button** enforced by your flow.
+
+Below is how to use it and what’s included.
+
+---
+
+### 1. Files created
+
+In your `c-SPMS` folder you now have:
+
+- **Core config & DB**
+  - `config.php` – DB settings (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`) and `LANDBANK_URL`.
+  - `db.php` – PDO connection helper.
+  - `init_db.sql` – MySQL schema:
+    - `roles`, `suppliers`, `users`, `transactions` (with all unit fields).
+- **Auth & layout**
+  - `auth.php` – session, `require_login()`, `require_role()` helpers, `current_user()`.
+  - `header.php` / `footer.php` – HTML `<head>`, Bootstrap 5 (via CDN), navbar, layout.
+- **Auth pages**
+  - `index.php` – redirects to `dashboard.php` if logged in, else `login.php`.
+  - `login.php` – login form.
+  - `logout.php` – logout and redirect.
+  - `register_supplier.php` – supplier self‑registration (creates supplier + user with `supplier` role).
+- **Main app**
+  - `dashboard.php` – role‑based dashboard for:
+    - `procurement`, `supply`, `accounting`, `budget`, `cashier`, `supplier`.
+    - Shows counts and a transactions table.
+  - `partials_transactions_table.php` – shared table listing transactions with:
+    - Supplier, PO #, program title, amount, derived current status, link to detail.
+    - Filters per role (e.g., Cashier sees only items with `acct_post_status` in “FOR PAYMENT” / “FOR CASHIER – PAYMENT PROCESSING”).
+  - `transaction_new.php` – **Procurement** creates new transaction:
+    - Inputs: Supplier name, PO number, program title, amount, Procurement status & remarks.
+  - `transaction_view.php` – central detail page:
+    - Shows full flow timeline (Procurement → Supply → Accounting Pre → Budget → Accounting Post → Cashier).
+    - Each unit sees and can edit **only its own fields**.
+    - Suppliers can **view only their own transactions**, read‑only.
+
+---
+
+### 2. Cashier flow and Landbank button
+
+In `transaction_view.php`, for users with role `cashier`:
+
+- Cashier can edit:
+  - `cashier_status`, `cashier_remarks`,
+  - `cashier_or_number`, `cashier_or_date`,
+  - `cashier_landbank_ref`, `cashier_payment_date`.
+- The **“Proceed to Landbank Site”** button:
+  - Uses `LANDBANK_URL` from `config.php` (edit to the real Landbank URL as needed).
+  - Is **enabled only if**:
+    - `proc_status`, `supply_status`, and `acct_pre_status` are filled,
+    - `budget_dv_number` and `budget_dv_date` are filled,
+    - `acct_post_status` is either **“FOR PAYMENT”** or **“FOR CASHIER – PAYMENT PROCESSING”**,
+    - and none of the unit statuses are `"FOR CORRECTION"` or `"PENDING"`.
+  - Otherwise, it is disabled and a **warning box** explains what is missing.
+
+This matches your requirement that **Cashier is the last step and can only proceed when all documents are complete**.
+
+---
+
+### 3. How to set up and run
+
+1. **Create the database**
+   - In MySQL:
+
+     ```sql
+     CREATE DATABASE spms_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+     USE spms_db;
+     SOURCE /path/to/your/c-SPMS/init_db.sql;
+     ```
+
+2. **Update DB config**
+   - Open `config.php` and set:
+
+     ```php
+     define('DB_HOST', 'localhost');
+     define('DB_NAME', 'spms_db');
+     define('DB_USER', 'your_mysql_user');
+     define('DB_PASS', 'your_mysql_password');
+     define('BASE_URL', 'http://localhost/c-SPMS'); // optional
+     define('LANDBANK_URL', 'https://your-landbank-url-here');
+     ```
+
+3. **Create initial internal users**
+   - After importing `init_db.sql`, insert admin/internal accounts manually, for example:
+
+     ```sql
+     USE spms_db;
+
+     -- Get role ids
+     SELECT * FROM roles;
+
+     -- Example: create a procurement user
+     INSERT INTO users (username, password_hash, role_id)
+     VALUES (
+       'procurement1',
+       -- password: 123456
+       PASSWORD_HASH_PLACEHOLDER,
+       (SELECT id FROM roles WHERE name = 'procurement')
+     );
+     ```
+
+   - Generate `PASSWORD_HASH_PLACEHOLDER` using PHP `password_hash('123456', PASSWORD_DEFAULT);` (you can do this in a quick PHP snippet or phpMyAdmin).  
+   - Repeat for `supply`, `accounting`, `budget`, `cashier`, etc.
+
+4. **Access the app**
+   - Place this folder under your web root (e.g., `htdocs/c-SPMS` or `www/c-SPMS`).
+   - Visit `http://localhost/c-SPMS/`:
+     - Use an internal user (e.g., `procurement1`) to log in.
+     - Or click “Supplier Register” to register a supplier account.
+
+---
+
+### 4. Where HTML, Bootstrap, JS, PHP are used
+
+- **HTML & PHP**: All pages (`login.php`, `dashboard.php`, `transaction_new.php`, `transaction_view.php`, etc.) render HTML templates combined with PHP.
+- **Bootstrap 5**:
+  - Included via CDN in `header.php` and `footer.php`.
+  - Provides the layout, navbar, responsive cards, tables, and buttons.
+- **JavaScript**:
+  - Bootstrap’s JS bundle (with Popper) is included in `footer.php`.
+  - You can easily add more custom JavaScript (e.g., client‑side validation, dynamic status color‑coding) in `header.php` or per page.
+
+---
+
+If you’d like, I can next:
+- Add **JavaScript enhancements** (status color badges, modal confirmations), or  
+- Add a **simple admin panel** to manage users and assign roles via the web instead of manually in SQL.
