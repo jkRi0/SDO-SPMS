@@ -15,6 +15,7 @@ try {
     $proponent = trim($_POST['proponent'] ?? '');
     $coverage_start = trim($_POST['coverage_start'] ?? '');
     $coverage_end = trim($_POST['coverage_end'] ?? '');
+    $expected_date = trim($_POST['expected_date'] ?? '');
     $amount = trim($_POST['amount'] ?? '');
     $po_number = trim($_POST['po_number'] ?? '');
     $po_type = trim($_POST['po_type'] ?? '');
@@ -59,6 +60,10 @@ try {
 
     $db->beginTransaction();
 
+    if ($expected_date === '') {
+        $expected_date = null;
+    }
+
     // Check if supplier exists or create new one
     $stmt = $db->prepare('SELECT id FROM suppliers WHERE name = ?');
     $stmt->execute([$supplier_name]);
@@ -74,8 +79,8 @@ try {
 
     // Insert transaction
     $stmt = $db->prepare('INSERT INTO transactions 
-        (supplier_id, po_number, program_title, po_type, proponent, coverage_start, coverage_end, amount, proc_status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
+        (supplier_id, po_number, program_title, po_type, proponent, coverage_start, coverage_end, expected_date, amount, proc_status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
     
     $stmt->execute([
         $supplier_id,
@@ -85,6 +90,7 @@ try {
         $proponent,
         $coverage_start,
         $coverage_end,
+        $expected_date,
         $amount,
         'FOR SUPPLY REVIEW'
     ]);

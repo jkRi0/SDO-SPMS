@@ -13,9 +13,16 @@ $db = get_db();
 include __DIR__ . '/header.php';
 ?>
 
-<div class="page-header">
-    <h2 class="page-title">Welcome, <?php echo htmlspecialchars(ucfirst($role)); ?></h2>
-    <p class="page-subtitle"><?php echo htmlspecialchars(ucfirst($role)); ?> Dashboard</p>
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h2 class="page-title">Welcome, <?php echo htmlspecialchars(ucfirst($role)); ?></h2>
+        <p class="page-subtitle"><?php echo htmlspecialchars(ucfirst($role)); ?> Dashboard</p>
+    </div>
+    <div>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+            <i class="fas fa-comment-alt"></i> Send Feedback
+        </button>
+    </div>
 </div>
 
 <?php if ($role === 'procurement'): ?>
@@ -91,7 +98,73 @@ include __DIR__ . '/header.php';
     </div>
 <?php endif; ?>
 
+<!-- Feedback Modal -->
+<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+        <div class="modal-content" style="border-radius: 12px;">
+            <div class="modal-header" style="border-bottom: 1px solid #e5e7eb;">
+                <h5 class="modal-title" id="feedbackModalLabel">Send Feedback</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3" style="font-size: 0.9rem;">Tell us about any bugs, suggestions, or other comments you have about the system.</p>
+                <div id="feedbackAlert"></div>
+                <form id="feedbackForm">
+                    <div class="mb-3">
+                        <label for="feedbackType" class="form-label" style="font-size: 0.9rem; font-weight: 600;">Type</label>
+                        <select id="feedbackType" name="type" class="form-control" required>
+                            <option value="">-- Select type --</option>
+                            <option value="Bug">Bug</option>
+                            <option value="Suggestion">Suggestion</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="feedbackMessage" class="form-label" style="font-size: 0.9rem; font-weight: 600;">Message</label>
+                        <textarea id="feedbackMessage" name="message" class="form-control" rows="4" required
+                                  placeholder="Describe the issue, suggestion, or comment..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #e5e7eb;">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="feedbackForm">Submit Feedback</button>
+            </div>
+        </div>
+    </div>
+</div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var feedbackForm = document.getElementById('feedbackForm');
+    var feedbackAlert = document.getElementById('feedbackAlert');
+    if (feedbackForm && feedbackAlert) {
+        feedbackForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            feedbackAlert.innerHTML = '';
+
+            var formData = new FormData(feedbackForm);
+
+            fetch('api_submit_feedback.php', {
+                method: 'POST',
+                body: formData
+            })
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        feedbackAlert.innerHTML = '<div class="alert alert-success mb-2" role="alert">' + (data.message || 'Thank you, your feedback has been recorded.') + '</div>';
+                        feedbackForm.reset();
+                    } else {
+                        feedbackAlert.innerHTML = '<div class="alert alert-danger mb-2" role="alert">' + (data.message || 'Unable to save feedback.') + '</div>';
+                    }
+                })
+                .catch(function () {
+                    feedbackAlert.innerHTML = '<div class="alert alert-danger mb-2" role="alert">An unexpected error occurred while sending feedback.</div>';
+                });
+        });
+    }
+});
+</script>
 
 <?php include __DIR__ . '/footer.php'; ?>
-

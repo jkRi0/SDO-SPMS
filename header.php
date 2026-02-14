@@ -959,6 +959,13 @@ if (session_status() === PHP_SESSION_NONE) {
                         </div>
                     </div>
 
+                    <!-- Expected Date (Optional) -->
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; color: #333; font-size: 0.9rem;">Expected Date (Optional)</label>
+                        <input type="date" name="expected_date" class="form-control"
+                               style="border-radius: 6px; border: 1px solid #ddd; padding: 0.5rem 0.6rem; font-size: 0.9rem;">
+                    </div>
+
                     <div class="mb-3">
                         <!-- PO Amount -->
                         <label class="form-label" style="font-weight: 600; color: #333; font-size: 0.9rem;">PO (Gross Amount) <span style="color: #dc2626;">*</span></label>
