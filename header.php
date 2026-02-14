@@ -875,6 +875,12 @@ if (session_status() === PHP_SESSION_NONE) {
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
                         <li>
+                            <a class="dropdown-item d-flex align-items-center" href="change_password.php">
+                                <i class="fas fa-key me-2"></i> Change password
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
                             <button class="dropdown-item text-danger d-flex align-items-center logout-animate" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal" type="button" aria-label="Sign out">
                                 <i class="fas fa-sign-out-alt me-2"></i> <strong>Sign out</strong>
                             </button>
