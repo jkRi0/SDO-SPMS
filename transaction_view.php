@@ -34,6 +34,29 @@ if ($role === 'supplier' && $supplierId && $transaction['supplier_id'] != $suppl
     exit;
 }
 
+$updatesByStage = [
+    'procurement' => [],
+    'supply' => [],
+    'accounting_pre' => [],
+    'accounting_post' => [],
+    'budget' => [],
+    'cashier' => [],
+];
+
+try {
+    $logStmt = $db->prepare('SELECT transaction_id, stage, status, remarks, created_at FROM transaction_updates WHERE transaction_id = ? ORDER BY created_at ASC');
+    $logStmt->execute([$id]);
+    $logs = $logStmt->fetchAll();
+    foreach ($logs as $log) {
+        $stageKey = $log['stage'];
+        if (isset($updatesByStage[$stageKey])) {
+            $updatesByStage[$stageKey][] = $log;
+        }
+    }
+} catch (Exception $e) {
+    // If history table doesn't exist yet, just skip history without breaking the page
+}
+
 $error = '';
 $success = '';
 
@@ -84,12 +107,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fields = [];
         $params = [];
 
+        $logStage = null;
+        $logStatus = '';
+        $logRemarks = '';
+
         if ($role === 'procurement') {
             $fields[] = 'proc_status = ?';
             $fields[] = 'proc_remarks = ?';
             $fields[] = 'proc_date = CURDATE()';
             $params[] = trim($_POST['proc_status'] ?? '');
             $params[] = trim($_POST['proc_remarks'] ?? '');
+            $logStage = 'procurement';
+            $logStatus = $params[0];
+            $logRemarks = $params[1];
         } elseif ($role === 'supply') {
             $fields[] = 'supply_status = ?';
             $fields[] = 'supply_delivery_receipt = ?';
@@ -100,6 +130,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $params[] = trim($_POST['supply_delivery_receipt'] ?? '');
             $params[] = trim($_POST['supply_sales_invoice'] ?? '');
             $params[] = trim($_POST['supply_remarks'] ?? '');
+            $logStage = 'supply';
+            $logStatus = $params[0];
+            $logRemarks = $params[3];
         } elseif ($role === 'accounting') {
             // Detect whether acting pre- or post-budget based on posted flag
             $stage = $_POST['stage'] ?? 'pre';
@@ -109,12 +142,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $fields[] = 'acct_pre_date = CURDATE()';
                 $params[] = trim($_POST['acct_pre_status'] ?? '');
                 $params[] = trim($_POST['acct_pre_remarks'] ?? '');
+                $logStage = 'accounting_pre';
+                $logStatus = $params[0];
+                $logRemarks = $params[1];
             } else {
                 $fields[] = 'acct_post_status = ?';
                 $fields[] = 'acct_post_remarks = ?';
                 $fields[] = 'acct_post_date = CURDATE()';
-                $params[] = trim($_POST['acct_post_status'] ?? '');
-                $params[] = trim($_POST['acct_post_remarks'] ?? '');
+
+                $postStatus = trim($_POST['acct_post_status'] ?? '');
+                $postRemarksBase = trim($_POST['acct_post_remarks'] ?? '');
+                $postDvAmount = trim($_POST['acct_post_dv_amount'] ?? '');
+
+                // Build combined remarks so DV Amount is on its own line
+                $combinedRemarks = $postRemarksBase;
+                if ($postDvAmount !== '') {
+                    if ($combinedRemarks !== '') {
+                        $combinedRemarks .= "\n";
+                    }
+                    $combinedRemarks .= 'DV Amount: ' . $postDvAmount;
+                }
+
+                $params[] = $postStatus;
+                $params[] = $combinedRemarks;
+
+                $logStage = 'accounting_post';
+                $logStatus = $postStatus;
+                $logRemarks = $combinedRemarks;
             }
         } elseif ($role === 'budget') {
             $fields[] = 'budget_dv_number = ?';
@@ -127,6 +181,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $params[] = trim($_POST['budget_status'] ?? '');
             $params[] = trim($_POST['budget_demandability'] ?? '');
             $params[] = trim($_POST['budget_remarks'] ?? '');
+            $logStage = 'budget';
+            $logStatus = $params[2];
+            $logRemarks = $params[4];
         } elseif ($role === 'cashier') {
             $fields[] = 'cashier_status = ?';
             $fields[] = 'cashier_remarks = ?';
@@ -134,12 +191,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $fields[] = 'cashier_or_date = ?';
             $fields[] = 'cashier_landbank_ref = ?';
             $fields[] = 'cashier_payment_date = ?';
-            $params[] = trim($_POST['cashier_status'] ?? '');
-            $params[] = trim($_POST['cashier_remarks'] ?? '');
-            $params[] = trim($_POST['cashier_or_number'] ?? '');
-            $params[] = trim($_POST['cashier_or_date'] ?? '');
-            $params[] = trim($_POST['cashier_landbank_ref'] ?? '');
-            $params[] = trim($_POST['cashier_payment_date'] ?? '');
+
+            $cashierStatus  = trim($_POST['cashier_status'] ?? '');
+            $cashierRemarks = trim($_POST['cashier_remarks'] ?? '');
+            $cashierAmount  = trim($_POST['cashier_landbank_ref'] ?? '');
+            $cashierOrNum   = trim($_POST['cashier_or_number'] ?? '');
+            $cashierOrDate  = trim($_POST['cashier_or_date'] ?? '');
+            $cashierPayDate = trim($_POST['cashier_payment_date'] ?? '');
+
+            // Store raw values on the transaction
+            $params[] = $cashierStatus;
+            $params[] = $cashierRemarks;
+            $params[] = $cashierOrNum;
+            $params[] = $cashierOrDate;
+            $params[] = $cashierAmount;
+            $params[] = $cashierPayDate;
+
+            // For history/timeline, append Amount as its own line (if provided)
+            $logStage = 'cashier';
+            $logStatus = $cashierStatus;
+            $logRemarks = $cashierRemarks;
+            if ($cashierAmount !== '') {
+                if ($logRemarks !== '') {
+                    $logRemarks .= "\n";
+                }
+                $logRemarks .= 'Amount: ' . $cashierAmount;
+            }
         }
 
         if ($fields) {
@@ -149,6 +226,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute($params);
             $success = 'Transaction updated successfully.';
 
+            // Record history if table exists and there is something meaningful to log
+            if ($logStage && ($logStatus !== '' || $logRemarks !== '')) {
+                try {
+                    $histStmt = $db->prepare('INSERT INTO transaction_updates (transaction_id, stage, status, remarks, created_at) VALUES (?, ?, ?, ?, NOW())');
+                    $histStmt->execute([$id, $logStage, $logStatus, $logRemarks]);
+                } catch (Exception $e) {
+                    // Silently ignore logging errors so they don't break main update
+                }
+            }
+
             // Reload data
             $stmt = $db->prepare('SELECT t.*, s.name AS supplier_name 
                                   FROM transactions t 
@@ -156,6 +243,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                   WHERE t.id = ?');
             $stmt->execute([$id]);
             $transaction = $stmt->fetch();
+
+            // Reload history
+            try {
+                $updatesByStage = [
+                    'procurement' => [],
+                    'supply' => [],
+                    'accounting_pre' => [],
+                    'accounting_post' => [],
+                    'budget' => [],
+                    'cashier' => [],
+                ];
+                $logStmt = $db->prepare('SELECT transaction_id, stage, status, remarks, created_at FROM transaction_updates WHERE transaction_id = ? ORDER BY created_at ASC');
+                $logStmt->execute([$id]);
+                $logs = $logStmt->fetchAll();
+                foreach ($logs as $log) {
+                    $stageKey = $log['stage'];
+                    if (isset($updatesByStage[$stageKey])) {
+                        $updatesByStage[$stageKey][] = $log;
+                    }
+                }
+            } catch (Exception $e) {
+                // ignore history reload errors
+            }
         }
     } catch (Exception $e) {
         $error = 'Error updating transaction.';
@@ -219,7 +329,7 @@ include __DIR__ . '/header.php';
                     <div class="info-item">
                         <div class="info-icon"><i class="fas fa-money-bill-wave"></i></div>
                         <div class="info-content">
-                            <p class="info-label">PO Amount</p>
+                            <p class="info-label">PO (Gross Amount)</p>
                             <p class="info-value">₱ <?php echo number_format($transaction['amount'], 2); ?></p>
                         </div>
                     </div>
@@ -237,6 +347,19 @@ include __DIR__ . '/header.php';
                         <div class="info-content">
                             <p class="info-label">Date Created</p>
                             <p class="info-value"><?php echo date('m/d/Y H:i:s', strtotime($transaction['created_at'])); ?></p>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="info-content">
+                            <p class="info-label">Expected Date</p>
+                            <p class="info-value">
+                                <?php
+                                $expectedText = $transaction['expected_date'] ?? '';
+                                echo $expectedText !== '' ? htmlspecialchars($expectedText) : '—';
+                                ?>
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -275,13 +398,11 @@ include __DIR__ . '/header.php';
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Delivery Receipt</label>
-                                    <input type="text" name="supply_delivery_receipt" class="form-control"
-                                           value="<?php echo htmlspecialchars($transaction['supply_delivery_receipt'] ?? ''); ?>">
+                                    <textarea name="supply_delivery_receipt" class="form-control" rows="2"><?php echo htmlspecialchars($transaction['supply_delivery_receipt'] ?? ''); ?></textarea>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Sales Invoice</label>
-                                    <input type="text" name="supply_sales_invoice" class="form-control"
-                                           value="<?php echo htmlspecialchars($transaction['supply_sales_invoice'] ?? ''); ?>">
+                                    <textarea name="supply_sales_invoice" class="form-control" rows="2"><?php echo htmlspecialchars($transaction['supply_sales_invoice'] ?? ''); ?></textarea>
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -305,47 +426,60 @@ include __DIR__ . '/header.php';
                                           rows="2"><?php echo htmlspecialchars($transaction['supply_remarks'] ?? ''); ?></textarea>
                             </div>
                         <?php elseif ($role === 'accounting'): ?>
-                            <div class="mb-2">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="stage" id="stagePre"
-                                           value="pre" checked>
-                                    <label class="form-check-label" for="stagePre">Pre-Budget</label>
+                            <input type="hidden" name="stage" id="acctStage" value="pre">
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="border rounded p-3 h-100">
+                                        <h6 class="mb-2">Pre-Budget</h6>
+                                        <div class="mb-2">
+                                            <label class="form-label mb-1">Status</label>
+                                            <div class="form-check">
+                                                <input class="form-check-input acct-pre-field" type="checkbox" id="acctPreStatus"
+                                                       name="acct_pre_status" value="PRE-BUDGET FOR VOUCHER"
+                                                    <?php echo ($transaction['acct_pre_status'] ?? '') === 'PRE-BUDGET FOR VOUCHER' ? 'checked' : ''; ?>>
+                                                <label class="form-check-label" for="acctPreStatus">
+                                                    PRE-BUDGET FOR VOUCHER
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-0">
+                                            <label class="form-label mb-1">Remarks</label>
+                                            <textarea name="acct_pre_remarks" class="form-control acct-pre-field"
+                                                      rows="2"
+                                                      placeholder="Pre-Budget remarks"><?php echo htmlspecialchars($transaction['acct_pre_remarks'] ?? ''); ?></textarea>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="stage" id="stagePost"
-                                           value="post">
-                                    <label class="form-check-label" for="stagePost">Post-Budget</label>
+
+                                <div class="col-md-6">
+                                    <div class="border rounded p-3 h-100">
+                                        <h6 class="mb-2">Post-Budget</h6>
+                                        <div class="mb-2">
+                                            <label class="form-label mb-1">Status</label>
+                                            <div class="form-check">
+                                                <input class="form-check-input acct-post-field" type="checkbox" id="acctPostStatus"
+                                                       name="acct_post_status" value="POST BUDGET FOR VOUCHER"
+                                                    <?php echo ($transaction['acct_post_status'] ?? '') === 'POST BUDGET FOR VOUCHER' ? 'checked' : ''; ?>>
+                                                <label class="form-check-label" for="acctPostStatus">
+                                                    POST BUDGET FOR VOUCHER
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label mb-1">Remarks</label>
+                                            <textarea name="acct_post_remarks" class="form-control acct-post-field"
+                                                      rows="2"
+                                                      placeholder="Post-Budget remarks"><?php echo htmlspecialchars($transaction['acct_post_remarks'] ?? ''); ?></textarea>
+                                        </div>
+                                        <div class="mb-0">
+                                            <label class="form-label mb-1">DV Amount</label>
+                                            <input type="number" step="0.01" min="0" name="acct_post_dv_amount" class="form-control acct-post-field"
+                                                   placeholder="Enter DV amount (net)"
+                                                   value="">
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Accounting Status</label>
-                                <div class="form-check">
-                                    <input class="form-check-input acct-pre-field" type="checkbox" id="acctPreStatus"
-                                           name="acct_pre_status" value="PRE-BUDGET FOR VOUCHER"
-                                        <?php echo ($transaction['acct_pre_status'] ?? '') === 'PRE-BUDGET FOR VOUCHER' ? 'checked' : ''; ?>>
-                                    <label class="form-check-label" for="acctPreStatus">
-                                        PRE-BUDGET FOR VOUCHER
-                                    </label>
-                                </div>
-                                <div class="form-check mt-2">
-                                    <input class="form-check-input acct-post-field" type="checkbox" id="acctPostStatus"
-                                           name="acct_post_status" value="POST BUDGET FOR VOUCHER"
-                                        <?php echo ($transaction['acct_post_status'] ?? '') === 'POST BUDGET FOR VOUCHER' ? 'checked' : ''; ?>>
-                                    <label class="form-check-label" for="acctPostStatus">
-                                        POST BUDGET FOR VOUCHER
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Accounting Remarks</label>
-                                <small class="text-muted d-block mb-1">Pre-Budget</small>
-                                <textarea name="acct_pre_remarks" class="form-control acct-pre-field"
-                                          rows="2"
-                                          placeholder="Pre-Budget remarks"><?php echo htmlspecialchars($transaction['acct_pre_remarks'] ?? ''); ?></textarea>
-                                <small class="text-muted d-block mt-2 mb-1">Post-Budget</small>
-                                <textarea name="acct_post_remarks" class="form-control mt-0 acct-post-field"
-                                          rows="2"
-                                          placeholder="Post-Budget remarks"><?php echo htmlspecialchars($transaction['acct_post_remarks'] ?? ''); ?></textarea>
                             </div>
                         <?php elseif ($role === 'budget'): ?>
                             <div class="row">
@@ -382,7 +516,7 @@ include __DIR__ . '/header.php';
                                     $currentDemand = $transaction['budget_demandability'] ?? '';
                                     // Empty placeholder option
                                     echo '<option value="">-- Select demandability --</option>';
-                                    $demandOptions = ['DUE DEMANDABLE', 'NOT YET DEMANDABLE'];
+                                    $demandOptions = ['Due and Demandable', 'Not Yet Due and Demandable'];
                                     foreach ($demandOptions as $opt) {
                                         $selected = ($currentDemand === $opt) ? 'selected' : '';
                                         echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
@@ -403,13 +537,8 @@ include __DIR__ . '/header.php';
                                     $currentCashierStatus = $transaction['cashier_status'] ?? '';
                                     // Empty placeholder
                                     echo '<option value="">-- Select status --</option>';
-                                    $cashierOptions = [
-                                        'FOR ACIL',
-                                        'FOR APPROVAL ASDS/SDS',
-                                        'FOR OR INSUANCE',
-                                        'ON PROCESS PAYMENT',
-                                    ];
-                                    foreach ($cashierOptions as $opt) {
+                                    $cashierStatusOptions = ['For ACIC', 'For OR Issuance', 'For SDS/ASDS Approval'];
+                                    foreach ($cashierStatusOptions as $opt) {
                                         $selected = ($currentCashierStatus === $opt) ? 'selected' : '';
                                         echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
                                     }
@@ -423,7 +552,7 @@ include __DIR__ . '/header.php';
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">OR Number</label>
+                                    <label class="form-label">ACIC Number</label>
                                     <input type="text" name="cashier_or_number" class="form-control"
                                            value="<?php echo htmlspecialchars($transaction['cashier_or_number'] ?? ''); ?>">
                                 </div>
@@ -435,7 +564,7 @@ include __DIR__ . '/header.php';
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Landbank Reference</label>
+                                    <label class="form-label">Amount</label>
                                     <input type="text" name="cashier_landbank_ref" class="form-control"
                                            value="<?php echo htmlspecialchars($transaction['cashier_landbank_ref'] ?? ''); ?>">
                                 </div>
@@ -472,17 +601,29 @@ include __DIR__ . '/header.php';
                         </div>
                         <div class="timeline-content">
                             <h6 class="timeline-title">Procurement</h6>
-                            <p class="timeline-status">
-                                <?php echo htmlspecialchars($transaction['proc_status'] ?? 'Pending'); ?>
-                            </p>
-                            <?php if ($transaction['proc_date']): ?>
-                                <p class="timeline-meta">
-                                    <i class="fas fa-calendar-alt me-1"></i>
-                                    <span>Created: <?php echo date('m/d/Y H:i:s', strtotime($transaction['created_at'])); ?></span>
-                                </p>
-                            <?php endif; ?>
-                            <?php if ($transaction['proc_remarks']): ?>
-                                <p class="timeline-remarks"><?php echo htmlspecialchars($transaction['proc_remarks']); ?></p>
+
+                            <?php if (!empty($updatesByStage['procurement'])): ?>
+                                <div class="timeline-history mt-2 p-2 border rounded bg-white">
+                                    <div class="small text-muted mb-1">Update history</div>
+                                    <?php $countProc = count($updatesByStage['procurement']); ?>
+                                    <?php foreach ($updatesByStage['procurement'] as $idx => $u): ?>
+                                        <?php
+                                        $isLatest = ($idx === $countProc - 1);
+                                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+                                        ?>
+                                        <div class="<?php echo $rowClass; ?>">
+                                            <div class="text-muted">
+                                                <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                            </div>
+                                            <?php if ($u['status'] !== ''): ?>
+                                                <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                            <?php endif; ?>
+                                            <?php if ($u['remarks'] !== ''): ?>
+                                                <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -494,17 +635,29 @@ include __DIR__ . '/header.php';
                         </div>
                         <div class="timeline-content">
                             <h6 class="timeline-title">Supply Unit</h6>
-                            <p class="timeline-status">
-                                <?php echo htmlspecialchars($transaction['supply_status'] ?? 'Pending'); ?>
-                            </p>
-                            <?php if ($transaction['supply_date']): ?>
-                                <p class="timeline-meta">
-                                    <i class="fas fa-calendar-alt me-1"></i>
-                                    <span>Created: <?php echo date('m/d/Y H:i:s', strtotime($transaction['created_at'])); ?></span>
-                                </p>
-                            <?php endif; ?>
-                            <?php if ($transaction['supply_remarks']): ?>
-                                <p class="timeline-remarks"><?php echo htmlspecialchars($transaction['supply_remarks']); ?></p>
+
+                            <?php if (!empty($updatesByStage['supply'])): ?>
+                                <div class="timeline-history mt-2 p-2 border rounded bg-white">
+                                    <div class="small text-muted mb-1">Update history</div>
+                                    <?php $countSupply = count($updatesByStage['supply']); ?>
+                                    <?php foreach ($updatesByStage['supply'] as $idx => $u): ?>
+                                        <?php
+                                        $isLatest = ($idx === $countSupply - 1);
+                                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+                                        ?>
+                                        <div class="<?php echo $rowClass; ?>">
+                                            <div class="text-muted">
+                                                <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                            </div>
+                                            <?php if ($u['status'] !== ''): ?>
+                                                <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                            <?php endif; ?>
+                                            <?php if ($u['remarks'] !== ''): ?>
+                                                <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -516,17 +669,29 @@ include __DIR__ . '/header.php';
                         </div>
                         <div class="timeline-content">
                             <h6 class="timeline-title">Accounting (Pre-Budget)</h6>
-                            <p class="timeline-status">
-                                <?php echo htmlspecialchars($transaction['acct_pre_status'] ?? 'Pending'); ?>
-                            </p>
-                            <?php if ($transaction['acct_pre_date']): ?>
-                                <p class="timeline-meta">
-                                    <i class="fas fa-calendar-alt me-1"></i>
-                                    <span>Created: <?php echo date('m/d/Y H:i:s', strtotime($transaction['created_at'])); ?></span>
-                                </p>
-                            <?php endif; ?>
-                            <?php if ($transaction['acct_pre_remarks']): ?>
-                                <p class="timeline-remarks"><?php echo htmlspecialchars($transaction['acct_pre_remarks']); ?></p>
+
+                            <?php if (!empty($updatesByStage['accounting_pre'])): ?>
+                                <div class="timeline-history mt-2 p-2 border rounded bg-white">
+                                    <div class="small text-muted mb-1">Update history</div>
+                                    <?php $countAcctPre = count($updatesByStage['accounting_pre']); ?>
+                                    <?php foreach ($updatesByStage['accounting_pre'] as $idx => $u): ?>
+                                        <?php
+                                        $isLatest = ($idx === $countAcctPre - 1);
+                                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+                                        ?>
+                                        <div class="<?php echo $rowClass; ?>">
+                                            <div class="text-muted">
+                                                <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                            </div>
+                                            <?php if ($u['status'] !== ''): ?>
+                                                <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                            <?php endif; ?>
+                                            <?php if ($u['remarks'] !== ''): ?>
+                                                <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -538,17 +703,32 @@ include __DIR__ . '/header.php';
                         </div>
                         <div class="timeline-content">
                             <h6 class="timeline-title">Budget Unit</h6>
-                            <p class="timeline-status">
-                                <?php echo htmlspecialchars($transaction['budget_status'] ?? 'Pending'); ?>
-                            </p>
                             <?php if ($transaction['budget_dv_number']): ?>
                                 <p class="timeline-meta"><i class="fas fa-file-invoice me-1"></i>DV #: <?php echo htmlspecialchars($transaction['budget_dv_number']); ?></p>
                             <?php endif; ?>
-                            <?php if ($transaction['budget_dv_date']): ?>
-                                <p class="timeline-meta">
-                                    <i class="fas fa-calendar-alt me-1"></i>
-                                    <span>Created: <?php echo date('m/d/Y H:i:s', strtotime($transaction['created_at'])); ?></span>
-                                </p>
+
+                            <?php if (!empty($updatesByStage['budget'])): ?>
+                                <div class="timeline-history mt-2 p-2 border rounded bg-white">
+                                    <div class="small text-muted mb-1">Update history</div>
+                                    <?php $countBudget = count($updatesByStage['budget']); ?>
+                                    <?php foreach ($updatesByStage['budget'] as $idx => $u): ?>
+                                        <?php
+                                        $isLatest = ($idx === $countBudget - 1);
+                                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+                                        ?>
+                                        <div class="<?php echo $rowClass; ?>">
+                                            <div class="text-muted">
+                                                <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                            </div>
+                                            <?php if ($u['status'] !== ''): ?>
+                                                <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                            <?php endif; ?>
+                                            <?php if ($u['remarks'] !== ''): ?>
+                                                <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -560,17 +740,29 @@ include __DIR__ . '/header.php';
                         </div>
                         <div class="timeline-content">
                             <h6 class="timeline-title">Accounting (Post-Budget)</h6>
-                            <p class="timeline-status">
-                                <?php echo htmlspecialchars($transaction['acct_post_status'] ?? 'Pending'); ?>
-                            </p>
-                            <?php if ($transaction['acct_post_date']): ?>
-                                <p class="timeline-meta">
-                                    <i class="fas fa-calendar-alt me-1"></i>
-                                    <span>Created: <?php echo date('m/d/Y H:i:s', strtotime($transaction['created_at'])); ?></span>
-                                </p>
-                            <?php endif; ?>
-                            <?php if ($transaction['acct_post_remarks']): ?>
-                                <p class="timeline-remarks"><?php echo htmlspecialchars($transaction['acct_post_remarks']); ?></p>
+
+                            <?php if (!empty($updatesByStage['accounting_post'])): ?>
+                                <div class="timeline-history mt-2 p-2 border rounded bg-white">
+                                    <div class="small text-muted mb-1">Update history</div>
+                                    <?php $countAcctPost = count($updatesByStage['accounting_post']); ?>
+                                    <?php foreach ($updatesByStage['accounting_post'] as $idx => $u): ?>
+                                        <?php
+                                        $isLatest = ($idx === $countAcctPost - 1);
+                                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+                                        ?>
+                                        <div class="<?php echo $rowClass; ?>">
+                                            <div class="text-muted">
+                                                <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                            </div>
+                                            <?php if ($u['status'] !== ''): ?>
+                                                <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                            <?php endif; ?>
+                                            <?php if ($u['remarks'] !== ''): ?>
+                                                <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -582,17 +774,28 @@ include __DIR__ . '/header.php';
                         </div>
                         <div class="timeline-content">
                             <h6 class="timeline-title">Cashier</h6>
-                            <p class="timeline-status">
-                                <?php echo htmlspecialchars($transaction['cashier_status'] ?? 'Pending'); ?>
-                            </p>
-                            <?php if ($transaction['cashier_or_number']): ?>
-                                <p class="timeline-meta"><i class="fas fa-receipt me-1"></i>OR #: <?php echo htmlspecialchars($transaction['cashier_or_number']); ?></p>
-                            <?php endif; ?>
-                            <?php if ($transaction['cashier_payment_date']): ?>
-                                <p class="timeline-meta">
-                                    <i class="fas fa-calendar-alt me-1"></i>
-                                    <span>Created: <?php echo date('m/d/Y H:i:s', strtotime($transaction['created_at'])); ?></span>
-                                </p>
+                            <?php if (!empty($updatesByStage['cashier'])): ?>
+                                <div class="timeline-history mt-2 p-2 border rounded bg-white">
+                                    <div class="small text-muted mb-1">Update history</div>
+                                    <?php $countCashier = count($updatesByStage['cashier']); ?>
+                                    <?php foreach ($updatesByStage['cashier'] as $idx => $u): ?>
+                                        <?php
+                                        $isLatest = ($idx === $countCashier - 1);
+                                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+                                        ?>
+                                        <div class="<?php echo $rowClass; ?>">
+                                            <div class="text-muted">
+                                                <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                            </div>
+                                            <?php if ($u['status'] !== ''): ?>
+                                                <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                            <?php endif; ?>
+                                            <?php if ($u['remarks'] !== ''): ?>
+                                                <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -657,35 +860,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
     setInterval(refreshTimeline, refreshIntervalMs);
 
-    // Accounting: only allow editing fields for the selected stage (Pre vs Post)
-    function updateAccountingFields() {
-        const selectedStage = document.querySelector('input[name="stage"]:checked');
-        if (!selectedStage) return;
-
-        const isPre = selectedStage.value === 'pre';
-
-        document.querySelectorAll('.acct-pre-field').forEach(function (el) {
-            // keep value & checkmark visible, just make it non-interactive when inactive
-            if (el.tagName === 'TEXTAREA') {
-                el.readOnly = !isPre;
-            }
-            el.classList.toggle('acct-readonly', !isPre);
-        });
-        document.querySelectorAll('.acct-post-field').forEach(function (el) {
-            if (el.tagName === 'TEXTAREA') {
-                el.readOnly = isPre;
-            }
-            el.classList.toggle('acct-readonly', isPre);
-        });
+    // Accounting: keep a notion of which stage (pre vs post) was last edited for logging,
+    // but allow editing of both sections at the same time.
+    function setAccountingStage(stage) {
+        var stageInput = document.getElementById('acctStage');
+        if (!stageInput) return;
+        stageInput.value = stage;
     }
 
     // Attach listeners only if the Accounting form is present
-    if (document.querySelector('input[name="stage"]')) {
-        document.querySelectorAll('input[name="stage"]').forEach(function (radio) {
-            radio.addEventListener('change', updateAccountingFields);
+    if (document.getElementById('acctStage')) {
+        // Default to pre on load
+        setAccountingStage('pre');
+
+        document.querySelectorAll('.acct-pre-field').forEach(function (el) {
+            ['focus', 'click'].forEach(function (evt) {
+                el.addEventListener(evt, function () { setAccountingStage('pre'); });
+            });
         });
-        // Initialize state on load
-        updateAccountingFields();
+        document.querySelectorAll('.acct-post-field').forEach(function (el) {
+            ['focus', 'click'].forEach(function (evt) {
+                el.addEventListener(evt, function () { setAccountingStage('post'); });
+            });
+        });
     }
 });
 </script>

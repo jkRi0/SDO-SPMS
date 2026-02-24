@@ -35,8 +35,7 @@ include __DIR__ . '/header.php';
         <h5 class="mb-0">Activity Logs</h5>
     </div>
     <div class="btn-group">
-        <a href="admin_logs.php" class="btn btn-outline-secondary"><i class="fas fa-sync-alt"></i> Refresh</a>
-        <a href="export_logs.php" class="btn btn-outline-secondary"><i class="fas fa-file-export me-1"></i> Export</a>
+        <a href="dashboard.php" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back</a>
     </div>
 </div>
 
@@ -56,10 +55,6 @@ include __DIR__ . '/header.php';
                         </select>
                     </div>
                     <div class="col-auto">
-                        <label class="form-label">Action</label>
-                        <input type="text" name="action" value="<?php echo htmlspecialchars($filters['action'] ?? ''); ?>" class="form-control" placeholder="create_user">
-                    </div>
-                    <div class="col-auto">
                         <label class="form-label">From</label>
                         <input type="date" name="from" value="<?php echo htmlspecialchars($filters['from'] ?? ''); ?>" class="form-control">
                     </div>
@@ -75,26 +70,21 @@ include __DIR__ . '/header.php';
         </div>
 
         <div class="table-wrapper">
-            <table class="table table-striped table-compact">
+            <table class="table table-striped table-compact" id="activityLogsTable">
+
                 <thead>
                     <tr>
                         <th>Time</th>
                         <th>User</th>
-                        <th>Action</th>
                         <th>Target</th>
-                        <th>Details</th>
-                        <th>IP</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="activityLogsBody">
                     <?php foreach ($logs as $l): ?>
                         <tr>
                             <td><?php echo htmlspecialchars($l['created_at']); ?></td>
                             <td><?php echo htmlspecialchars($l['username'] ?? 'System'); ?></td>
-                            <td><?php echo htmlspecialchars($l['action']); ?></td>
                             <td><?php echo htmlspecialchars($l['target_type'] . ' #' . $l['target_id']); ?></td>
-                            <td><?php echo htmlspecialchars($l['details']); ?></td>
-                            <td><?php echo htmlspecialchars($l['ip']); ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -103,5 +93,35 @@ include __DIR__ . '/header.php';
 
     </div>
 </div>
+
+<script>
+// Auto-refresh only the logs table body every 3 seconds
+document.addEventListener('DOMContentLoaded', function () {
+    var tbody = document.getElementById('activityLogsBody');
+    if (!tbody) return;
+
+    function refreshLogs() {
+        if (document.visibilityState !== 'visible') {
+            return;
+        }
+
+        var url = 'admin_logs_partial.php' + window.location.search;
+
+        fetch(url, { cache: 'no-store' })
+            .then(function (res) {
+                if (!res.ok) throw new Error('Network response was not ok');
+                return res.text();
+            })
+            .then(function (html) {
+                tbody.innerHTML = html;
+            })
+            .catch(function () {
+                // Fail silently; keep last known data
+            });
+    }
+
+    setInterval(refreshLogs, 3000);
+});
+</script>
 
 <?php include __DIR__ . '/footer.php'; ?>

@@ -15,8 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $current = $_POST['current_password'] ?? '';
     $new = $_POST['new_password'] ?? '';
     $confirm = $_POST['confirm_password'] ?? '';
+    $username = trim($_POST['username'] ?? '');
 
-    if ($current === '' || $new === '' || $confirm === '') {
+    if ($username === '' || $current === '' || $new === '' || $confirm === '') {
         $errors[] = 'Please fill in all fields.';
     } elseif ($new !== $confirm) {
         $errors[] = 'New password and confirmation do not match.';
@@ -29,13 +30,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$row || !password_verify($current, $row['password_hash'])) {
                 $errors[] = 'Current password is incorrect.';
             } else {
-                $newHash = password_hash($new, PASSWORD_DEFAULT);
-                $stmt = $db->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
-                $stmt->execute([$newHash, $user['id']]);
-                $success = 'Your password has been updated successfully.';
+                $check = $db->prepare('SELECT id FROM users WHERE username = ? AND id != ?');
+                $check->execute([$username, $user['id']]);
+                if ($check->fetch()) {
+                    $errors[] = 'Username is already taken.';
+                } else {
+                    $newHash = password_hash($new, PASSWORD_DEFAULT);
+                    $update = $db->prepare('UPDATE users SET username = ?, password_hash = ? WHERE id = ?');
+                    $update->execute([$username, $newHash, $user['id']]);
+                    $_SESSION['username'] = $username;
+                    $success = 'Your account details have been updated successfully.';
+                }
             }
         } catch (Exception $e) {
-            $errors[] = 'Error updating password: ' . $e->getMessage();
+            $errors[] = 'Error updating account: ' . $e->getMessage();
         }
     }
 }
@@ -44,7 +52,7 @@ include __DIR__ . '/header.php';
 ?>
 
 <div class="container mt-4" style="max-width: 480px;">
-    <h3 class="mb-3">Change Password</h3>
+    <h3 class="mb-3">Update Account</h3>
 
     <?php if ($success): ?>
         <div class="alert alert-success" role="alert">
@@ -63,6 +71,10 @@ include __DIR__ . '/header.php';
     <?php endif; ?>
 
     <form method="post" autocomplete="off">
+        <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="username" value="<?php echo htmlspecialchars($user['username'] ?? ''); ?>" required>
+        </div>
         <div class="mb-3">
             <label for="current_password" class="form-label">Current Password</label>
             <input type="password" class="form-control" id="current_password" name="current_password" required>

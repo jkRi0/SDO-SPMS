@@ -37,9 +37,7 @@ include __DIR__ . '/header.php';
         <h5 class="mb-0">User Accounts</h5>
     </div>
     <div class="btn-group">
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal"><i class="fas fa-user-plus me-1"></i> Add User</button>
-        <a href="export_users.php" class="btn btn-outline-secondary"><i class="fas fa-file-export me-1"></i> Export</a>
-        <a href="admin_users.php" class="btn btn-outline-secondary"><i class="fas fa-sync-alt"></i></a>
+        <a href="dashboard.php" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back</a>
     </div>
 </div>
 
@@ -71,13 +69,12 @@ include __DIR__ . '/header.php';
 
             <div class="ms-auto d-flex gap-2">
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal"><i class="fas fa-user-plus"></i> Add User</button>
-                <a href="admin_logs.php" class="btn btn-outline-primary"><i class="fas fa-list"></i> Activity Logs</a>
             </div>
         </div>
     </div>
 
 <div class="table-wrapper mt-3">
-    <table class="table table-striped table-compact">
+    <table class="table table-striped table-compact" id="adminUsersTable">
         <thead>
             <tr>
                 <th>#</th>
@@ -87,7 +84,7 @@ include __DIR__ . '/header.php';
                 <th>Actions</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="adminUsersBody">
             <?php foreach ($users as $u): ?>
                 <tr>
                     <td><?php echo htmlspecialchars($u['id']); ?></td>
@@ -196,5 +193,35 @@ include __DIR__ . '/header.php';
 
     </div>
 </div>
+
+<script>
+// Auto-refresh only the users table body every 3 seconds
+document.addEventListener('DOMContentLoaded', function () {
+    var tbody = document.getElementById('adminUsersBody');
+    if (!tbody) return;
+
+    function refreshUsers() {
+        if (document.visibilityState !== 'visible') {
+            return;
+        }
+
+        var url = 'admin_users_partial.php' + window.location.search;
+
+        fetch(url, { cache: 'no-store' })
+            .then(function (res) {
+                if (!res.ok) throw new Error('Network response was not ok');
+                return res.text();
+            })
+            .then(function (html) {
+                tbody.innerHTML = html;
+            })
+            .catch(function () {
+                // Fail silently; keep last known data
+            });
+    }
+
+    setInterval(refreshUsers, 3000);
+});
+</script>
 
 <?php include __DIR__ . '/footer.php'; ?>

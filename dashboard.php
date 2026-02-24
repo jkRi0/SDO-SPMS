@@ -68,8 +68,37 @@ include __DIR__ . '/header.php';
     <?php include __DIR__ . '/partials_transactions_table.php'; ?>
 
 <?php elseif ($role === 'admin'): ?>
-    <div class="alert alert-info">
-        No specific dashboard implemented for this role yet.
+    <div class="row g-3 mt-1">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title mb-1">Department Accounts</h5>
+                    <p class="card-text text-muted" style="font-size: 0.9rem;">
+                        View and update usernames and passwords for all department and supplier accounts.
+                    </p>
+                    <div class="mt-auto">
+                        <a href="admin_users.php" class="btn btn-primary btn-sm">
+                            <i class="fas fa-users-cog me-1"></i> Manage Users
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title mb-1">System Activity & Login Logs</h5>
+                    <p class="card-text text-muted" style="font-size: 0.9rem;">
+                        Review recent admin actions and system activity logs, including logins.
+                    </p>
+                    <div class="mt-auto">
+                        <a href="admin_logs.php" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-list me-1"></i> View Logs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
 <?php elseif ($role === 'supply'): ?>

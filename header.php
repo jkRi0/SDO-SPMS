@@ -874,12 +874,14 @@ if (session_status() === PHP_SESSION_NONE) {
                         <span class="d-none d-md-inline"><?php echo htmlspecialchars(ucfirst($_SESSION['role'] ?? 'User')); ?></span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center" href="change_password.php">
-                                <i class="fas fa-key me-2"></i> Change password
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
+                        <?php if (($_SESSION['role'] ?? '') === 'supplier'): ?>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center" href="change_password.php">
+                                    <i class="fas fa-user-cog me-2"></i> Account settings
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                        <?php endif; ?>
                         <li>
                             <button class="dropdown-item text-danger d-flex align-items-center logout-animate" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal" type="button" aria-label="Sign out">
                                 <i class="fas fa-sign-out-alt me-2"></i> <strong>Sign out</strong>
@@ -968,7 +970,8 @@ if (session_status() === PHP_SESSION_NONE) {
                     <!-- Expected Date (Optional) -->
                     <div class="mb-3">
                         <label class="form-label" style="font-weight: 600; color: #333; font-size: 0.9rem;">Expected Date (Optional)</label>
-                        <input type="date" name="expected_date" class="form-control"
+                        <input type="text" name="expected_date" class="form-control"
+                               placeholder="e.g. Within March 2026 or Before opening of classes"
                                style="border-radius: 6px; border: 1px solid #ddd; padding: 0.5rem 0.6rem; font-size: 0.9rem;">
                     </div>
 

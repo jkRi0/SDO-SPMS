@@ -95,6 +95,15 @@ $transactions = $stmt->fetchAll();
                                href="transaction_view.php?id=<?php echo (int)$t['id']; ?>">
                                 <i class="fas fa-eye"></i>
                             </a>
+                            <?php if ($role === 'procurement'): ?>
+                                <button type="button"
+                                        class="btn btn-outline-danger btn-sm ms-1 btn-delete-tx"
+                                        title="Delete transaction"
+                                        aria-label="Delete transaction"
+                                        data-tx-id="<?php echo (int)$t['id']; ?>">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -102,5 +111,41 @@ $transactions = $stmt->fetchAll();
             </tbody>
         </table>
     </div>
+    </div>
 </div>
+
+<?php if ($role === 'procurement'): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.btn-delete-tx').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const id = this.getAttribute('data-tx-id');
+            if (!id) return;
+
+            if (!confirm('Delete this transaction? This action cannot be undone.')) {
+                return;
+            }
+
+            fetch('api_delete_transaction.php', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: new URLSearchParams({ id: id })
+            })
+                .then(resp => resp.json())
+                .then(data => {
+                    if (data.success) {
+                        // Simple reload to refresh table
+                        window.location.reload();
+                    } else {
+                        alert(data.message || 'Failed to delete transaction.');
+                    }
+                })
+                .catch(() => {
+                    alert('Failed to delete transaction.');
+                });
+        });
+    });
+});
+</script>
+<?php endif; ?>
 

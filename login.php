@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/audit.php';
 
 $error = '';
 
@@ -24,6 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role_name'];
             $_SESSION['supplier_id'] = $user['supplier_id'];
+
+            // Log successful login to activity_logs for admin visibility
+            create_log($db, $user['id'], 'login', 'user', $user['id'], 'Successful login');
 
             header('Location: dashboard.php');
             exit;
