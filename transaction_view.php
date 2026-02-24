@@ -59,6 +59,9 @@ try {
 
 $error = '';
 $success = '';
+if (isset($_GET['updated']) && $_GET['updated'] === '1') {
+    $success = 'Transaction updated successfully.';
+}
 
 // Prepare coverage display string from coverage_start / coverage_end (MM/DD/YYYY)
 $coverageDisplay = 'N/A';
@@ -224,7 +227,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $sql = 'UPDATE transactions SET ' . implode(', ', $fields) . ' WHERE id = ?';
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
-            $success = 'Transaction updated successfully.';
 
             // Record history if table exists and there is something meaningful to log
             if ($logStage && ($logStatus !== '' || $logRemarks !== '')) {
@@ -236,36 +238,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            // Reload data
-            $stmt = $db->prepare('SELECT t.*, s.name AS supplier_name 
-                                  FROM transactions t 
-                                  JOIN suppliers s ON t.supplier_id = s.id 
-                                  WHERE t.id = ?');
-            $stmt->execute([$id]);
-            $transaction = $stmt->fetch();
-
-            // Reload history
-            try {
-                $updatesByStage = [
-                    'procurement' => [],
-                    'supply' => [],
-                    'accounting_pre' => [],
-                    'accounting_post' => [],
-                    'budget' => [],
-                    'cashier' => [],
-                ];
-                $logStmt = $db->prepare('SELECT transaction_id, stage, status, remarks, created_at FROM transaction_updates WHERE transaction_id = ? ORDER BY created_at ASC');
-                $logStmt->execute([$id]);
-                $logs = $logStmt->fetchAll();
-                foreach ($logs as $log) {
-                    $stageKey = $log['stage'];
-                    if (isset($updatesByStage[$stageKey])) {
-                        $updatesByStage[$stageKey][] = $log;
-                    }
-                }
-            } catch (Exception $e) {
-                // ignore history reload errors
-            }
+            // Redirect to avoid duplicate submissions on refresh (Post/Redirect/Get)
+            header('Location: transaction_view.php?id=' . $id . '&updated=1');
+            exit;
         }
     } catch (Exception $e) {
         $error = 'Error updating transaction.';

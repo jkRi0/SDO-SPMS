@@ -29,13 +29,24 @@ if ($role === 'cashier') {
     $where[] = 'acct_post_status IS NOT NULL';
 }
 
-$sql = 'SELECT t.*, s.name AS supplier_name
+$sql = 'SELECT 
+            t.*, 
+            s.name AS supplier_name,
+            GREATEST(
+                t.created_at,
+                IFNULL(t.proc_date, "0000-00-00"),
+                IFNULL(t.supply_date, "0000-00-00"),
+                IFNULL(t.acct_pre_date, "0000-00-00"),
+                IFNULL(t.budget_dv_date, "0000-00-00"),
+                IFNULL(t.acct_post_date, "0000-00-00"),
+                IFNULL(t.cashier_payment_date, "0000-00-00")
+            ) AS last_activity
         FROM transactions t
         JOIN suppliers s ON t.supplier_id = s.id';
 if ($where) {
     $sql .= ' WHERE ' . implode(' AND ', $where);
 }
-$sql .= ' ORDER BY t.created_at DESC';
+$sql .= ' ORDER BY last_activity DESC';
 
 $stmt = $db->prepare($sql);
 $stmt->execute($params);

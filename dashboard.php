@@ -65,7 +65,9 @@ include __DIR__ . '/header.php';
         <h5 class="section-title">Procurement - Transactions</h5>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPOModal"><i class="fas fa-plus"></i> New Transaction</button>
     </div>
-    <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+    <div id="transactionsContainer">
+        <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+    </div>
 
 <?php elseif ($role === 'admin'): ?>
     <div class="row g-3 mt-1">
@@ -103,23 +105,33 @@ include __DIR__ . '/header.php';
 
 <?php elseif ($role === 'supply'): ?>
     <h8 class="mb-3">Supply Unit - For Verification</h8>
-    <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+    <div id="transactionsContainer">
+        <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+    </div>
 
 <?php elseif ($role === 'accounting'): ?>
     <h8 class="mb-3">Accounting Unit - All Transactions</h8>
-    <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+    <div id="transactionsContainer">
+        <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+    </div>
 
 <?php elseif ($role === 'budget'): ?>
     <h8 class="mb-3">Budget Unit - For DV Preparation</h8>
-    <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+    <div id="transactionsContainer">
+        <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+    </div>
 
 <?php elseif ($role === 'cashier'): ?>
     <h8 class="mb-3">Cashier Unit - For Payment / OR</h8>
-    <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+    <div id="transactionsContainer">
+        <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+    </div>
 
 <?php elseif ($role === 'supplier'): ?>
     <h8 class="mb-3">My Transactions</h8>
-    <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+    <div id="transactionsContainer">
+        <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+    </div>
 
 <?php else: ?>
     <div class="alert alert-info">
@@ -165,6 +177,7 @@ include __DIR__ . '/header.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Feedback submit handler
     var feedbackForm = document.getElementById('feedbackForm');
     var feedbackAlert = document.getElementById('feedbackAlert');
     if (feedbackForm && feedbackAlert) {
@@ -192,6 +205,30 @@ document.addEventListener('DOMContentLoaded', function () {
                     feedbackAlert.innerHTML = '<div class="alert alert-danger mb-2" role="alert">An unexpected error occurred while sending feedback.</div>';
                 });
         });
+    }
+
+    // Dashboard transactions auto-refresh
+    var txContainer = document.getElementById('transactionsContainer');
+    if (txContainer) {
+        function refreshDashboardTransactions() {
+            if (document.visibilityState !== 'visible') {
+                return;
+            }
+
+            fetch('transactions_partial.php', { cache: 'no-store' })
+                .then(function (res) {
+                    if (!res.ok) throw new Error('Network error');
+                    return res.text();
+                })
+                .then(function (html) {
+                    txContainer.innerHTML = html;
+                })
+                .catch(function () {
+                    // Silent fail – keep last known data
+                });
+        }
+
+        setInterval(refreshDashboardTransactions, 5000);
     }
 });
 </script>
