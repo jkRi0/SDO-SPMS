@@ -207,21 +207,47 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Dashboard transactions auto-refresh
-    var txContainer = document.getElementById('transactionsContainer');
-    if (txContainer) {
+    // Dashboard transactions auto-refresh (only table body)
+    var txBody = document.getElementById('transactionsBody');
+    if (txBody) {
         function refreshDashboardTransactions() {
             if (document.visibilityState !== 'visible') {
                 return;
             }
 
-            fetch('transactions_partial.php', { cache: 'no-store' })
+            fetch('transactions_rows_partial.php', { cache: 'no-store' })
                 .then(function (res) {
                     if (!res.ok) throw new Error('Network error');
                     return res.text();
                 })
                 .then(function (html) {
-                    txContainer.innerHTML = html;
+                    // If DataTables is active, destroy before we touch the DOM
+                    if (window.jQuery && jQuery.fn.DataTable) {
+                        var existing;
+                        try {
+                            existing = jQuery('#transactionsTable').DataTable();
+                        } catch (e) {
+                            existing = null;
+                        }
+                        if (existing) {
+                            existing.destroy();
+                        }
+                    }
+
+                    txBody.innerHTML = html;
+
+                    // Re-initialize DataTables with the same options as footer.php
+                    if (window.jQuery && jQuery.fn.DataTable) {
+                        jQuery('#transactionsTable').DataTable({
+                            responsive: true,
+                            pageLength: 10,
+                            lengthMenu: [10, 25, 50, 100],
+                            columnDefs: [{ orderable: false, targets: -1 }],
+                            // Default sort: Created column (index 5) descending
+                            order: [[5, 'desc']],
+                            language: { searchPlaceholder: 'Search...', search: '' }
+                        });
+                    }
                 })
                 .catch(function () {
                     // Silent fail – keep last known data

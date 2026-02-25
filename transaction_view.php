@@ -105,6 +105,38 @@ if (!empty($validDates)) {
     }
 }
 
+// Helper to compute elapsed time in fixed format: 00 d : 00 h : 00 m
+if (!function_exists('format_elapsed_time')) {
+    function format_elapsed_time($seconds)
+    {
+        $seconds = (int)$seconds;
+        if ($seconds < 0) {
+            $seconds = 0;
+        }
+        $days = intdiv($seconds, 86400);
+        $seconds %= 86400;
+        $hours = intdiv($seconds, 3600);
+        $seconds %= 3600;
+        $minutes = intdiv($seconds, 60);
+
+        return sprintf('%02dd : %02dh : %02dm', $days, $hours, $minutes);
+    }
+}
+
+// Helper to get timestamp of latest update in a given stage from $updatesByStage
+if (!function_exists('get_last_stage_timestamp')) {
+    function get_last_stage_timestamp(array $updatesByStage, $stage)
+    {
+        if (empty($updatesByStage[$stage])) {
+            return null;
+        }
+        $logs = $updatesByStage[$stage];
+        $last = $logs[count($logs) - 1];
+        $ts = strtotime($last['created_at']);
+        return $ts !== false ? $ts : null;
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $fields = [];
@@ -575,7 +607,23 @@ include __DIR__ . '/header.php';
                             <i class="fas fa-<?php echo !empty($transaction['proc_status']) ? 'check-circle' : 'circle'; ?>"></i>
                         </div>
                         <div class="timeline-content">
-                            <h6 class="timeline-title">Procurement</h6>
+                            <?php
+                            // Elapsed from transaction created_at to latest Procurement update
+                            $elapsedProc = '';
+                            if (!empty($updatesByStage['procurement'])) {
+                                $logsProc  = $updatesByStage['procurement'];
+                                $lastProc  = $logsProc[count($logsProc) - 1];
+                                $lastTs    = strtotime($lastProc['created_at']);
+                                $createdTs = strtotime($transaction['created_at']);
+                                if ($lastTs !== false && $createdTs !== false && $lastTs >= $createdTs) {
+                                    $elapsedProc = format_elapsed_time($lastTs - $createdTs);
+                                }
+                            }
+                            ?>
+                            <h6 class="timeline-title d-flex justify-content-between align-items-center">
+                                <span>Procurement</span>
+                                <span class="small text-muted"><?php echo $elapsedProc ? htmlspecialchars($elapsedProc) : ''; ?></span>
+                            </h6>
 
                             <?php if (!empty($updatesByStage['procurement'])): ?>
                                 <div class="timeline-history mt-2 p-2 border rounded bg-white">
@@ -609,7 +657,19 @@ include __DIR__ . '/header.php';
                             <i class="fas fa-<?php echo !empty($transaction['supply_status']) ? 'check-circle' : 'circle'; ?>"></i>
                         </div>
                         <div class="timeline-content">
-                            <h6 class="timeline-title">Supply Unit</h6>
+                            <?php
+                            // Elapsed from latest Procurement update to latest Supply update
+                            $elapsedSupply = '';
+                            $prevTs = get_last_stage_timestamp($updatesByStage, 'procurement');
+                            $currTs = get_last_stage_timestamp($updatesByStage, 'supply');
+                            if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
+                                $elapsedSupply = format_elapsed_time($currTs - $prevTs);
+                            }
+                            ?>
+                            <h6 class="timeline-title d-flex justify-content-between align-items-center">
+                                <span>Supply Unit</span>
+                                <span class="small text-muted"><?php echo $elapsedSupply ? htmlspecialchars($elapsedSupply) : ''; ?></span>
+                            </h6>
 
                             <?php if (!empty($updatesByStage['supply'])): ?>
                                 <div class="timeline-history mt-2 p-2 border rounded bg-white">
@@ -643,7 +703,19 @@ include __DIR__ . '/header.php';
                             <i class="fas fa-<?php echo !empty($transaction['acct_pre_status']) ? 'check-circle' : 'circle'; ?>"></i>
                         </div>
                         <div class="timeline-content">
-                            <h6 class="timeline-title">Accounting (Pre-Budget)</h6>
+                            <?php
+                            // Elapsed from latest Supply update to latest Accounting (Pre-Budget) update
+                            $elapsedAcctPre = '';
+                            $prevTs = get_last_stage_timestamp($updatesByStage, 'supply');
+                            $currTs = get_last_stage_timestamp($updatesByStage, 'accounting_pre');
+                            if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
+                                $elapsedAcctPre = format_elapsed_time($currTs - $prevTs);
+                            }
+                            ?>
+                            <h6 class="timeline-title d-flex justify-content-between align-items-center">
+                                <span>Accounting (Pre-Budget)</span>
+                                <span class="small text-muted"><?php echo $elapsedAcctPre ? htmlspecialchars($elapsedAcctPre) : ''; ?></span>
+                            </h6>
 
                             <?php if (!empty($updatesByStage['accounting_pre'])): ?>
                                 <div class="timeline-history mt-2 p-2 border rounded bg-white">
@@ -677,7 +749,19 @@ include __DIR__ . '/header.php';
                             <i class="fas fa-<?php echo !empty($transaction['budget_status']) ? 'check-circle' : 'circle'; ?>"></i>
                         </div>
                         <div class="timeline-content">
-                            <h6 class="timeline-title">Budget Unit</h6>
+                            <?php
+                            // Elapsed from latest Accounting (Pre-Budget) update to latest Budget update
+                            $elapsedBudget = '';
+                            $prevTs = get_last_stage_timestamp($updatesByStage, 'accounting_pre');
+                            $currTs = get_last_stage_timestamp($updatesByStage, 'budget');
+                            if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
+                                $elapsedBudget = format_elapsed_time($currTs - $prevTs);
+                            }
+                            ?>
+                            <h6 class="timeline-title d-flex justify-content-between align-items-center">
+                                <span>Budget Unit</span>
+                                <span class="small text-muted"><?php echo $elapsedBudget ? htmlspecialchars($elapsedBudget) : ''; ?></span>
+                            </h6>
                             <?php if ($transaction['budget_dv_number']): ?>
                                 <p class="timeline-meta"><i class="fas fa-file-invoice me-1"></i>DV #: <?php echo htmlspecialchars($transaction['budget_dv_number']); ?></p>
                             <?php endif; ?>
@@ -714,7 +798,19 @@ include __DIR__ . '/header.php';
                             <i class="fas fa-<?php echo !empty($transaction['acct_post_status']) ? 'check-circle' : 'circle'; ?>"></i>
                         </div>
                         <div class="timeline-content">
-                            <h6 class="timeline-title">Accounting (Post-Budget)</h6>
+                            <?php
+                            // Elapsed from latest Budget update to latest Accounting (Post-Budget) update
+                            $elapsedAcctPost = '';
+                            $prevTs = get_last_stage_timestamp($updatesByStage, 'budget');
+                            $currTs = get_last_stage_timestamp($updatesByStage, 'accounting_post');
+                            if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
+                                $elapsedAcctPost = format_elapsed_time($currTs - $prevTs);
+                            }
+                            ?>
+                            <h6 class="timeline-title d-flex justify-content-between align-items-center">
+                                <span>Accounting (Post-Budget)</span>
+                                <span class="small text-muted"><?php echo $elapsedAcctPost ? htmlspecialchars($elapsedAcctPost) : ''; ?></span>
+                            </h6>
 
                             <?php if (!empty($updatesByStage['accounting_post'])): ?>
                                 <div class="timeline-history mt-2 p-2 border rounded bg-white">
@@ -748,7 +844,19 @@ include __DIR__ . '/header.php';
                             <i class="fas fa-<?php echo !empty($transaction['cashier_status']) ? 'check-circle' : 'circle'; ?>"></i>
                         </div>
                         <div class="timeline-content">
-                            <h6 class="timeline-title">Cashier</h6>
+                            <?php
+                            // Elapsed from latest Accounting (Post-Budget) update to latest Cashier update
+                            $elapsedCashier = '';
+                            $prevTs = get_last_stage_timestamp($updatesByStage, 'accounting_post');
+                            $currTs = get_last_stage_timestamp($updatesByStage, 'cashier');
+                            if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
+                                $elapsedCashier = format_elapsed_time($currTs - $prevTs);
+                            }
+                            ?>
+                            <h6 class="timeline-title d-flex justify-content-between align-items-center">
+                                <span>Cashier</span>
+                                <span class="small text-muted"><?php echo $elapsedCashier ? htmlspecialchars($elapsedCashier) : ''; ?></span>
+                            </h6>
                             <?php if (!empty($updatesByStage['cashier'])): ?>
                                 <div class="timeline-history mt-2 p-2 border rounded bg-white">
                                     <div class="small text-muted mb-1">Update history</div>

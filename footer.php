@@ -21,6 +21,8 @@
                     pageLength: 10,
                     lengthMenu: [10, 25, 50, 100],
                     columnDefs: [{ orderable: false, targets: -1 }],
+                    // Default sort: Created column (index 5) descending
+                    order: [[5, 'desc']],
                     language: { searchPlaceholder: "Search...", search: "" }
                 });
             });
