@@ -45,8 +45,8 @@ if (empty($transaction['supply_status'])) {
     echo "<p style='color: green;'>✓ " . $transaction['supply_status'] . "</p>";
 }
 
-// Check 3: Accounting (Pre-Budget) Status
-echo "<h4>3. Accounting (Pre-Budget) Status</h4>";
+// Check 3: Initial Accounting Status
+echo "<h4>3. Accounting Status (initial review)</h4>";
 if (empty($transaction['acct_pre_status'])) {
     echo "<p style='color: red;'>❌ NOT SET</p>";
 } elseif (in_array($transaction['acct_pre_status'], ['PENDING', 'FOR CORRECTION'])) {
@@ -79,14 +79,12 @@ if (empty($transaction['budget_dv_date'])) {
     echo "<p style='color: green;'>✓ " . $transaction['budget_dv_date'] . "</p>";
 }
 
-// Check 5: Accounting (Post-Budget) Status
-echo "<h4>5. Accounting (Post-Budget) Status</h4>";
+// Check 5: Final Accounting Status
+echo "<h4>5. Accounting Status (final)</h4>";
 if (empty($transaction['acct_post_status'])) {
     echo "<p style='color: red;'>❌ NOT SET</p>";
 } elseif (in_array($transaction['acct_post_status'], ['PENDING', 'FOR CORRECTION'])) {
-    echo "<p style='color: orange;'>⊘ " . $transaction['acct_post_status'] . " (must be FOR PAYMENT or FOR CASHIER – PAYMENT PROCESSING)</p>";
-} elseif (!in_array($transaction['acct_post_status'], ['FOR PAYMENT', 'FOR CASHIER – PAYMENT PROCESSING'])) {
-    echo "<p style='color: orange;'>⊘ " . $transaction['acct_post_status'] . " (must be FOR PAYMENT or FOR CASHIER – PAYMENT PROCESSING)</p>";
+    echo "<p style='color: orange;'>⊘ " . $transaction['acct_post_status'] . " (must be completed)</p>";
 } else {
     echo "<p style='color: green;'>✓ " . $transaction['acct_post_status'] . "</p>";
 }

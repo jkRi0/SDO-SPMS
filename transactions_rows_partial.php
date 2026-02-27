@@ -57,13 +57,30 @@ if (!$transactions) {
 }
 
 foreach ($transactions as $t) {
-    $status = $t['cashier_status']
-        ?: $t['acct_post_status']
-        ?: $t['budget_status']
-        ?: $t['acct_pre_status']
-        ?: $t['supply_status']
-        ?: $t['proc_status']
-        ?: 'NEW';
+    $status = 'NEW';
+    $statusDept = '';
+
+    if (!empty($t['cashier_status'])) {
+        $status = $t['cashier_status'];
+        $statusDept = 'Cashier';
+    } elseif (!empty($t['acct_post_status'])) {
+        $status = $t['acct_post_status'];
+        $statusDept = 'Accounting';
+    } elseif (!empty($t['budget_status'])) {
+        $status = $t['budget_status'];
+        $statusDept = 'Budget';
+    } elseif (!empty($t['acct_pre_status'])) {
+        $status = $t['acct_pre_status'];
+        $statusDept = 'Accounting';
+    } elseif (!empty($t['supply_status'])) {
+        $status = $t['supply_status'];
+        $statusDept = 'Supply';
+    } elseif (!empty($t['proc_status'])) {
+        $status = $t['proc_status'];
+        $statusDept = 'Procurement';
+    }
+
+    $statusLabel = $statusDept ? ($statusDept . ' - ' . $status) : $status;
 
     $statusUpper = strtoupper(trim($status));
     $statusClass = 'badge-info';
@@ -80,7 +97,7 @@ foreach ($transactions as $t) {
     echo '<td>' . htmlspecialchars($t['supplier_name']) . '</td>';
     echo '<td>' . htmlspecialchars($t['program_title']) . '</td>';
     echo '<td>₱ ' . number_format($t['amount'], 2) . '</td>';
-    echo '<td><span class="badge ' . htmlspecialchars($statusClass) . '">' . htmlspecialchars($status) . '</span></td>';
+    echo '<td><span class="badge ' . htmlspecialchars($statusClass) . '">' . htmlspecialchars($statusLabel) . '</span></td>';
     echo '<td>' . htmlspecialchars($t['created_at']) . '</td>';
     echo '<td class="text-end">';
     echo '<a class="btn btn-outline-primary btn-sm" aria-label="View or update transaction" title="View / Update" href="transaction_view.php?id=' . (int)$t['id'] . '"><i class="fas fa-eye"></i></a>';

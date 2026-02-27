@@ -71,15 +71,33 @@ $transactions = $stmt->fetchAll();
             <?php else: ?>
                 <?php foreach ($transactions as $t): ?>
                     <?php
-                    // Derive a simple current status text from the flow
-                    $status = $t['cashier_status']
-                        ?: $t['acct_post_status']
-                        ?: $t['budget_status']
-                        ?: $t['acct_pre_status']
-                        ?: $t['supply_status']
-                        ?: $t['proc_status']
-                        ?: 'NEW';
-                    // Map status to badge styles
+                    // Derive a simple current status text from the flow and which department owns it
+                    $status = 'NEW';
+                    $statusDept = '';
+
+                    if (!empty($t['cashier_status'])) {
+                        $status = $t['cashier_status'];
+                        $statusDept = 'Cashier';
+                    } elseif (!empty($t['acct_post_status'])) {
+                        $status = $t['acct_post_status'];
+                        $statusDept = 'Accounting';
+                    } elseif (!empty($t['budget_status'])) {
+                        $status = $t['budget_status'];
+                        $statusDept = 'Budget';
+                    } elseif (!empty($t['acct_pre_status'])) {
+                        $status = $t['acct_pre_status'];
+                        $statusDept = 'Accounting';
+                    } elseif (!empty($t['supply_status'])) {
+                        $status = $t['supply_status'];
+                        $statusDept = 'Supply';
+                    } elseif (!empty($t['proc_status'])) {
+                        $status = $t['proc_status'];
+                        $statusDept = 'Procurement';
+                    }
+
+                    $statusLabel = $statusDept ? ($statusDept . ' - ' . $status) : $status;
+
+                    // Map status to badge styles based on the status text
                     $statusUpper = strtoupper(trim($status));
                     $statusClass = 'badge-info';
                     if (strpos($statusUpper, 'PAID') !== false || strpos($statusUpper, 'APPROVE') !== false || strpos($statusUpper, 'COMPLETED') !== false) {
@@ -95,7 +113,7 @@ $transactions = $stmt->fetchAll();
                         <td><?php echo htmlspecialchars($t['supplier_name']); ?></td>
                         <td><?php echo htmlspecialchars($t['program_title']); ?></td>
                         <td>₱ <?php echo number_format($t['amount'], 2); ?></td>
-                        <td><span class="badge <?php echo $statusClass; ?>"><?php echo htmlspecialchars($status); ?></span></td>
+                        <td><span class="badge <?php echo $statusClass; ?>"><?php echo htmlspecialchars($statusLabel); ?></span></td>
                         <td><?php echo htmlspecialchars($t['created_at']); ?></td>
                         <td class="text-end">
                             <a class="btn btn-outline-primary btn-sm" aria-label="View or update transaction" title="View / Update"

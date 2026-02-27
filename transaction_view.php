@@ -285,21 +285,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Determine if cashier can proceed to Landbank
-$canProceedLandbank = false;
-if ($role === 'cashier') {
-    // Check all statuses are filled and not pending/correction
-    $statusesOk = 
-        !empty($transaction['proc_status']) && !in_array($transaction['proc_status'], ['FOR CORRECTION', 'PENDING'], true) &&
-        !empty($transaction['supply_status']) && !in_array($transaction['supply_status'], ['FOR CORRECTION', 'PENDING'], true) &&
-        !empty($transaction['acct_pre_status']) && !in_array($transaction['acct_pre_status'], ['FOR CORRECTION', 'PENDING'], true) &&
-        !empty($transaction['budget_status']) && !in_array($transaction['budget_status'], ['FOR CORRECTION', 'PENDING'], true) &&
-        !empty($transaction['acct_post_status']) && !in_array($transaction['acct_post_status'], ['FOR CORRECTION', 'PENDING'], true);
-    
-    // Check budget details are filled
-    $budgetOk = !empty($transaction['budget_dv_number']) && !empty($transaction['budget_dv_date']);
-    
-    $canProceedLandbank = $statusesOk && $budgetOk;
-}
+// Temporarily allow cashier to always proceed (no status/DV verification)
+$canProceedLandbank = ($role === 'cashier');
 
 include __DIR__ . '/header.php';
 ?>
@@ -878,9 +865,10 @@ include __DIR__ . '/header.php';
                             Cannot proceed yet. Please ensure:
                             <ul class="mb-0">
                                 <li>Procurement and Supply statuses are set and not pending.</li>
-                                <li>Accounting (Pre-Budget) completed and forwarded.</li>
+                                <li>Initial Accounting review is completed and forwarded to Budget.</li>
                                 <li>Budget DV number and date are filled in.</li>
-                                <li>Accounting (Post-Budget) status is "FOR PAYMENT" or "FOR CASHIER – PAYMENT PROCESSING".</li>
+                                <li>Final Accounting status is set and not "PENDING" or "FOR CORRECTION".</li>
+                                <li>Cashier must finish internal payment processing before proceeding to the Landbank site.</li>
                             </ul>
                         </div>
                         <button class="btn btn-secondary w-100" type="button" disabled>Proceed to Landbank Site</button>
