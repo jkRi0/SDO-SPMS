@@ -1,4 +1,4 @@
-# DepEd SPMS - Change Log & Version History
+# DepEd STMS - Change Log & Version History
 
 ---
 
@@ -346,7 +346,7 @@ if ($role === 'procurement') {
 
 | Version | Date | Status | Major Changes |
 |---------|------|--------|--------------|
-| 1.0 | Initial | Archived | Basic SPMS functionality |
+| 1.0 | Initial | Archived | Basic STMS functionality |
 | 1.5 | Mid-2024 | Archived | UI enhancements, auto-generated POs |
 | 2.0 | Jan 2025 | **CURRENT** | Complete DepEd workflow, 6-stage system |
 

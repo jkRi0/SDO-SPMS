@@ -26,7 +26,7 @@ Then in cashier unit, we want to have them a button that proceeds to their site,
 assistant:
 [Thinking] **Summarizing role-based dashboards**
 
-The user seems to be looking for dashboard summaries. I could suggest database tables, but since they didn't specify a tech stack, it might not be necessary. I want to keep things concise. They mentioned "FLOW OF SPMS (SUPPLIER PAYMENT MONITORING SYSTEM CASHIER UNIT)" in an earlier message, which signals a need for a flowchart focusing on the cashier component. I'll include the entire flow but emphasize the cashier part and provide a narrative they can use in their documents.
+The user seems to be looking for dashboard summaries. I could suggest database tables, but since they didn't specify a tech stack, it might not be necessary. I want to keep things concise. They mentioned "FLOW OF STMS (SUPPLIER PAYMENT MONITORING SYSTEM CASHIER UNIT)" in an earlier message, which signals a need for a flowchart focusing on the cashier component. I'll include the entire flow but emphasize the cashier part and provide a narrative they can use in their documents.
 ### Overview
 
 You already have a very clear manual process; the system should mirror that, add role-based access, and add validation so Cashier can only proceed when documents are complete.
@@ -269,14 +269,14 @@ The user wants to implement a system using HTML, CSS with Bootstrap, JavaScript,
 
 I’m planning to create a minimal but functional skeleton for a web app using PHP without any frameworks, MySQL, and Bootstrap CSS/JS via CDN. The essentials will include a `db.php` for the database connection and a schema covering tables for `users`, `roles`, `suppliers`, `transactions`, and `transaction_statuses`. I'll create an `index.php` for login, a `register_supplier.php`, and either multiple `dashboard_*.php` pages for each role or a single `dashboard.php`. First, I need to check the repository’s structure using LS.
 [Tool call] LS
-  target_directory: C:\Users\Hazel\.cursor\projects\c-SPMS
+  target_directory: C:\Users\Hazel\.cursor\projects\c-STMS
 
 [Tool result] LS
 
 assistant:
 [Thinking] **Creating project structure**
 
-I don't have any project files yet, just an empty structure. To make new files, I need to use ApplyPatch. The requirement states that I have to use Read at least once before editing, even if the file doesn't exist. I could read a likely file, like `index.php`, to satisfy that rule before I create. My plan is to have a minimal but functional prototype with files like `config.php`, `init_db.sql`, `header.php`, and others for a simple SPMS with flows focused on roles.
+I don't have any project files yet, just an empty structure. To make new files, I need to use ApplyPatch. The requirement states that I have to use Read at least once before editing, even if the file doesn't exist. I could read a likely file, like `index.php`, to satisfy that rule before I create. My plan is to have a minimal but functional prototype with files like `config.php`, `init_db.sql`, `header.php`, and others for a simple STMS with flows focused on roles.
 **Designing a minimal system**
 
 To keep things simple and coherent due to time and scope, I’m focusing on a minimal system design. I’ll create tables like `roles` for ID and name, `users` with fields for ID, username, and role, and `suppliers` for their information. The `transactions` table will include several fields like ID, supplier ID, PO number, and various statuses. I’ll write an SQL file to set up the database and include a sample admin user. For login checks, I’m using PHP’s built-in password functions, without going into complex hashing methods, assuming PHP version 7 or higher.
@@ -287,24 +287,24 @@ I’m working on creating view files for the system: a `login.php` for a basic l
 
 I realize I have quite a few calls planned, but that’s manageable. I need to provide updates on progress. To save time, I might group the header and footer into the same file, though separating them is usually better. Here’s the minimum file set I’ve settled on: `config.php`, `db.php` for the database connection, `auth.php` for session management, `init_db.sql`, `login.php`, `register_supplier.php`, `dashboard.php`, `transaction_new.php` for adding transactions, and `transaction_view.php` to update fields based on roles. It's still a lot, but I think it's manageable, so I’ll begin with a Read call.
 [Tool call] Read
-  path: C:\Users\Hazel\.cursor\projects\c-SPMS\index.php
+  path: C:\Users\Hazel\.cursor\projects\c-STMS\index.php
 
 [Tool result] Read
 
 assistant:
 [Tool call] ApplyPatch*** Begin Patch
-*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\config.php
+*** Add File: C:\Users\Hazel\.cursor\projects\c-STMS\config.php
 +<?php
-+// Basic configuration file for SPMS
++// Basic configuration file for STMS
 +// NOTE: Update these values to match your local MySQL setup.
 +
 +define('DB_HOST', 'localhost');
-+define('DB_NAME', 'spms_db');
++define('DB_NAME', 'STMS_db');
 +define('DB_USER', 'root');
 +define('DB_PASS', '');
 +
 +// Base URL of the application (optional, used for redirects/links)
-+// Example: 'http://localhost/c-SPMS'
++// Example: 'http://localhost/c-STMS'
 +define('BASE_URL', '');
 +
 +// Landbank URL used for the cashier "Proceed to Landbank" button
@@ -321,12 +321,12 @@ assistant:
 
 assistant:
 [Tool call] ApplyPatch*** Begin Patch
-*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\db.php
+*** Add File: C:\Users\Hazel\.cursor\projects\c-STMS\db.php
 +<?php
 +require_once __DIR__ . '/config.php';
 +
 +/**
-+ * Returns a PDO connection to the SPMS database.
++ * Returns a PDO connection to the STMS database.
 + *
 + * @return PDO
 + */
@@ -355,7 +355,7 @@ assistant:
 
 assistant:
 [Tool call] ApplyPatch*** Begin Patch
-*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\auth.php
+*** Add File: C:\Users\Hazel\.cursor\projects\c-STMS\auth.php
 +<?php
 +require_once __DIR__ . '/db.php';
 +
@@ -416,7 +416,7 @@ assistant:
 
 assistant:
 [Tool call] ApplyPatch*** Begin Patch
-*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\header.php
+*** Add File: C:\Users\Hazel\.cursor\projects\c-STMS\header.php
 +<?php
 +require_once __DIR__ . '/config.php';
 +?>
@@ -445,7 +445,7 @@ assistant:
 +<body>
 +<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
 +    <div class="container-fluid">
-+        <a class="navbar-brand" href="dashboard.php">SPMS - DepEd Division</a>
++        <a class="navbar-brand" href="dashboard.php">STMS - DepEd Division</a>
 +        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
 +                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
 +            <span class="navbar-toggler-icon"></span>
@@ -489,7 +489,7 @@ assistant:
 
 assistant:
 [Tool call] ApplyPatch*** Begin Patch
-*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\footer.php
+*** Add File: C:\Users\Hazel\.cursor\projects\c-STMS\footer.php
 +    </div> <!-- /.container -->
 +
 +    <!-- Bootstrap JS (with Popper) -->
@@ -505,8 +505,8 @@ assistant:
 
 assistant:
 [Tool call] ApplyPatch*** Begin Patch
-*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\init_db.sql
-+-- SQL schema for Supplier Payment Monitoring System (SPMS)
+*** Add File: C:\Users\Hazel\.cursor\projects\c-STMS\init_db.sql
++-- SQL schema for Supplier Payment Monitoring System (STMS)
 +
 +CREATE TABLE roles (
 +    id INT AUTO_INCREMENT PRIMARY KEY,
@@ -591,7 +591,7 @@ assistant:
 
 assistant:
 [Tool call] ApplyPatch*** Begin Patch
-*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\login.php
+*** Add File: C:\Users\Hazel\.cursor\projects\c-STMS\login.php
 +<?php
 +require_once __DIR__ . '/config.php';
 +require_once __DIR__ . '/db.php';
@@ -664,7 +664,7 @@ assistant:
 
 assistant:
 [Tool call] ApplyPatch*** Begin Patch
-*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\logout.php
+*** Add File: C:\Users\Hazel\.cursor\projects\c-STMS\logout.php
 +<?php
 +require_once __DIR__ . '/config.php';
 +
@@ -680,7 +680,7 @@ assistant:
 
 assistant:
 [Tool call] ApplyPatch*** Begin Patch
-*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\register_supplier.php
+*** Add File: C:\Users\Hazel\.cursor\projects\c-STMS\register_supplier.php
 +<?php
 +require_once __DIR__ . '/config.php';
 +require_once __DIR__ . '/db.php';
@@ -790,7 +790,7 @@ assistant:
 
 assistant:
 [Tool call] ApplyPatch*** Begin Patch
-*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\dashboard.php
+*** Add File: C:\Users\Hazel\.cursor\projects\c-STMS\dashboard.php
 +<?php
 +require_once __DIR__ . '/config.php';
 +require_once __DIR__ . '/db.php';
@@ -886,7 +886,7 @@ assistant:
 
 assistant:
 [Tool call] ApplyPatch*** Begin Patch
-*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\partials_transactions_table.php
+*** Add File: C:\Users\Hazel\.cursor\projects\c-STMS\partials_transactions_table.php
 +<?php
 +// Shared transaction table for different dashboards
 +// Expects $db and $_SESSION context
@@ -984,7 +984,7 @@ assistant:
 
 assistant:
 [Tool call] ApplyPatch*** Begin Patch
-*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\transaction_new.php
+*** Add File: C:\Users\Hazel\.cursor\projects\c-STMS\transaction_new.php
 +<?php
 +require_once __DIR__ . '/config.php';
 +require_once __DIR__ . '/db.php';
@@ -1107,7 +1107,7 @@ assistant:
 
 assistant:
 [Tool call] ApplyPatch*** Begin Patch
-*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\transaction_view.php
+*** Add File: C:\Users\Hazel\.cursor\projects\c-STMS\transaction_view.php
 +<?php
 +require_once __DIR__ . '/config.php';
 +require_once __DIR__ . '/db.php';
@@ -1540,7 +1540,7 @@ assistant:
 
 assistant:
 [Tool call] ApplyPatch*** Begin Patch
-*** Add File: C:\Users\Hazel\.cursor\projects\c-SPMS\index.php
+*** Add File: C:\Users\Hazel\.cursor\projects\c-STMS\index.php
 +<?php
 +// Simple landing page: redirect to login or dashboard
 +require_once __DIR__ . '/config.php';
@@ -1557,7 +1557,7 @@ assistant:
 [Tool result] ApplyPatch
 
 assistant:
-### SPMS prototype using HTML, Bootstrap, JavaScript, and PHP
+### STMS prototype using HTML, Bootstrap, JavaScript, and PHP
 
 I’ve created a **working PHP + MySQL skeleton** of your Supplier Payment Monitoring System, with **role‑based dashboards** and the **Cashier “Proceed to Landbank” button** enforced by your flow.
 
@@ -1567,7 +1567,7 @@ Below is how to use it and what’s included.
 
 ### 1. Files created
 
-In your `c-SPMS` folder you now have:
+In your `c-STMS` folder you now have:
 
 - **Core config & DB**
   - `config.php` – DB settings (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`) and `LANDBANK_URL`.
@@ -1625,9 +1625,9 @@ This matches your requirement that **Cashier is the last step and can only proce
    - In MySQL:
 
      ```sql
-     CREATE DATABASE spms_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-     USE spms_db;
-     SOURCE /path/to/your/c-SPMS/init_db.sql;
+     CREATE DATABASE STMS_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+     USE STMS_db;
+     SOURCE /path/to/your/c-STMS/init_db.sql;
      ```
 
 2. **Update DB config**
@@ -1635,10 +1635,10 @@ This matches your requirement that **Cashier is the last step and can only proce
 
      ```php
      define('DB_HOST', 'localhost');
-     define('DB_NAME', 'spms_db');
+     define('DB_NAME', 'STMS_db');
      define('DB_USER', 'your_mysql_user');
      define('DB_PASS', 'your_mysql_password');
-     define('BASE_URL', 'http://localhost/c-SPMS'); // optional
+     define('BASE_URL', 'http://localhost/c-STMS'); // optional
      define('LANDBANK_URL', 'https://your-landbank-url-here');
      ```
 
@@ -1646,7 +1646,7 @@ This matches your requirement that **Cashier is the last step and can only proce
    - After importing `init_db.sql`, insert admin/internal accounts manually, for example:
 
      ```sql
-     USE spms_db;
+     USE STMS_db;
 
      -- Get role ids
      SELECT * FROM roles;
@@ -1665,8 +1665,8 @@ This matches your requirement that **Cashier is the last step and can only proce
    - Repeat for `supply`, `accounting`, `budget`, `cashier`, etc.
 
 4. **Access the app**
-   - Place this folder under your web root (e.g., `htdocs/c-SPMS` or `www/c-SPMS`).
-   - Visit `http://localhost/c-SPMS/`:
+   - Place this folder under your web root (e.g., `htdocs/c-STMS` or `www/c-STMS`).
+   - Visit `http://localhost/c-STMS/`:
      - Use an internal user (e.g., `procurement1`) to log in.
      - Or click “Supplier Register” to register a supplier account.
 

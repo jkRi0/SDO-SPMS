@@ -554,6 +554,34 @@ include __DIR__ . '/header.php';
                 <?php endif; ?>
             </div>
         </div>
+        <?php if ($role === 'cashier'): ?>
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="mb-2">Proceed to Landbank</h6>
+                    <?php if ($canProceedLandbank): ?>
+                        <p class="small text-muted">
+                            All requirements from Procurement, Supply, Accounting, and Budget are complete.
+                        </p>
+                        <a href="<?php echo htmlspecialchars(LANDBANK_URL); ?>" target="_blank"
+                           class="btn btn-success w-100">
+                            Proceed to Landbank Site
+                        </a>
+                    <?php else: ?>
+                        <div class="alert alert-warning small mb-2">
+                            Cannot proceed yet. Please ensure:
+                            <ul class="mb-0">
+                                <li>Procurement and Supply statuses are set and not pending.</li>
+                                <li>Initial Accounting review is completed and forwarded to Budget.</li>
+                                <li>Budget DV number and date are filled in.</li>
+                                <li>Final Accounting status is set and not "PENDING" or "FOR CORRECTION".</li>
+                                <li>Cashier must finish internal payment processing before proceeding to the Landbank site.</li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-secondary w-100" type="button" disabled>Proceed to Landbank Site</button>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
     </div>
 
     <div class="col-lg-5">
@@ -844,38 +872,36 @@ include __DIR__ . '/header.php';
                             <?php endif; ?>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <?php if ($role === 'cashier'): ?>
-            <div class="card">
-                <div class="card-body">
-                    <h6 class="mb-2">Proceed to Landbank</h6>
-                    <?php if ($canProceedLandbank): ?>
-                        <p class="small text-muted">
-                            All requirements from Procurement, Supply, Accounting, and Budget are complete.
-                        </p>
-                        <a href="<?php echo htmlspecialchars(LANDBANK_URL); ?>" target="_blank"
-                           class="btn btn-success w-100">
-                            Proceed to Landbank Site
-                        </a>
-                    <?php else: ?>
-                        <div class="alert alert-warning small mb-2">
-                            Cannot proceed yet. Please ensure:
-                            <ul class="mb-0">
-                                <li>Procurement and Supply statuses are set and not pending.</li>
-                                <li>Initial Accounting review is completed and forwarded to Budget.</li>
-                                <li>Budget DV number and date are filled in.</li>
-                                <li>Final Accounting status is set and not "PENDING" or "FOR CORRECTION".</li>
-                                <li>Cashier must finish internal payment processing before proceeding to the Landbank site.</li>
-                            </ul>
+                <?php if ($role === 'cashier'): ?>
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="mb-2">Proceed to Landbank</h6>
+                            <?php if ($canProceedLandbank): ?>
+                                <p class="small text-muted">
+                                    All requirements from Procurement, Supply, Accounting, and Budget are complete.
+                                </p>
+                                <a href="<?php echo htmlspecialchars(LANDBANK_URL); ?>" target="_blank"
+                                   class="btn btn-success w-100">
+                                    Proceed to Landbank Site
+                                </a>
+                            <?php else: ?>
+                                <div class="alert alert-warning small mb-2">
+                                    Cannot proceed yet. Please ensure:
+                                    <ul class="mb-0">
+                                        <li>Procurement and Supply statuses are set and not pending.</li>
+                                        <li>Initial Accounting review is completed and forwarded to Budget.</li>
+                                        <li>Budget DV number and date are filled in.</li>
+                                        <li>Final Accounting status is set and not "PENDING" or "FOR CORRECTION".</li>
+                                        <li>Cashier must finish internal payment processing before proceeding to the Landbank site.</li>
+                                    </ul>
+                                </div>
+                                <button class="btn btn-secondary w-100" type="button" disabled>Proceed to Landbank Site</button>
+                            <?php endif; ?>
                         </div>
-                        <button class="btn btn-secondary w-100" type="button" disabled>Proceed to Landbank Site</button>
-                    <?php endif; ?>
-                </div>
-            </div>
-        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+        
     </div>
 </div>
 

@@ -1,9 +1,9 @@
 ---
 pid: 20836
 cwd: |
-  C:\SPMS
+  C:\STMS
 last_command: DIR
 last_exit_code: 0
 ---
-PS C:\SPMS> DIR
-PS C:\SPMS>
+PS C:\STMS> DIR
+PS C:\STMS>

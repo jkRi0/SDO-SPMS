@@ -1,4 +1,4 @@
-# DepEd SPMS - Complete System Documentation Index
+# DepEd STMS - Complete System Documentation Index
 
 **System**: Department of Education Supplier Procurement Monitoring System  
 **Version**: 2.0 - Complete Workflow Implementation  
@@ -166,7 +166,7 @@
 ## 🗂️ Documentation Structure
 
 ```
-DepEd SPMS Documentation/
+DepEd STMS Documentation/
 │
 ├── For Users
 │   ├── QUICK_REFERENCE.md ...................... Day-to-day guide
@@ -428,4 +428,4 @@ DepEd SPMS Documentation/
 - Submit to: documentation_feedback@deped.gov
 - Include: Document name, section, issue, suggestion
 
-Thank you for using DepEd SPMS!
+Thank you for using DepEd STMS!
