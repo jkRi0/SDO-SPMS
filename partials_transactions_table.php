@@ -60,7 +60,13 @@ $transactions = $stmt->fetchAll();
             <tbody id="transactionsBody">
             <?php if (!$transactions): ?>
                 <tr>
-                    <td colspan="7" class="text-center text-muted">No transactions found.</td>
+                    <td class="text-center text-muted">No transactions found.</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
                 </tr>
             <?php else: ?>
                 <?php foreach ($transactions as $t): ?>

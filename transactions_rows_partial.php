@@ -44,7 +44,15 @@ $stmt->execute($params);
 $transactions = $stmt->fetchAll();
 
 if (!$transactions) {
-    echo '<tr><td colspan="7" class="text-center text-muted">No transactions found.</td></tr>';
+    echo '<tr>';
+    echo '<td class="text-center text-muted">No transactions found.</td>';
+    echo '<td></td>';
+    echo '<td></td>';
+    echo '<td></td>';
+    echo '<td></td>';
+    echo '<td></td>';
+    echo '<td></td>';
+    echo '</tr>';
     exit;
 }
 

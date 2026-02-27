@@ -304,9 +304,16 @@ if (session_status() === PHP_SESSION_NONE) {
                             </button>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-sign-in-alt"></i> Sign In
-                    </button>
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <button type="submit" class="btn btn-primary d-flex align-items-center gap-2">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Sign In</span>
+                        </button>
+                        <a href="supplier_oauth_login.php" class="btn btn-outline-danger d-flex align-items-center gap-2 ms-2">
+                            <i class="fab fa-google"></i>
+                            <span>Google Login (Supplier)</span>
+                        </a>
+                    </div>
                 </form>
 
                 <div class="register-link">

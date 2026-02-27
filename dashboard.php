@@ -10,13 +10,34 @@ $role = $_SESSION['role'] ?? '';
 
 $db = get_db();
 
+// Determine display name for welcome message
+$welcomeName = ucfirst($role);
+if ($role === 'supplier' && !empty($user['supplier_id'])) {
+    try {
+        $stmtName = $db->prepare('SELECT name FROM suppliers WHERE id = ? LIMIT 1');
+        $stmtName->execute([$user['supplier_id']]);
+        $rowName = $stmtName->fetch();
+        if ($rowName && !empty($rowName['name'])) {
+            $welcomeName = $rowName['name'];
+        }
+    } catch (Exception $e) {
+        // Fallback to role-based name if lookup fails
+    }
+}
+
+// Subtitle text
+$subtitle = ucfirst($role) . ' Dashboard';
+if ($role === 'supplier') {
+    $subtitle = 'Supplier Dashboard';
+}
+
 include __DIR__ . '/header.php';
 ?>
 
 <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
     <div>
-        <h2 class="page-title">Welcome, <?php echo htmlspecialchars(ucfirst($role)); ?></h2>
-        <p class="page-subtitle"><?php echo htmlspecialchars(ucfirst($role)); ?> Dashboard</p>
+        <h2 class="page-title">Welcome, <?php echo htmlspecialchars($welcomeName); ?></h2>
+        <p class="page-subtitle"><?php echo htmlspecialchars($subtitle); ?></p>
     </div>
     <div>
         <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#feedbackModal">
