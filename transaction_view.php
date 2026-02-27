@@ -118,8 +118,9 @@ if (!function_exists('format_elapsed_time')) {
         $hours = intdiv($seconds, 3600);
         $seconds %= 3600;
         $minutes = intdiv($seconds, 60);
+        $seconds %= 60;
 
-        return sprintf('%02dd : %02dh : %02dm', $days, $hours, $minutes);
+        return sprintf('%02d : %02d : %02d : %02d ', $days, $hours, $minutes, $seconds);
     }
 }
 
@@ -169,40 +170,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $logStatus = $params[0];
             $logRemarks = $params[3];
         } elseif ($role === 'accounting') {
-            // Detect whether acting pre- or post-budget based on posted flag
-            $stage = $_POST['stage'] ?? 'pre';
-            if ($stage === 'pre') {
+            // Single Accounting form: status (For Voucher checkbox), remarks, DV amount
+            $acctStatus      = isset($_POST['acct_status']) ? trim($_POST['acct_status']) : '';
+            $acctRemarksBase = trim($_POST['acct_remarks'] ?? '');
+            $acctDvAmount    = trim($_POST['acct_dv_amount'] ?? '');
+
+            // Combine remarks + DV amount for storage / history
+            $combinedRemarks = $acctRemarksBase;
+            if ($acctDvAmount !== '') {
+                if ($combinedRemarks !== '') {
+                    $combinedRemarks .= "\n";
+                }
+                $combinedRemarks .= 'DV Amount: ' . $acctDvAmount;
+            }
+
+            // Decide automatically: before Budget is done = pre-budget; after Budget is done = post-budget
+            $budgetDone = !empty($transaction['budget_status'])
+                || !empty($transaction['budget_dv_number'])
+                || !empty($transaction['budget_dv_date']);
+
+            if (!$budgetDone) {
+                // Pre-budget accounting update
                 $fields[] = 'acct_pre_status = ?';
                 $fields[] = 'acct_pre_remarks = ?';
                 $fields[] = 'acct_pre_date = CURDATE()';
-                $params[] = trim($_POST['acct_pre_status'] ?? '');
-                $params[] = trim($_POST['acct_pre_remarks'] ?? '');
+                $params[] = $acctStatus;
+                $params[] = $combinedRemarks;
                 $logStage = 'accounting_pre';
-                $logStatus = $params[0];
-                $logRemarks = $params[1];
+                $logStatus = $acctStatus;
+                $logRemarks = $combinedRemarks;
             } else {
+                // Post-budget accounting update
                 $fields[] = 'acct_post_status = ?';
                 $fields[] = 'acct_post_remarks = ?';
                 $fields[] = 'acct_post_date = CURDATE()';
-
-                $postStatus = trim($_POST['acct_post_status'] ?? '');
-                $postRemarksBase = trim($_POST['acct_post_remarks'] ?? '');
-                $postDvAmount = trim($_POST['acct_post_dv_amount'] ?? '');
-
-                // Build combined remarks so DV Amount is on its own line
-                $combinedRemarks = $postRemarksBase;
-                if ($postDvAmount !== '') {
-                    if ($combinedRemarks !== '') {
-                        $combinedRemarks .= "\n";
-                    }
-                    $combinedRemarks .= 'DV Amount: ' . $postDvAmount;
-                }
-
-                $params[] = $postStatus;
+                $params[] = $acctStatus;
                 $params[] = $combinedRemarks;
-
                 $logStage = 'accounting_post';
-                $logStatus = $postStatus;
+                $logStatus = $acctStatus;
                 $logRemarks = $combinedRemarks;
             }
         } elseif ($role === 'budget') {
@@ -433,59 +438,29 @@ include __DIR__ . '/header.php';
                                           rows="2"><?php echo htmlspecialchars($transaction['supply_remarks'] ?? ''); ?></textarea>
                             </div>
                         <?php elseif ($role === 'accounting'): ?>
-                            <input type="hidden" name="stage" id="acctStage" value="pre">
-
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <div class="border rounded p-3 h-100">
-                                        <h6 class="mb-2">Pre-Budget</h6>
-                                        <div class="mb-2">
-                                            <label class="form-label mb-1">Status</label>
-                                            <div class="form-check">
-                                                <input class="form-check-input acct-pre-field" type="checkbox" id="acctPreStatus"
-                                                       name="acct_pre_status" value="PRE-BUDGET FOR VOUCHER"
-                                                    <?php echo ($transaction['acct_pre_status'] ?? '') === 'PRE-BUDGET FOR VOUCHER' ? 'checked' : ''; ?>>
-                                                <label class="form-check-label" for="acctPreStatus">
-                                                    PRE-BUDGET FOR VOUCHER
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="mb-0">
-                                            <label class="form-label mb-1">Remarks</label>
-                                            <textarea name="acct_pre_remarks" class="form-control acct-pre-field"
-                                                      rows="2"
-                                                      placeholder="Pre-Budget remarks"><?php echo htmlspecialchars($transaction['acct_pre_remarks'] ?? ''); ?></textarea>
-                                        </div>
+                            <div class="border rounded p-3 mb-2">
+                                <h6 class="mb-2">Accounting</h6>
+                                <div class="mb-2">
+                                    <label class="form-label mb-1">Status</label>
+                                    <div class="form-check">
+                                        <?php
+                                        $currentAcctStatus = ($transaction['acct_post_status'] ?: $transaction['acct_pre_status']) ?? '';
+                                        $isCheckedAcct = (strtoupper(trim($currentAcctStatus)) === 'FOR VOUCHER');
+                                        ?>
+                                        <input class="form-check-input" type="checkbox" id="acctStatus"
+                                               name="acct_status" value="FOR VOUCHER" <?php echo $isCheckedAcct ? 'checked' : ''; ?>>
+                                        <label class="form-check-label" for="acctStatus">For Voucher</label>
                                     </div>
                                 </div>
-
-                                <div class="col-md-6">
-                                    <div class="border rounded p-3 h-100">
-                                        <h6 class="mb-2">Post-Budget</h6>
-                                        <div class="mb-2">
-                                            <label class="form-label mb-1">Status</label>
-                                            <div class="form-check">
-                                                <input class="form-check-input acct-post-field" type="checkbox" id="acctPostStatus"
-                                                       name="acct_post_status" value="POST BUDGET FOR VOUCHER"
-                                                    <?php echo ($transaction['acct_post_status'] ?? '') === 'POST BUDGET FOR VOUCHER' ? 'checked' : ''; ?>>
-                                                <label class="form-check-label" for="acctPostStatus">
-                                                    POST BUDGET FOR VOUCHER
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="mb-2">
-                                            <label class="form-label mb-1">Remarks</label>
-                                            <textarea name="acct_post_remarks" class="form-control acct-post-field"
-                                                      rows="2"
-                                                      placeholder="Post-Budget remarks"><?php echo htmlspecialchars($transaction['acct_post_remarks'] ?? ''); ?></textarea>
-                                        </div>
-                                        <div class="mb-0">
-                                            <label class="form-label mb-1">DV Amount</label>
-                                            <input type="number" step="0.01" min="0" name="acct_post_dv_amount" class="form-control acct-post-field"
-                                                   placeholder="Enter DV amount (net)"
-                                                   value="">
-                                        </div>
-                                    </div>
+                                <div class="mb-2">
+                                    <label class="form-label mb-1">Remarks</label>
+                                    <textarea name="acct_remarks" class="form-control" rows="2"
+                                              placeholder="Enter accounting remarks"></textarea>
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label mb-1">DV Amount</label>
+                                    <input type="number" step="0.01" min="0" name="acct_dv_amount" class="form-control"
+                                           placeholder="Enter DV amount (net)">
                                 </div>
                             </div>
                         <?php elseif ($role === 'budget'): ?>
@@ -697,14 +672,14 @@ include __DIR__ . '/header.php';
                         </div>
                     </div>
 
-                    <!-- Accounting (Pre-Budget) -->
-                    <div class="timeline-item <?php echo !empty($transaction['acct_pre_status']) ? 'completed' : 'pending'; ?>">
+                    <!-- Accounting -->
+                    <div class="timeline-item <?php echo !empty($updatesByStage['accounting_pre']) ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
-                            <i class="fas fa-<?php echo !empty($transaction['acct_pre_status']) ? 'check-circle' : 'circle'; ?>"></i>
+                            <i class="fas fa-<?php echo !empty($updatesByStage['accounting_pre']) ? 'check-circle' : 'circle'; ?>"></i>
                         </div>
                         <div class="timeline-content">
                             <?php
-                            // Elapsed from latest Supply update to latest Accounting (Pre-Budget) update
+                            // Elapsed from latest Supply update to latest Accounting update (pre-budget)
                             $elapsedAcctPre = '';
                             $prevTs = get_last_stage_timestamp($updatesByStage, 'supply');
                             $currTs = get_last_stage_timestamp($updatesByStage, 'accounting_pre');
@@ -713,7 +688,7 @@ include __DIR__ . '/header.php';
                             }
                             ?>
                             <h6 class="timeline-title d-flex justify-content-between align-items-center">
-                                <span>Accounting (Pre-Budget)</span>
+                                <span>Accounting</span>
                                 <span class="small text-muted"><?php echo $elapsedAcctPre ? htmlspecialchars($elapsedAcctPre) : ''; ?></span>
                             </h6>
 
@@ -792,14 +767,14 @@ include __DIR__ . '/header.php';
                         </div>
                     </div>
 
-                    <!-- Accounting (Post-Budget) -->
-                    <div class="timeline-item <?php echo !empty($transaction['acct_post_status']) ? 'completed' : 'pending'; ?>">
+                    <!-- Accounting -->
+                    <div class="timeline-item <?php echo !empty($updatesByStage['accounting_post']) ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
-                            <i class="fas fa-<?php echo !empty($transaction['acct_post_status']) ? 'check-circle' : 'circle'; ?>"></i>
+                            <i class="fas fa-<?php echo !empty($updatesByStage['accounting_post']) ? 'check-circle' : 'circle'; ?>"></i>
                         </div>
                         <div class="timeline-content">
                             <?php
-                            // Elapsed from latest Budget update to latest Accounting (Post-Budget) update
+                            // Elapsed from latest Budget update to latest Accounting update (post-budget)
                             $elapsedAcctPost = '';
                             $prevTs = get_last_stage_timestamp($updatesByStage, 'budget');
                             $currTs = get_last_stage_timestamp($updatesByStage, 'accounting_post');
@@ -808,7 +783,7 @@ include __DIR__ . '/header.php';
                             }
                             ?>
                             <h6 class="timeline-title d-flex justify-content-between align-items-center">
-                                <span>Accounting (Post-Budget)</span>
+                                <span>Accounting</span>
                                 <span class="small text-muted"><?php echo $elapsedAcctPost ? htmlspecialchars($elapsedAcctPost) : ''; ?></span>
                             </h6>
 

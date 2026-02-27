@@ -15,8 +15,9 @@ if ($role === 'supplier' && $supplierId) {
 
 // Example: show only items relevant to each unit (can be refined later)
 if ($role === 'supply') {
-    // Supply sees items once procurement has set a status
-    $where[] = 'proc_status IS NOT NULL';
+    // Supply sees items only once Procurement has actually saved an update
+    // (proc_date is set when Procurement submits its form)
+    $where[] = 'proc_date IS NOT NULL';
 }
 if ($role === 'accounting') {
     // Accounting should only see items after Supply has reviewed them

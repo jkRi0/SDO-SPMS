@@ -221,32 +221,47 @@ document.addEventListener('DOMContentLoaded', function () {
                     return res.text();
                 })
                 .then(function (html) {
-                    // If DataTables is active, destroy before we touch the DOM
+                    var currentSearch = '';
+                    var currentPage = 0;
+                    var currentLength = 10;
+                    var currentOrder = [[5, 'desc']];
+
+                    // If DataTables is active, capture state and destroy before we touch the DOM
                     if (window.jQuery && jQuery.fn.DataTable) {
-                        var existing;
+                        var existing = null;
                         try {
                             existing = jQuery('#transactionsTable').DataTable();
                         } catch (e) {
                             existing = null;
                         }
                         if (existing) {
+                            currentSearch = existing.search();
+                            currentPage = existing.page();
+                            currentLength = existing.page.len();
+                            currentOrder = existing.order();
                             existing.destroy();
                         }
                     }
 
+                    // Replace tbody with fresh rows
                     txBody.innerHTML = html;
 
-                    // Re-initialize DataTables with the same options as footer.php
+                    // Re-initialize DataTables and restore previous state
                     if (window.jQuery && jQuery.fn.DataTable) {
-                        jQuery('#transactionsTable').DataTable({
+                        var dtNew = jQuery('#transactionsTable').DataTable({
                             responsive: true,
-                            pageLength: 10,
+                            pageLength: currentLength,
                             lengthMenu: [10, 25, 50, 100],
                             columnDefs: [{ orderable: false, targets: -1 }],
-                            // Default sort: Created column (index 5) descending
-                            order: [[5, 'desc']],
+                            // Default sort: Created column (index 5)
+                            order: currentOrder,
                             language: { searchPlaceholder: 'Search...', search: '' }
                         });
+
+                        if (currentSearch) {
+                            dtNew.search(currentSearch);
+                        }
+                        dtNew.page(currentPage).draw(false);
                     }
                 })
                 .catch(function () {

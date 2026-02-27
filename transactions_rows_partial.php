@@ -19,7 +19,7 @@ if ($role === 'supplier' && $supplierId) {
 
 // Same visibility rules as dashboard table
 if ($role === 'supply') {
-    $where[]  = 'proc_status IS NOT NULL';
+    $where[]  = 'proc_date IS NOT NULL';
 }
 if ($role === 'accounting') {
     $where[]  = 'supply_status IS NOT NULL';
