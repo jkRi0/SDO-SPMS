@@ -39,11 +39,13 @@ include __DIR__ . '/header.php';
         <h2 class="page-title">Welcome, <?php echo htmlspecialchars($welcomeName); ?></h2>
         <p class="page-subtitle"><?php echo htmlspecialchars($subtitle); ?></p>
     </div>
-    <div>
-        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#feedbackModal">
-            <i class="fas fa-comment-alt"></i> Send Feedback
-        </button>
-    </div>
+    <?php if ($role !== 'admin'): ?>
+        <div>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+                <i class="fas fa-comment-alt"></i> Send Feedback
+            </button>
+        </div>
+    <?php endif; ?>
 </div>
 
 <?php if ($role === 'procurement'): ?>

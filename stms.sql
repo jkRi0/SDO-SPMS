@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 28, 2026 at 12:08 AM
+-- Generation Time: Feb 28, 2026 at 04:16 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `spms`
+-- Database: `stms`
 --
 
 -- --------------------------------------------------------
@@ -86,7 +86,10 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `action`, `target_type`, `target_i
 (41, 14, 'login', 'user', 14, 'Successful login', '::1', '2026-02-27 21:22:22'),
 (42, 15, 'login', 'user', 15, 'Successful login', '::1', '2026-02-27 21:37:24'),
 (43, 15, 'login', 'user', 15, 'Successful login', '::1', '2026-02-27 21:38:20'),
-(44, 16, 'login', 'user', 16, 'Successful login', '::1', '2026-02-27 21:39:59');
+(44, 16, 'login', 'user', 16, 'Successful login', '::1', '2026-02-27 21:39:59'),
+(45, 16, 'login', 'user', 16, 'Successful login', '::1', '2026-02-27 23:17:31'),
+(46, 18, 'login', 'user', 18, 'Successful login', '::1', '2026-02-28 00:13:32'),
+(47, 10, 'login', 'user', 10, 'Successful login', '::1', '2026-02-28 02:59:44');
 
 -- --------------------------------------------------------
 
@@ -110,6 +113,41 @@ CREATE TABLE `feedback` (
 INSERT INTO `feedback` (`id`, `user_id`, `role`, `type`, `message`, `created_at`) VALUES
 (1, 12, 'procurement', 'Other', 'sample2', '2026-02-14 10:51:56'),
 (2, 18, 'supplier', 'Suggestion', 'sample 3', '2026-02-14 10:52:29');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `notifications`
+--
+
+CREATE TABLE `notifications` (
+  `id` int(11) NOT NULL,
+  `supplier_id` int(11) NOT NULL,
+  `transaction_id` int(11) DEFAULT NULL,
+  `title` varchar(255) NOT NULL,
+  `message` text NOT NULL,
+  `link` varchar(255) DEFAULT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
+  `email_sent` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `notifications`
+--
+
+INSERT INTO `notifications` (`id`, `supplier_id`, `transaction_id`, `title`, `message`, `link`, `is_read`, `email_sent`, `created_at`) VALUES
+(1, 6, 20, 'Payment status update', 'Your PO asd has been updated by Cashier.', 'transaction_view.php?id=20', 0, 0, '2026-02-28 07:36:50'),
+(2, 6, 20, 'Payment status update', 'Your PO asd has been updated by Cashier.', 'transaction_view.php?id=20', 1, 0, '2026-02-28 07:37:20'),
+(3, 6, 20, 'Payment status update', 'Your PO asd has been updated by Cashier.', 'transaction_view.php?id=20', 1, 0, '2026-02-28 07:43:01'),
+(4, 6, 20, 'Payment status update', 'Your PO asd has been updated by Cashier.', 'transaction_view.php?id=20', 0, 0, '2026-02-28 07:56:49'),
+(5, 6, 20, 'Payment status update', 'Your PO asd has been updated by Cashier.', 'transaction_view.php?id=20', 0, 0, '2026-02-28 07:57:01'),
+(6, 6, 20, 'Payment status update', 'Your PO asd has been updated by Cashier.', 'transaction_view.php?id=20', 1, 0, '2026-02-28 07:57:09'),
+(7, 3, 16, 'Payment status update', 'Your PO asdkj123 has been updated by Cashier.', 'transaction_view.php?id=16', 1, 0, '2026-02-28 08:14:05'),
+(8, 3, 14, 'Payment status update', 'Your PO anskdjk1n23 has been updated by Cashier.', 'transaction_view.php?id=14', 1, 0, '2026-02-28 08:14:48'),
+(9, 6, 20, 'Payment status update', 'Your PO asd has been updated by Cashier.', 'transaction_view.php?id=20', 1, 0, '2026-02-28 08:30:28'),
+(10, 6, 20, 'Payment status update', 'Your PO asd has been updated by Cashier.', 'transaction_view.php?id=20', 0, 0, '2026-02-28 10:02:05'),
+(11, 6, 20, 'Payment status update', 'Your PO asd has been updated by Cashier.', 'transaction_view.php?id=20', 0, 0, '2026-02-28 11:05:20');
 
 -- --------------------------------------------------------
 
@@ -209,10 +247,10 @@ INSERT INTO `transactions` (`id`, `supplier_id`, `po_number`, `program_title`, `
 (10, 3, '2026-01-03', 'qwerty', 'Transpo/venue', 'jeff', '2026-02-18', '2026-02-18', '2026-02-19', 40000.00, '2026-02-19 01:53:16', 'FOR SUPPLY REVIEW', 'brrt', '2026-02-20', 'COMPLETED', 'asdasdqwe', 'asd', 'sample', '2026-02-20', 'PRE-BUDGET FOR VOUCHER', 'Completed', '2026-02-19', '2026-01-04', '2026-02-11', 'FOR ORS', 'DUE DEMANDABLE', '', 'POST BUDGET FOR VOUCHER', 'completed', '2026-02-19', 'FOR OR INSUANCE', '', '', '0000-00-00', '', '0000-00-00'),
 (11, 3, 'asdasd', 'asdasdasdasd', 'Supplies', 'qweqweqwe', '2026-02-19', '2026-02-26', NULL, 333.00, '2026-02-20 03:05:34', 'COMPLETED', 'okay 123', '2026-02-20', 'PARTIAL DELIVER', 'asd', 'asd', 'sample', '2026-02-20', 'PRE-BUDGET FOR VOUCHER', 'desc1', '2026-02-23', '123', '0000-00-00', 'FOR PAYMENT', 'Not Yet Due and Demandable', 'asd', 'POST BUDGET FOR VOUCHER', 'desc2\nDV Amount: 111111', '2026-02-23', 'For ACIC', 'asdasdasd', 'asdqwe', '0000-00-00', '1000', '0000-00-00'),
 (13, 3, 'asdlklk123', 'okay1', 'Transpo/venue', 'qwertyqqwe', '2026-02-24', '2026-02-27', 'bukas', 69696.00, '2026-02-23 07:19:04', 'FOR SUPPLY REVIEW', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(14, 3, 'anskdjk1n23', 'sample1', 'Supplies', 'sampledesc', '2026-02-19', '2026-02-26', 'bukas', 19898.00, '2026-02-24 01:38:39', 'FOR SUPPLY REVIEW', 'okay', '2026-02-25', 'PARTIAL DELIVER', 'sampel\r\nasdlkals', 'askdmlas\r\nmalksdlkqwe', 'asample', '2026-02-24', 'PRE-BUDGET FOR VOUCHER', 'sample', '2026-02-24', 'aasdjk123', '2026-02-18', 'ACCOUNTS PAYABLE', 'Due and Demandable', 'sanoke', 'POST BUDGET FOR VOUCHER', 'dsaplme\nDV Amount: 1000', '2026-02-24', NULL, NULL, NULL, NULL, NULL, NULL),
+(14, 3, 'anskdjk1n23', 'sample1', 'Supplies', 'sampledesc', '2026-02-19', '2026-02-26', 'bukas', 19898.00, '2026-02-24 01:38:39', 'FOR SUPPLY REVIEW', 'okay', '2026-02-25', 'PARTIAL DELIVER', 'sampel\r\nasdlkals', 'askdmlas\r\nmalksdlkqwe', 'asample', '2026-02-24', 'PRE-BUDGET FOR VOUCHER', 'sample', '2026-02-24', 'aasdjk123', '2026-02-18', 'ACCOUNTS PAYABLE', 'Due and Demandable', 'sanoke', 'POST BUDGET FOR VOUCHER', 'dsaplme\nDV Amount: 1000', '2026-02-24', '', '', '', '0000-00-00', '', '0000-00-00'),
 (16, 3, 'asdkj123', 'asldkllnlk', 'Transpo/venue', 'asdklnaskldnla', '2026-02-18', '2026-02-28', NULL, 2000.00, '2026-02-27 01:38:23', 'FOR SUPPLY REVIEW', 'okay', '2026-02-27', 'PARTIAL DELIVER', 'na', 'na', 'okay', '2026-02-27', '', 'wait', '2026-02-27', 'asdjkjn28198', '2026-02-28', 'FOR PAYMENT', 'Due and Demandable', 'waitArek', 'FOR VOUCHER', 'okay po aasd\nDV Amount: 300', '2026-02-27', NULL, NULL, NULL, NULL, NULL, NULL),
 (19, 3, 'asd', 'as', 'Transpo/venue', 'asd', '2026-02-19', '2026-02-28', NULL, 1111.00, '2026-02-27 02:47:14', 'FOR SUPPLY REVIEW', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(20, 6, 'asd', 'asdasd', 'Transpo/venue', 'asldmkasm', '2026-02-18', '2026-02-26', NULL, 3030303.00, '2026-02-27 21:05:32', 'COMPLETED', 'okay', '2026-02-28', 'COMPLETED', 'sample receipt', 'sample sales invoice', 'okay', '2026-02-28', '', 'okay', '2026-02-28', 'asd', '2026-02-26', 'FOR ORS', 'Due and Demandable', 'samleee', 'FOR VOUCHER', 'okay3\nDV Amount: 5000', '2026-02-28', 'For SDS/ASDS Approval', 'sample', 'dfgfgd5', '2026-02-25', '2000', '2026-03-07');
+(20, 6, 'asd', 'asdasd', 'Transpo/venue', 'asldmkasm', '2026-02-18', '2026-02-26', NULL, 3030303.00, '2026-02-27 21:05:32', 'COMPLETED', 'okay', '2026-02-28', 'COMPLETED', 'sample receipt', 'sample sales invoice', 'okay', '2026-02-28', '', 'okay', '2026-02-28', 'asd', '2026-02-26', 'ACCOUNTS PAYABLE', 'Not Yet Due and Demandable', 'again', 'FOR VOUCHER', 'okay3\nDV Amount: 5000', '2026-02-28', 'For OR Issuance', 'sample', 'dfgfgd5', '2026-02-25', '2000', '2026-03-07');
 
 -- --------------------------------------------------------
 
@@ -312,7 +350,10 @@ INSERT INTO `transaction_updates` (`id`, `transaction_id`, `stage`, `status`, `r
 (85, 20, 'budget', 'FOR ORS', 'samleee', '2026-02-27 21:45:02'),
 (86, 20, 'cashier', 'For ACIC', 'okay\nAmount: 2000', '2026-02-27 22:05:04'),
 (87, 20, 'cashier', 'For OR Issuance', 'sample\nAmount: 2000', '2026-02-27 22:05:16'),
-(88, 20, 'cashier', 'For SDS/ASDS Approval', 'sample\nAmount: 2000', '2026-02-27 22:05:25');
+(88, 20, 'cashier', 'For SDS/ASDS Approval', 'sample\nAmount: 2000', '2026-02-27 22:05:25'),
+(89, 20, 'budget', 'ACCOUNTS PAYABLE', 'samleee', '2026-02-27 23:12:40'),
+(90, 20, 'budget', 'ACCOUNTS PAYABLE', 'again', '2026-02-27 23:42:37'),
+(91, 20, 'cashier', 'For OR Issuance', 'sample\nAmount: 2000', '2026-02-28 02:01:44');
 
 -- --------------------------------------------------------
 
@@ -364,6 +405,13 @@ ALTER TABLE `feedback`
   ADD KEY `idx_feedback_role` (`role`);
 
 --
+-- Indexes for table `notifications`
+--
+ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `supplier_id` (`supplier_id`);
+
+--
 -- Indexes for table `roles`
 --
 ALTER TABLE `roles`
@@ -408,13 +456,19 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
 
 --
 -- AUTO_INCREMENT for table `feedback`
 --
 ALTER TABLE `feedback`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT for table `notifications`
+--
+ALTER TABLE `notifications`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `roles`
@@ -438,7 +492,7 @@ ALTER TABLE `transactions`
 -- AUTO_INCREMENT for table `transaction_updates`
 --
 ALTER TABLE `transaction_updates`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=89;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=92;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -461,6 +515,12 @@ ALTER TABLE `activity_logs`
 --
 ALTER TABLE `feedback`
   ADD CONSTRAINT `feedback_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+
+--
+-- Constraints for table `notifications`
+--
+ALTER TABLE `notifications`
+  ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`);
 
 --
 -- Constraints for table `transactions`

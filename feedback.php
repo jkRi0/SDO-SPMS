@@ -6,6 +6,16 @@ require_once __DIR__ . '/auth.php';
 require_login();
 
 $db = get_db();
+$role = $_SESSION['role'] ?? '';
+
+// If admin opens feedback page, mark all feedback as read
+if ($role === 'admin') {
+    try {
+        $db->exec('UPDATE feedback SET is_read = 1 WHERE is_read = 0');
+    } catch (Exception $e) {
+        // Ignore marking errors; just proceed to display
+    }
+}
 
 // Load feedback entries (most recent first)
 $stmt = $db->query('SELECT f.*, u.username FROM feedback f LEFT JOIN users u ON f.user_id = u.id ORDER BY f.created_at DESC');
@@ -41,7 +51,7 @@ include __DIR__ . '/header.php';
                     </tr>
                 <?php else: ?>
                     <?php foreach ($feedbacks as $f): ?>
-                        <tr>
+                        <tr class="<?php echo !empty($f['is_read']) ? '' : 'notif-unread'; ?>">
                             <td><?php echo htmlspecialchars($f['created_at']); ?></td>
                             <td><?php echo htmlspecialchars($f['username'] ?? 'N/A'); ?></td>
                             <td><?php echo htmlspecialchars($f['role'] ?? ''); ?></td>

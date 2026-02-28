@@ -929,6 +929,23 @@ if (session_status() === PHP_SESSION_NONE) {
                         </div>
                     <?php endif; ?>
 
+                    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+                        <div class="dropdown me-3">
+                            <button class="btn btn-light position-relative" type="button" id="adminFeedbackMenu" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Feedback">
+                                <i class="fas fa-comment-dots"></i>
+                                <span id="adminFeedbackBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary" style="display: none;">
+                                </span>
+                            </button>
+                            <ul id="adminFeedbackList" class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="adminFeedbackMenu" style="width: 360px; max-height: 320px; overflow-y: auto;">
+                                <li class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                                    <strong>Recent Feedback</strong>
+                                    <a href="feedback.php" class="small">View all</a>
+                                </li>
+                                <li class="px-3 py-2 small text-muted">Loading feedback...</li>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="dropdown">
                         <button class="btn btn-light dropdown-toggle d-flex align-items-center" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-user-circle fa-lg me-2" aria-hidden="true"></i>
