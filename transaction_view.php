@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/email_helper.php';
 
 require_login();
 
@@ -61,6 +62,9 @@ $error = '';
 $success = '';
 if (isset($_GET['updated']) && $_GET['updated'] === '1') {
     $success = 'Transaction updated successfully.';
+}
+if (isset($_GET['notified']) && $_GET['notified'] === '1') {
+    $success = 'Supplier has been notified.';
 }
 
 // Prepare coverage display string from coverage_start / coverage_end (MM/DD/YYYY)
@@ -139,6 +143,42 @@ if (!function_exists('get_last_stage_timestamp')) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Special action: cashier clicking "Notify Supplier" (no transaction field updates)
+    if ($role === 'cashier' && isset($_POST['notify_supplier']) && $_POST['notify_supplier'] === '1') {
+        try {
+            // Insert a basic in-app notification for this transaction's supplier
+            $notifyStmt = $db->prepare('INSERT INTO notifications (supplier_id, transaction_id, title, message, link, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
+            $title = 'Payment status update';
+            $message = 'Your PO ' . ($transaction['po_number'] ?? '') . ' has been updated by Cashier.';
+            $link = 'transaction_view.php?id=' . $transaction['id'];
+            $notifyStmt->execute([
+                $transaction['supplier_id'],
+                $transaction['id'],
+                $title,
+                $message,
+                $link,
+            ]);
+
+            // Also email supplier if an email address is available (e.g. Google OAuth suppliers)
+            $emailStmt = $db->prepare('SELECT email FROM suppliers WHERE id = ? LIMIT 1');
+            $emailStmt->execute([$transaction['supplier_id']]);
+            $supplierRow = $emailStmt->fetch();
+
+            if ($supplierRow && !empty($supplierRow['email'])) {
+                $toEmail = strtolower(trim($supplierRow['email']));
+                $emailSubject = $title;
+                $emailBody = '<p>' . htmlspecialchars($message) . '</p>' .
+                    '<p><a href="' . htmlspecialchars(BASE_URL . $link) . '">View details in the STMS portal</a></p>';
+                send_supplier_email($toEmail, $emailSubject, $emailBody);
+            }
+        } catch (Exception $e) {
+            // If notification insert fails, do not break the main page
+        }
+
+        // Redirect back so refresh does not re-send notification
+        header('Location: transaction_view.php?id=' . $id . '&notified=1');
+        exit;
+    }
     try {
         $fields = [];
         $params = [];
@@ -558,27 +598,19 @@ include __DIR__ . '/header.php';
             <div class="card mt-3">
                 <div class="card-body">
                     <h6 class="mb-2">Proceed to Landbank</h6>
-                    <?php if ($canProceedLandbank): ?>
-                        <p class="small text-muted">
-                            All requirements from Procurement, Supply, Accounting, and Budget are complete.
-                        </p>
-                        <a href="<?php echo htmlspecialchars(LANDBANK_URL); ?>" target="_blank"
-                           class="btn btn-success w-100">
-                            Proceed to Landbank Site
-                        </a>
-                    <?php else: ?>
-                        <div class="alert alert-warning small mb-2">
-                            Cannot proceed yet. Please ensure:
-                            <ul class="mb-0">
-                                <li>Procurement and Supply statuses are set and not pending.</li>
-                                <li>Initial Accounting review is completed and forwarded to Budget.</li>
-                                <li>Budget DV number and date are filled in.</li>
-                                <li>Final Accounting status is set and not "PENDING" or "FOR CORRECTION".</li>
-                                <li>Cashier must finish internal payment processing before proceeding to the Landbank site.</li>
-                            </ul>
-                        </div>
-                        <button class="btn btn-secondary w-100" type="button" disabled>Proceed to Landbank Site</button>
-                    <?php endif; ?>
+                    <p class="small text-muted">
+                        All requirements from Procurement, Supply, Accounting, and Budget are complete.
+                    </p>
+                    <a href="<?php echo htmlspecialchars(LANDBANK_URL); ?>" target="_blank"
+                       class="btn btn-success w-100 mb-2">
+                        Proceed to Landbank Site
+                    </a>
+                    <form method="post" class="mt-1">
+                        <input type="hidden" name="notify_supplier" value="1">
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            Notify Supplier
+                        </button>
+                    </form>
                 </div>
             </div>
         <?php endif; ?>
@@ -872,36 +904,8 @@ include __DIR__ . '/header.php';
                             <?php endif; ?>
                         </div>
                     </div>
+                </div>
 
-                <?php if ($role === 'cashier'): ?>
-                    <div class="card">
-                        <div class="card-body">
-                            <h6 class="mb-2">Proceed to Landbank</h6>
-                            <?php if ($canProceedLandbank): ?>
-                                <p class="small text-muted">
-                                    All requirements from Procurement, Supply, Accounting, and Budget are complete.
-                                </p>
-                                <a href="<?php echo htmlspecialchars(LANDBANK_URL); ?>" target="_blank"
-                                   class="btn btn-success w-100">
-                                    Proceed to Landbank Site
-                                </a>
-                            <?php else: ?>
-                                <div class="alert alert-warning small mb-2">
-                                    Cannot proceed yet. Please ensure:
-                                    <ul class="mb-0">
-                                        <li>Procurement and Supply statuses are set and not pending.</li>
-                                        <li>Initial Accounting review is completed and forwarded to Budget.</li>
-                                        <li>Budget DV number and date are filled in.</li>
-                                        <li>Final Accounting status is set and not "PENDING" or "FOR CORRECTION".</li>
-                                        <li>Cashier must finish internal payment processing before proceeding to the Landbank site.</li>
-                                    </ul>
-                                </div>
-                                <button class="btn btn-secondary w-100" type="button" disabled>Proceed to Landbank Site</button>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
-        
     </div>
 </div>
 

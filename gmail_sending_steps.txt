@@ -1,0 +1,297 @@
+Step-by-step guide: Sending notifications to supplier Gmail using PHPMailer + Gmail SMTP
+====================================================================
+
+OVERVIEW
+--------
+This guide shows how to make the "Notify Supplier" button send REAL emails to a supplier's Gmail account when the supplier was created via Google OAuth. We will:
+
+1. Install PHPMailer in the project.
+2. Configure a Gmail account and app password.
+3. Add SMTP configuration constants in `config.php`.
+4. Create a reusable `send_supplier_email()` helper using PHPMailer.
+5. Call `send_supplier_email()` from `transaction_view.php` right after inserting a notification, but only when the supplier has an email.
+
+You can follow this on localhost (XAMPP) or on a live server.
+
+--------------------------------------------------------------------
+1. INSTALL PHPMailer
+--------------------------------------------------------------------
+
+You have two options: Composer (recommended) or manual download.
+
+1.1. Using Composer (recommended)
+---------------------------------
+
+1) Open a terminal / command prompt at the project root folder:
+   c:\xampp\htdocs\samples\SDO-STMS
+
+2) Run:
+   composer require phpmailer/phpmailer
+
+3) This will create `vendor/` and `vendor/autoload.php`.
+
+4) Later, you will include the autoloader in PHP files that need PHPMailer:
+   require_once __DIR__ . '/vendor/autoload.php';
+
+If you do NOT have Composer or do not want to use it, use the manual method below.
+
+1.2. Manual download
+--------------------
+
+1) Go to https://github.com/PHPMailer/PHPMailer and download the latest release as a ZIP.
+
+2) Extract the ZIP somewhere and copy the `src/` folder from PHPMailer into your project, for example:
+   c:\xampp\htdocs\samples\SDO-STMS\phpmailer\src
+
+3) You will then include the classes manually, e.g. in a helper file:
+
+   require_once __DIR__ . '/phpmailer/src/PHPMailer.php';
+   require_once __DIR__ . '/phpmailer/src/SMTP.php';
+   require_once __DIR__ . '/phpmailer/src/Exception.php';
+
+4) In the code examples below, whenever you see `use PHPMailer\PHPMailer\PHPMailer;`, that expects either Composer autoload or the manual includes above.
+
+--------------------------------------------------------------------
+2. PREPARE A GMAIL ACCOUNT + APP PASSWORD
+--------------------------------------------------------------------
+
+For reliable SMTP, you should use a Gmail (or preferably Google Workspace) account with an App Password.
+
+2.1. Turn on 2FA and create an app password
+------------------------------------------
+
+1) Log in to the Gmail account you want to send from.
+
+2) Open https://myaccount.google.com/security
+
+3) Ensure **2-Step Verification** is turned ON.
+
+4) After 2FA is enabled, scroll to **App passwords**.
+
+5) Create a new app password:
+   - App: Mail
+   - Device: Other (give a name, e.g. "SDO-STMS")
+
+6) Google will show you a 16-character app password (e.g. `abcd efgh ijkl mnop`). Copy it and keep it safe.
+
+You will use this app password as your SMTP password.
+
+--------------------------------------------------------------------
+3. ADD SMTP CONFIG CONSTANTS IN config.php
+--------------------------------------------------------------------
+
+Open `config.php` and add these constants (edit values to your own):
+
+   // SMTP / Gmail settings for outgoing mail
+   define('SMTP_HOST', 'smtp.gmail.com');
+   define('SMTP_PORT', 587); // 587 for TLS
+   define('SMTP_USERNAME', 'yourgmail@gmail.com');
+   define('SMTP_PASSWORD', 'your_app_password_here');
+   define('SMTP_FROM_EMAIL', 'yourgmail@gmail.com');
+   define('SMTP_FROM_NAME', 'SDO STMS Notifications');
+
+Notes:
+- `SMTP_USERNAME` is usually the full Gmail address.
+- `SMTP_PASSWORD` is the 16-character app password from step 2.
+- `SMTP_FROM_EMAIL` should be the same Gmail or another address allowed by the account.
+- `SMTP_FROM_NAME` is what will be displayed as the sender name in inbox (e.g. "SDO-STMS").
+
+Also set `BASE_URL` to your app base URL so email links are correct, e.g. for local XAMPP:
+
+   define('BASE_URL', 'http://localhost/samples/SDO-STMS/');
+
+--------------------------------------------------------------------
+4. CREATE A REUSABLE send_supplier_email() HELPER
+--------------------------------------------------------------------
+
+We will create a single helper function that uses PHPMailer with the constants above. You can put this in a new file, for example `email_helper.php` in the project root.
+
+4.1. Create email_helper.php
+----------------------------
+
+Create `email_helper.php` with something like (pseudo-outline, not yet pasted into code):
+
+- Require `config.php` and either Composer autoload or manual PHPMailer includes.
+- Implement `send_supplier_email($toEmail, $subject, $htmlBody)` which:
+  - Validates the email.
+  - Creates a `PHPMailer` instance.
+  - Sets SMTP host, port, username, password, and TLS.
+  - Sets the From address and recipient.
+  - Sends HTML email and returns true/false.
+
+Concrete example (Composer-based):
+
+   <?php
+   require_once __DIR__ . '/config.php';
+   require_once __DIR__ . '/vendor/autoload.php';
+
+   use PHPMailer\PHPMailer\PHPMailer;
+   use PHPMailer\PHPMailer\Exception;
+
+   if (!function_exists('send_supplier_email')) {
+       function send_supplier_email($toEmail, $subject, $htmlBody)
+       {
+           if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+               return false;
+           }
+
+           $mail = new PHPMailer(true);
+
+           try {
+               // Server settings
+               $mail->isSMTP();
+               $mail->Host       = SMTP_HOST;
+               $mail->SMTPAuth   = true;
+               $mail->Username   = SMTP_USERNAME;
+               $mail->Password   = SMTP_PASSWORD;
+               $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+               $mail->Port       = SMTP_PORT;
+
+               // Recipients
+               $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
+               $mail->addAddress($toEmail);
+
+               // Content
+               $mail->isHTML(true);
+               $mail->Subject = $subject;
+               $mail->Body    = $htmlBody;
+
+               $mail->send();
+               return true;
+           } catch (Exception $e) {
+               // Optionally log error: error_log('Mail error: ' . $e->getMessage());
+               return false;
+           }
+       }
+   }
+
+If you use manual PHPMailer instead of Composer, replace `require_once __DIR__ . '/vendor/autoload.php';` with the manual class includes (see step 1.2).
+
+4.2. Include email_helper where needed
+-------------------------------------
+
+In `transaction_view.php` (and any other file that needs to send email), add:
+
+   require_once __DIR__ . '/email_helper.php';
+
+near the top, after `config.php` / `db.php` requires.
+
+--------------------------------------------------------------------
+5. HOOK EMAIL SENDING INTO THE "NOTIFY SUPPLIER" FLOW
+--------------------------------------------------------------------
+
+Now that you have `send_supplier_email()`, connect it to the cashier `Notify Supplier` logic.
+
+5.1. Find the Notify Supplier handler
+-------------------------------------
+
+In `transaction_view.php` you already have something like:
+
+   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+       // Special action: cashier clicking "Notify Supplier" (no transaction field updates)
+       if ($role === 'cashier' && isset($_POST['notify_supplier']) && $_POST['notify_supplier'] === '1') {
+           try {
+               // Insert a basic in-app notification for this transaction's supplier
+               $notifyStmt = $db->prepare('INSERT INTO notifications (supplier_id, transaction_id, title, message, link, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
+               $title = 'Payment status update';
+               $message = 'Your PO ' . ($transaction['po_number'] ?? '') . ' has been updated by Cashier.';
+               $link = 'transaction_view.php?id=' . $transaction['id'];
+               $notifyStmt->execute([
+                   $transaction['supplier_id'],
+                   $transaction['id'],
+                   $title,
+                   $message,
+                   $link,
+               ]);
+
+               // EMAIL SENDING WILL BE ADDED HERE
+
+           } catch (Exception $e) {
+               // If notification insert fails, do not break the main page
+           }
+
+           // Redirect back so refresh does not re-send notification
+           header('Location: transaction_view.php?id=' . $id . '&notified=1');
+           exit;
+       }
+       ...
+   }
+
+5.2. Load supplier email and call helper
+----------------------------------------
+
+Right after the `$notifyStmt->execute([...])` call, add logic to fetch the supplier email and send:
+
+   $emailStmt = $db->prepare('SELECT email FROM suppliers WHERE id = ? LIMIT 1');
+   $emailStmt->execute([$transaction['supplier_id']]);
+   $supplierRow = $emailStmt->fetch();
+
+   if ($supplierRow && !empty($supplierRow['email'])) {
+       $toEmail = strtolower(trim($supplierRow['email']));
+       $emailSubject = $title;
+       $emailBody = '<p>' . htmlspecialchars($message) . '</p>' .
+           '<p><a href="' . htmlspecialchars(BASE_URL . $link) . '">View details in the STMS portal</a></p>';
+       send_supplier_email($toEmail, $emailSubject, $emailBody);
+   }
+
+Notes:
+- This checks if `suppliers.email` is present. For Google OAuth suppliers, `oauth_callback.php` already stores their Gmail in `suppliers.email`.
+- For non-Google suppliers (registered manually), `email` is empty, so the email is skipped and they only get in-app notifications.
+
+--------------------------------------------------------------------
+6. TESTING THE COMPLETE FLOW
+--------------------------------------------------------------------
+
+6.1. Basic connectivity test
+----------------------------
+
+Before testing the full Notify Supplier flow, write a small test script, e.g. `test_email.php` in the project root:
+
+   <?php
+   require_once __DIR__ . '/email_helper.php';
+
+   $ok = send_supplier_email('yourgmail@gmail.com', 'Test from SDO-STMS', '<p>This is a test email.</p>');
+
+   var_dump($ok);
+
+Load `http://localhost/samples/SDO-STMS/test_email.php` in the browser.
+
+- If `true` and you receive the email in Gmail (maybe in Spam/Promotions), SMTP is working.
+- If `false`, check your `php_error.log` for PHPMailer error messages.
+
+6.2. Full Notify Supplier test
+------------------------------
+
+1) Log out of all sessions.
+
+2) Log in as a supplier using the **Google Login (Supplier)** button.
+   - This ensures the supplier account has a Gmail stored in `suppliers.email`.
+
+3) Ensure at least one transaction exists for that supplier.
+
+4) Log in as `cashier`.
+
+5) Open that transaction in `transaction_view.php`.
+
+6) Click **Notify Supplier**.
+
+7) Check:
+   - The in-app header bell now shows a new notification.
+   - The Gmail inbox of that supplier receives an email with the subject `Payment status update` and a link back to the portal.
+
+--------------------------------------------------------------------
+7. PRODUCTION CONSIDERATIONS
+--------------------------------------------------------------------
+
+- Do NOT commit real SMTP passwords to a public repository. Use environment variables or a config file that is not tracked.
+- For a real domain, configure SPF, DKIM, and DMARC to improve deliverability.
+- Consider a dedicated transactional email provider (SendGrid, Mailgun, etc.) if Gmail limits become an issue.
+
+--------------------------------------------------------------------
+SUMMARY
+--------------------------------------------------------------------
+
+- PHPMailer + Gmail SMTP is required for reliable Gmail delivery.
+- `oauth_callback.php` already ensures Google suppliers have an `email` in the `suppliers` table.
+- Add SMTP constants to `config.php`, implement `send_supplier_email()` in `email_helper.php`, include that helper, and call it from `transaction_view.php` after inserting `notifications`.
+- Test with a simple `test_email.php` script, then test the full Notify Supplier flow for a Google supplier.

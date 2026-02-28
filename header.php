@@ -254,6 +254,11 @@ if (session_status() === PHP_SESSION_NONE) {
             color: #ef4444;
         }
 
+        /* Unread notification highlight */
+        .notif-unread {
+            background-color: #eef3ff;
+        }
+
         .section-header {
             display: flex;
             justify-content: space-between;
@@ -867,29 +872,85 @@ if (session_status() === PHP_SESSION_NONE) {
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
 
+                <?php
+                // Preload notifications for supplier role to show in header bell
+                $headerNotifications = [];
+                $headerUnreadCount = 0;
+                if (function_exists('get_db') && isset($_SESSION['role']) && $_SESSION['role'] === 'supplier' && !empty($_SESSION['supplier_id'])) {
+                    try {
+                        $dbHeader = get_db();
+                        $stmtHeaderNotif = $dbHeader->prepare('SELECT id, title, message, link, is_read, created_at FROM notifications WHERE supplier_id = ? ORDER BY created_at DESC LIMIT 10');
+                        $stmtHeaderNotif->execute([$_SESSION['supplier_id']]);
+                        $headerNotifications = $stmtHeaderNotif->fetchAll(PDO::FETCH_ASSOC);
+                        foreach ($headerNotifications as $row) {
+                            if (empty($row['is_read'])) {
+                                $headerUnreadCount++;
+                            }
+                        }
+                    } catch (Exception $e) {
+                        // If notifications table is missing or query fails, silently ignore
+                    }
+                }
+                ?>
+
                 <div class="nav-user-info">
-                <div class="dropdown">
-                    <button class="btn btn-light dropdown-toggle d-flex align-items-center" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-user-circle fa-lg me-2" aria-hidden="true"></i>
-                        <span class="d-none d-md-inline"><?php echo htmlspecialchars(ucfirst($_SESSION['role'] ?? 'User')); ?></span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                        <?php if (($_SESSION['role'] ?? '') === 'supplier'): ?>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center" href="change_password.php">
-                                    <i class="fas fa-user-cog me-2"></i> Account settings
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                        <?php endif; ?>
-                        <li>
-                            <button class="dropdown-item text-danger d-flex align-items-center logout-animate" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal" type="button" aria-label="Sign out">
-                                <i class="fas fa-sign-out-alt me-2"></i> <strong>Sign out</strong>
+
+                    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'supplier'): ?>
+                        <div class="dropdown me-3">
+                            <button class="btn btn-light position-relative" type="button" id="notifMenu" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
+                                <i class="fas fa-bell"></i>
+                                <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: <?php echo ($headerUnreadCount > 0) ? 'inline-block' : 'none'; ?>;">
+                                    <?php echo $headerUnreadCount > 9 ? '9+' : ($headerUnreadCount > 0 ? $headerUnreadCount : ''); ?>
+                                </span>
                             </button>
-                        </li>
-                    </ul>
+                            <ul id="notifList" class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notifMenu" style="width: 320px; max-height: 320px; overflow-y: auto;">
+                                <li class="px-3 py-2 border-bottom"><strong>Notifications</strong></li>
+                                <?php if (!empty($headerNotifications)): ?>
+                                    <?php foreach ($headerNotifications as $n): ?>
+                                        <li class="px-0 py-0 small">
+                                            <a href="<?php echo !empty($n['link']) ? 'notification_open.php?id=' . (int)$n['id'] : '#'; ?>"
+                                               class="d-block px-3 py-2 text-reset text-decoration-none <?php echo empty($n['is_read']) ? 'fw-semibold notif-unread' : ''; ?>">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><?php echo htmlspecialchars($n['title']); ?></span>
+                                                    <span class="text-muted" style="font-size: 0.75rem;">
+                                                        <?php echo htmlspecialchars(date('m/d/Y H:i', strtotime($n['created_at']))); ?>
+                                                    </span>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 0.8rem;">
+                                                    <?php echo nl2br(htmlspecialchars($n['message'])); ?>
+                                                </div>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <li class="px-3 py-2 small text-muted">No notifications yet.</li>
+                                <?php endif; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="dropdown">
+                        <button class="btn btn-light dropdown-toggle d-flex align-items-center" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle fa-lg me-2" aria-hidden="true"></i>
+                            <span class="d-none d-md-inline"><?php echo htmlspecialchars(ucfirst($_SESSION['role'] ?? 'User')); ?></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                            <?php if (($_SESSION['role'] ?? '') === 'supplier'): ?>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center" href="change_password.php">
+                                        <i class="fas fa-user-cog me-2"></i> Account settings
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                            <?php endif; ?>
+                            <li>
+                                <button class="dropdown-item text-danger d-flex align-items-center logout-animate" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal" type="button" aria-label="Sign out">
+                                    <i class="fas fa-sign-out-alt me-2"></i> <strong>Sign out</strong>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-            </div>
             </div>
         </div>
     </nav>
