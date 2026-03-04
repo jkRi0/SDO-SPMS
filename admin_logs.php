@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-    setInterval(refreshLogs, 3000);
+    setInterval(refreshLogs, (window.POLL_INTERVALS && window.POLL_INTERVALS.ADMIN_LOGS_TABLE) || 3000);
 });
 </script>
 

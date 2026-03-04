@@ -256,15 +256,18 @@ include __DIR__ . '/header.php';
     $activePOs = 0;
     $pendingReview = 0;
     $approved = 0;
+    $has = function ($v): bool {
+        return trim((string)($v ?? '')) !== '';
+    };
     $stmtStats = $db->query('SELECT proc_date, supply_status, cashier_status FROM transactions WHERE proc_date IS NOT NULL');
     $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
     foreach ($rowsStats as $t) {
         $stage = '';
-        if (!empty($t['cashier_status'])) {
+        if ($has($t['cashier_status'])) {
             $stage = 'Approved';
-        } elseif (!empty($t['supply_status']) && empty($t['cashier_status'])) {
+        } elseif ($has($t['supply_status']) && !$has($t['cashier_status'])) {
             $stage = 'Pending';
-        } elseif (!empty($t['proc_date']) && empty($t['supply_status'])) {
+        } elseif (!empty($t['proc_date']) && !$has($t['supply_status'])) {
             $stage = 'Active';
         }
 
@@ -306,15 +309,18 @@ include __DIR__ . '/header.php';
     $activePOs = 0;
     $pendingReview = 0;
     $approved = 0;
-    $stmtStats = $db->query('SELECT supply_status, acct_pre_status, budget_status, acct_post_status, cashier_status FROM transactions WHERE supply_status IS NOT NULL');
+    $has = function ($v): bool {
+        return trim((string)($v ?? '')) !== '';
+    };
+    $stmtStats = $db->query("SELECT supply_status, acct_pre_status, budget_status, acct_post_status, cashier_status FROM transactions WHERE (NULLIF(TRIM(supply_status), '') IS NOT NULL)");
     $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
     foreach ($rowsStats as $t) {
         $stage = '';
-        if (!empty($t['cashier_status'])) {
+        if ($has($t['cashier_status'])) {
             $stage = 'Approved';
-        } elseif ((!empty($t['acct_pre_status']) && empty($t['budget_status'])) || (!empty($t['acct_post_status']) && empty($t['cashier_status']))) {
+        } elseif (($has($t['acct_pre_status']) && !$has($t['budget_status'])) || ($has($t['acct_post_status']) && !$has($t['cashier_status']))) {
             $stage = 'Pending';
-        } elseif ((!empty($t['supply_status']) && empty($t['acct_pre_status'])) || (!empty($t['budget_status']) && empty($t['acct_post_status']))) {
+        } elseif (($has($t['supply_status']) && !$has($t['acct_pre_status'])) || ($has($t['budget_status']) && !$has($t['acct_post_status']))) {
             $stage = 'Active';
         }
 
@@ -356,15 +362,18 @@ include __DIR__ . '/header.php';
     $activePOs = 0;
     $pendingReview = 0;
     $approved = 0;
-    $stmtStats = $db->query('SELECT acct_pre_status, budget_status, cashier_status FROM transactions WHERE acct_pre_status IS NOT NULL');
+    $has = function ($v): bool {
+        return trim((string)($v ?? '')) !== '';
+    };
+    $stmtStats = $db->query("SELECT acct_pre_status, budget_status, cashier_status FROM transactions WHERE (NULLIF(TRIM(acct_pre_status), '') IS NOT NULL)");
     $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
     foreach ($rowsStats as $t) {
         $stage = '';
-        if (!empty($t['cashier_status'])) {
+        if ($has($t['cashier_status'])) {
             $stage = 'Approved';
-        } elseif (!empty($t['budget_status']) && empty($t['cashier_status'])) {
+        } elseif ($has($t['budget_status']) && !$has($t['cashier_status'])) {
             $stage = 'Pending';
-        } elseif (!empty($t['acct_pre_status']) && empty($t['budget_status'])) {
+        } elseif ($has($t['acct_pre_status']) && !$has($t['budget_status'])) {
             $stage = 'Active';
         }
 
@@ -406,16 +415,19 @@ include __DIR__ . '/header.php';
     $activePOs = 0;
     $pendingReview = 0;
     $approved = 0;
-    $stmtStats = $db->query('SELECT acct_post_status, cashier_status FROM transactions WHERE acct_post_status IS NOT NULL');
+    $has = function ($v): bool {
+        return trim((string)($v ?? '')) !== '';
+    };
+    $stmtStats = $db->query("SELECT acct_post_status, cashier_status FROM transactions WHERE (NULLIF(TRIM(acct_post_status), '') IS NOT NULL)");
     $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
     foreach ($rowsStats as $t) {
         $stage = '';
         $cashierUpper = strtoupper(trim((string)($t['cashier_status'] ?? '')));
         if ($cashierUpper === 'COMPLETED') {
             $stage = 'Approved';
-        } elseif (!empty($t['cashier_status'])) {
+        } elseif ($has($t['cashier_status'])) {
             $stage = 'Pending';
-        } elseif (!empty($t['acct_post_status']) && empty($t['cashier_status'])) {
+        } elseif ($has($t['acct_post_status']) && !$has($t['cashier_status'])) {
             $stage = 'Active';
         }
 
@@ -542,6 +554,25 @@ document.addEventListener('DOMContentLoaded', function () {
         var txRefreshInFlight = false;
         var statsRefreshInFlight = false;
 
+        var dtInstance = null;
+        function ensureDtInstance() {
+            if (!window.jQuery || !jQuery.fn || !jQuery.fn.dataTable) {
+                dtInstance = null;
+                return;
+            }
+            if (jQuery.fn.dataTable.isDataTable('#transactionsTable')) {
+                try {
+                    dtInstance = jQuery('#transactionsTable').DataTable();
+                } catch (e) {
+                    dtInstance = null;
+                }
+            } else {
+                dtInstance = null;
+            }
+        }
+
+        ensureDtInstance();
+
         function refreshDashboardStats() {
             if (!statActive || !statPending || !statApproved) {
                 return;
@@ -562,7 +593,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     statApproved.textContent = String(data.approved ?? 0);
                 })
                 .catch(function () {
-                });
+                })
                 .finally(function () {
                     statsRefreshInFlight = false;
                 });
@@ -584,50 +615,25 @@ document.addEventListener('DOMContentLoaded', function () {
                     return res.text();
                 })
                 .then(function (html) {
-                    var currentSearch = '';
-                    var currentPage = 0;
-                    var currentLength = 10;
-                    var currentOrder = [[5, 'desc']];
+                    ensureDtInstance();
+                    if (dtInstance && window.jQuery) {
+                        var currentSearch = dtInstance.search();
+                        var currentPage = dtInstance.page();
+                        var currentLength = dtInstance.page.len();
+                        var currentOrder = dtInstance.order();
 
-                    // If DataTables is active, capture state and destroy before we touch the DOM
-                    if (window.jQuery && jQuery.fn.DataTable) {
-                        var existing = null;
-                        try {
-                            existing = jQuery('#transactionsTable').DataTable();
-                        } catch (e) {
-                            existing = null;
-                        }
-                        if (existing) {
-                            currentSearch = existing.search();
-                            currentPage = existing.page();
-                            currentLength = existing.page.len();
-                            currentOrder = existing.order();
-                            existing.destroy();
-                        }
+                        var rows = jQuery(html).toArray();
+                        dtInstance.clear();
+                        dtInstance.rows.add(rows);
+                        dtInstance.order(currentOrder);
+                        dtInstance.page.len(currentLength);
+                        dtInstance.search(currentSearch);
+                        dtInstance.page(currentPage).draw(false);
+                    } else {
+                        txBody.innerHTML = html;
                     }
-
-                    // Replace tbody with fresh rows
-                    txBody.innerHTML = html;
 
                     refreshDashboardStats();
-
-                    // Re-initialize DataTables and restore previous state
-                    if (window.jQuery && jQuery.fn.DataTable) {
-                        var dtNew = jQuery('#transactionsTable').DataTable({
-                            responsive: true,
-                            pageLength: currentLength,
-                            lengthMenu: [10, 25, 50, 100],
-                            columnDefs: [{ orderable: false, targets: -1 }],
-                            // Default sort: Created column (index 5)
-                            order: currentOrder,
-                            language: { searchPlaceholder: 'Search...', search: '' }
-                        });
-
-                        if (currentSearch) {
-                            dtNew.search(currentSearch);
-                        }
-                        dtNew.page(currentPage).draw(false);
-                    }
                 })
                 .catch(function () {
                     // fail silently
@@ -641,7 +647,7 @@ document.addEventListener('DOMContentLoaded', function () {
         setInterval(function () {
             refreshDashboardTransactions();
             refreshDashboardStats();
-        }, 5000);
+        }, (window.POLL_INTERVALS && window.POLL_INTERVALS.DASHBOARD) || 5000);
     }
 
     // Admin "Online Users" auto-refresh
@@ -700,7 +706,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         refreshOnlineUsers();
-        setInterval(refreshOnlineUsers, 5000);
+        setInterval(refreshOnlineUsers, (window.POLL_INTERVALS && window.POLL_INTERVALS.DASHBOARD_ONLINE_USERS) || 5000);
     }
 
     // Admin "Login Logs" auto-refresh
@@ -756,7 +762,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         refreshLoginLogs();
-        setInterval(refreshLoginLogs, 5000);
+        setInterval(refreshLoginLogs, (window.POLL_INTERVALS && window.POLL_INTERVALS.DASHBOARD_LOGIN_LOGS) || 5000);
     }
 });
 </script>

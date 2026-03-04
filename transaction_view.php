@@ -1003,7 +1003,7 @@ include __DIR__ . '/header.php';
 <script>
 // Periodically refresh only the Flow Timeline without reloading the whole page
 document.addEventListener('DOMContentLoaded', function () {
-    const refreshIntervalMs = 5000; // 5 seconds
+    const refreshIntervalMs = (window.POLL_INTERVALS && window.POLL_INTERVALS.TRANSACTION_TIMELINE) || 5000;
 
     function refreshTimeline() {
         const currentTimeline = document.querySelector('.timeline');

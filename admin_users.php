@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-    setInterval(refreshUsers, 3000);
+    setInterval(refreshUsers, (window.POLL_INTERVALS && window.POLL_INTERVALS.ADMIN_USERS_TABLE) || 3000);
 });
 </script>
 

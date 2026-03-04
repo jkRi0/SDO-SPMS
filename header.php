@@ -851,6 +851,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="assets/polling_intervals.js"></script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg sticky-top">

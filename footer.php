@@ -105,7 +105,7 @@
 
                 // Initial load + interval
                 refreshNotifications();
-                setInterval(refreshNotifications, 5000);
+                setInterval(refreshNotifications, (window.POLL_INTERVALS && window.POLL_INTERVALS.HEADER_NOTIFICATIONS) || 5000);
             }
 
             // Auto-refresh department notifications in header bell
@@ -183,7 +183,7 @@
                 }
 
                 refreshDeptNotifications();
-                setInterval(refreshDeptNotifications, 5000);
+                setInterval(refreshDeptNotifications, (window.POLL_INTERVALS && window.POLL_INTERVALS.HEADER_DEPT_NOTIFICATIONS) || 5000);
             }
 
             // Auto-refresh admin feedback dropdown (admin role only)
@@ -265,7 +265,7 @@
                 }
 
                 refreshAdminFeedback();
-                setInterval(refreshAdminFeedback, 5000);
+                setInterval(refreshAdminFeedback, (window.POLL_INTERVALS && window.POLL_INTERVALS.HEADER_ADMIN_FEEDBACK) || 5000);
             }
         });
     </script>

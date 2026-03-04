@@ -1,0 +1,18 @@
+(function () {
+    if (window.POLL_INTERVALS) {
+        return;
+    }
+
+    window.POLL_INTERVALS = {
+        DASHBOARD: 3000,
+        HEADER_NOTIFICATIONS: 3000,
+        HEADER_DEPT_NOTIFICATIONS: 3000,
+        HEADER_ADMIN_FEEDBACK: 3000,
+        DASHBOARD_ONLINE_USERS: 3000,
+        DASHBOARD_LOGIN_LOGS: 3000,
+        ADMIN_LOGS_TABLE: 3000,
+        ADMIN_USERS_TABLE: 3000,
+        ACTIVITY_LOGS_TABLE: 3000,
+        TRANSACTION_TIMELINE: 3000
+    };
+})();

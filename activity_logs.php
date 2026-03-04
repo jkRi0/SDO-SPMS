@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-    setInterval(refreshLogs, 3000);
+    setInterval(refreshLogs, (window.POLL_INTERVALS && window.POLL_INTERVALS.ACTIVITY_LOGS_TABLE) || 3000);
 });
 </script>
 
