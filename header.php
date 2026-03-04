@@ -97,7 +97,6 @@ if (session_status() === PHP_SESSION_NONE) {
         .nav-user-info {
             display: flex;
             align-items: center;
-            gap: 2rem;
             margin-left: auto;
         }
 
@@ -498,10 +497,6 @@ if (session_status() === PHP_SESSION_NONE) {
                 align-self: flex-start;
             }
 
-            .nav-user-info {
-                gap: 1rem;
-            }
-
             .user-info {
                 display: none;
             }
@@ -891,6 +886,26 @@ if (session_status() === PHP_SESSION_NONE) {
                         // If notifications table is missing or query fails, silently ignore
                     }
                 }
+
+                $deptHeaderNotifications = [];
+                $deptHeaderUnreadCount = 0;
+                $deptRoles = ['procurement', 'supply', 'accounting', 'budget', 'cashier'];
+                if (function_exists('get_db') && isset($_SESSION['role']) && in_array($_SESSION['role'], $deptRoles, true)) {
+                    try {
+                        require_once __DIR__ . '/dept_notifications.php';
+                        $dbHeader2 = get_db();
+                        dept_notifications_ensure_table($dbHeader2);
+                        $stmtDept = $dbHeader2->prepare('SELECT id, title, message, link, is_read, created_at FROM department_notifications WHERE role = ? ORDER BY created_at DESC LIMIT 10');
+                        $stmtDept->execute([$_SESSION['role']]);
+                        $deptHeaderNotifications = $stmtDept->fetchAll(PDO::FETCH_ASSOC);
+                        foreach ($deptHeaderNotifications as $row) {
+                            if (empty($row['is_read'])) {
+                                $deptHeaderUnreadCount++;
+                            }
+                        }
+                    } catch (Exception $e) {
+                    }
+                }
                 ?>
 
                 <div class="nav-user-info">
@@ -909,6 +924,40 @@ if (session_status() === PHP_SESSION_NONE) {
                                     <?php foreach ($headerNotifications as $n): ?>
                                         <li class="px-0 py-0 small">
                                             <a href="<?php echo !empty($n['link']) ? 'notification_open.php?id=' . (int)$n['id'] : '#'; ?>"
+                                               class="d-block px-3 py-2 text-reset text-decoration-none <?php echo empty($n['is_read']) ? 'fw-semibold notif-unread' : ''; ?>">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><?php echo htmlspecialchars($n['title']); ?></span>
+                                                    <span class="text-muted" style="font-size: 0.75rem;">
+                                                        <?php echo htmlspecialchars(date('m/d/Y H:i', strtotime($n['created_at']))); ?>
+                                                    </span>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 0.8rem;">
+                                                    <?php echo nl2br(htmlspecialchars($n['message'])); ?>
+                                                </div>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <li class="px-3 py-2 small text-muted">No notifications yet.</li>
+                                <?php endif; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['procurement', 'supply', 'accounting', 'budget', 'cashier'], true)): ?>
+                        <div class="dropdown me-3">
+                            <button class="btn btn-light position-relative" type="button" id="deptNotifMenu" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
+                                <i class="fas fa-bell"></i>
+                                <span id="deptNotifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: <?php echo ($deptHeaderUnreadCount > 0) ? 'inline-block' : 'none'; ?>;">
+                                    <?php echo $deptHeaderUnreadCount > 9 ? '9+' : ($deptHeaderUnreadCount > 0 ? $deptHeaderUnreadCount : ''); ?>
+                                </span>
+                            </button>
+                            <ul id="deptNotifList" class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="deptNotifMenu" style="width: 320px; max-height: 320px; overflow-y: auto;">
+                                <li class="px-3 py-2 border-bottom"><strong>Notifications</strong></li>
+                                <?php if (!empty($deptHeaderNotifications)): ?>
+                                    <?php foreach ($deptHeaderNotifications as $n): ?>
+                                        <li class="px-0 py-0 small">
+                                            <a href="<?php echo !empty($n['link']) ? 'dept_notification_open.php?id=' . (int)$n['id'] : '#'; ?>"
                                                class="d-block px-3 py-2 text-reset text-decoration-none <?php echo empty($n['is_read']) ? 'fw-semibold notif-unread' : ''; ?>">
                                                 <div class="d-flex justify-content-between">
                                                     <span><?php echo htmlspecialchars($n['title']); ?></span>
@@ -987,22 +1036,35 @@ if (session_status() === PHP_SESSION_NONE) {
             <div style="padding: 1rem;">
                 <div id="poModalAlert"></div>
                 <form id="createPOForm" novalidate>
-                    <!-- PO Number and Type -->
+                    <!-- PO Number -->
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; color: #333; font-size: 0.9rem;">PO Number <span style="color: #dc2626;">*</span></label>
+                        <input type="text" name="po_number" class="form-control" required inputmode="numeric" pattern="\d*" oninput="this.value = this.value.replace(/\D/g, '')"
+                               placeholder="Enter PO number"
+                               style="border-radius: 6px; border: 1px solid #ddd; padding: 0.5rem 0.6rem; font-size: 0.9rem;">
+                    </div>
+
+                    <!-- Type -->
                     <div class="row gx-2">
                         <div class="col-12 col-md-6 mb-3">
-                            <label class="form-label" style="font-weight: 600; color: #333; font-size: 0.9rem;">PO Number <span style="color: #dc2626;">*</span></label>
-                            <input type="text" name="po_number" class="form-control" required
-                                   placeholder="Enter PO number"
-                                   style="border-radius: 6px; border: 1px solid #ddd; padding: 0.5rem 0.6rem; font-size: 0.9rem;">
-                        </div>
-                        <div class="col-12 col-md-6 mb-3">
                             <label class="form-label" style="font-weight: 600; color: #333; font-size: 0.9rem;">Type <span style="color: #dc2626;">*</span></label>
-                            <select name="po_type" class="form-control" required
+                            <select name="po_type" class="form-control" id="poTypeSelect"
                                     style="border-radius: 6px; border: 1px solid #ddd; padding: 0.5rem 0.6rem; font-size: 0.9rem;">
                                 <option value="">-- Select type --</option>
                                 <option value="Transpo/venue">Transpo/Venue</option>
                                 <option value="Supplies">Supplies</option>
+                                <option value="Meals">Meals</option>
+                                <option value="Services">Services</option>
                             </select>
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="form-label" style="font-weight: 600; color: #333; font-size: 0.9rem;">&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <div class="d-flex align-items-center" style="min-width: 28px; justify-content: center;">or</div>
+                                <input type="text" name="po_type_other" class="form-control" id="poTypeOther"
+                                       placeholder="Other type"
+                                       style="border-radius: 6px; border: 1px solid #ddd; padding: 0.5rem 0.6rem; font-size: 0.9rem;">
+                            </div>
                         </div>
                     </div>
 
@@ -1034,12 +1096,12 @@ if (session_status() === PHP_SESSION_NONE) {
                     <div class="row gx-2">
                         <div class="col-12 mb-3">
                             <!-- Coverage Date Range -->
-                            <label class="form-label" style="font-weight: 600; color: #333; font-size: 0.9rem;">Date (Coverage) <span style="color: #dc2626;">*</span></label>
+                            <label class="form-label" style="font-weight: 600; color: #333; font-size: 0.9rem;">Date (Coverage)</label>
                             <div class="d-flex gap-2">
-                                <input type="date" name="coverage_start" class="form-control" required
+                                <input type="date" name="coverage_start" class="form-control"
                                        style="border-radius: 6px; border: 1px solid #ddd; padding: 0.5rem 0.6rem; font-size: 0.9rem;">
                                 <span style="align-self: center; padding: 0 0.25rem;">to</span>
-                                <input type="date" name="coverage_end" class="form-control" required
+                                <input type="date" name="coverage_end" class="form-control"
                                        style="border-radius: 6px; border: 1px solid #ddd; padding: 0.5rem 0.6rem; font-size: 0.9rem;">
                             </div>
                         </div>
@@ -1093,6 +1155,21 @@ function loadSuppliers() {
         .then(response => response.json())
         .then(data => {
             const supplierSelect = document.getElementById('supplierSelect');
+const poTypeSelect = document.getElementById('poTypeSelect');
+const poTypeOther = document.getElementById('poTypeOther');
+if (poTypeSelect && poTypeOther) {
+    poTypeOther.addEventListener('input', function () {
+        if (String(poTypeOther.value || '').trim() !== '') {
+            poTypeSelect.value = '';
+        }
+    });
+    poTypeSelect.addEventListener('change', function () {
+        if (String(poTypeSelect.value || '').trim() !== '') {
+            poTypeOther.value = '';
+        }
+    });
+}
+
             supplierSelect.innerHTML = '<option value="">-- Select supplier --</option>';
             if (data.success) {
                 data.suppliers.forEach(supplier => {
@@ -1109,10 +1186,19 @@ function loadSuppliers() {
 function submitPO() {
     const form = document.getElementById('createPOForm');
     const alertDiv = document.getElementById('poModalAlert');
+    const typeSelect = document.getElementById('poTypeSelect');
+    const typeOther = document.getElementById('poTypeOther');
     
     // Validate form
     if (!form.checkValidity()) {
         form.classList.add('was-validated');
+        return;
+    }
+
+    const selectedType = typeSelect ? String(typeSelect.value || '').trim() : '';
+    const otherType = typeOther ? String(typeOther.value || '').trim() : '';
+    if (selectedType === '' && otherType === '') {
+        alertDiv.innerHTML = '<div class="alert alert-danger" role="alert" style="border-radius: 10px; border: none; background: #fee2e2; color: #991b1b; padding: 1rem;">Please select a type or enter another type.</div>';
         return;
     }
 

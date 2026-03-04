@@ -3,6 +3,7 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/email_helper.php';
+require_once __DIR__ . '/dept_notifications.php';
 
 require_login();
 
@@ -315,6 +316,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
+            dept_notifications_ensure_table($db);
+
+            $poNum = $transaction['po_number'] ?? '';
+            $link = 'transaction_view.php?id=' . (int)$id;
+
+            $statusUpper = strtoupper(trim((string)$logStatus));
+            $pendingRoles = [];
+            $completedNotifyRoles = [];
+
+            $prevStagesByStage = [
+                'procurement' => [],
+                'supply' => ['procurement'],
+                'accounting_pre' => ['procurement', 'supply'],
+                'budget' => ['procurement', 'supply', 'accounting'],
+                'accounting_post' => ['procurement', 'supply', 'accounting', 'budget'],
+                'cashier' => ['procurement', 'supply', 'accounting', 'budget'],
+            ];
+
+            // Pending should fire only when the next department can actually see/act on it.
+            // Use status transitions from empty -> non-empty, aligned with partials_transactions_table.php gating fields.
+            if ($logStage === 'procurement') {
+                $oldProcDate = $transaction['proc_date'] ?? null;
+                $newHasMeaningfulUpdate = (trim((string)$logStatus) !== '' || trim((string)$logRemarks) !== '');
+                if (empty($oldProcDate) && $newHasMeaningfulUpdate) {
+                    $pendingRoles[] = 'supply';
+                }
+            } elseif ($logStage === 'supply') {
+                $old = trim((string)($transaction['supply_status'] ?? ''));
+                $new = trim((string)$logStatus);
+                if ($old === '' && $new !== '') {
+                    $pendingRoles[] = 'accounting';
+                }
+            } elseif ($logStage === 'accounting_pre') {
+                $old = trim((string)($transaction['acct_pre_status'] ?? ''));
+                $new = trim((string)$logStatus);
+                if ($old === '' && $new !== '') {
+                    $pendingRoles[] = 'budget';
+                }
+            } elseif ($logStage === 'budget') {
+                $old = trim((string)($transaction['budget_status'] ?? ''));
+                $new = trim((string)$logStatus);
+                if ($old === '' && $new !== '') {
+                    $pendingRoles[] = 'accounting';
+                }
+            } elseif ($logStage === 'accounting_post') {
+                $old = trim((string)($transaction['acct_post_status'] ?? ''));
+                $new = trim((string)$logStatus);
+                if ($old === '' && $new !== '') {
+                    $pendingRoles[] = 'cashier';
+                }
+            }
+
+            // Completed should broadcast to all previous departments in the workflow.
+            if ($statusUpper === 'COMPLETED') {
+                $completedNotifyRoles = $prevStagesByStage[$logStage] ?? [];
+            }
+
+            foreach ($pendingRoles as $r) {
+                $pendingTitle = 'Pending Transaction';
+                $pendingMsg = 'Upcoming PO ' . $poNum . '';
+                create_dept_notification_once($db, $r, $id, $pendingTitle, $pendingMsg, $link);
+            }
+
+            foreach ($completedNotifyRoles as $stageName) {
+                $completedRole = $stageName;
+                $completedTitle = ucfirst($role) . ' Completed';
+                $completedMsg = ucfirst($role) . ' marked PO ' . $poNum . ' as Completed.';
+                create_dept_notification_once($db, $completedRole, $id, $completedTitle, $completedMsg, $link);
+            }
+
+            if ($logStage === 'cashier' && $statusUpper === 'COMPLETED') {
+                try {
+                    $notifyStmt = $db->prepare('INSERT INTO notifications (supplier_id, transaction_id, title, message, link, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
+                    $title = 'Transaction completed';
+                    $message = 'Your PO ' . $poNum . ' has been completed.';
+                    $notifyStmt->execute([
+                        $transaction['supplier_id'],
+                        $transaction['id'],
+                        $title,
+                        $message,
+                        $link,
+                    ]);
+                } catch (Exception $e) {
+                }
+            }
+
             // Redirect to avoid duplicate submissions on refresh (Post/Redirect/Get)
             header('Location: transaction_view.php?id=' . $id . '&updated=1');
             exit;
@@ -469,15 +556,19 @@ include __DIR__ . '/header.php';
                                 <h6 class="mb-2">Accounting</h6>
                                 <div class="mb-2">
                                     <label class="form-label mb-1">Status</label>
-                                    <div class="form-check">
+                                    <?php
+                                    $currentAcctStatus = ($transaction['acct_post_status'] ?: $transaction['acct_pre_status']) ?? '';
+                                    ?>
+                                    <select name="acct_status" class="form-control">
                                         <?php
-                                        $currentAcctStatus = ($transaction['acct_post_status'] ?: $transaction['acct_pre_status']) ?? '';
-                                        $isCheckedAcct = (strtoupper(trim($currentAcctStatus)) === 'FOR VOUCHER');
+                                        echo '<option value="">-- Select status --</option>';
+                                        $acctOptions = ['FOR VOUCHER', 'COMPLETED'];
+                                        foreach ($acctOptions as $opt) {
+                                            $selected = (strtoupper(trim($currentAcctStatus)) === strtoupper(trim($opt))) ? 'selected' : '';
+                                            echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
+                                        }
                                         ?>
-                                        <input class="form-check-input" type="checkbox" id="acctStatus"
-                                               name="acct_status" value="FOR VOUCHER" <?php echo $isCheckedAcct ? 'checked' : ''; ?>>
-                                        <label class="form-check-label" for="acctStatus">For Voucher</label>
-                                    </div>
+                                    </select>
                                 </div>
                                 <div class="mb-2">
                                     <label class="form-label mb-1">Remarks</label>
@@ -510,7 +601,7 @@ include __DIR__ . '/header.php';
                                     $currentBudgetStatus = $transaction['budget_status'] ?? '';
                                     // Empty placeholder option
                                     echo '<option value="">-- Select status --</option>';
-                                    $budgetStatusOptions = ['FOR PAYMENT', 'ACCOUNTS PAYABLE', 'FOR ORS'];
+                                    $budgetStatusOptions = ['FOR PAYMENT', 'ACCOUNTS PAYABLE', 'FOR ORS', 'COMPLETED'];
                                     foreach ($budgetStatusOptions as $opt) {
                                         $selected = ($currentBudgetStatus === $opt) ? 'selected' : '';
                                         echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
@@ -546,7 +637,7 @@ include __DIR__ . '/header.php';
                                     $currentCashierStatus = $transaction['cashier_status'] ?? '';
                                     // Empty placeholder
                                     echo '<option value="">-- Select status --</option>';
-                                    $cashierStatusOptions = ['For ACIC', 'For OR Issuance', 'For SDS/ASDS Approval'];
+                                    $cashierStatusOptions = ['For ACIC', 'For OR Issuance', 'For SDS/ASDS Approval', 'COMPLETED'];
                                     foreach ($cashierStatusOptions as $opt) {
                                         $selected = ($currentCashierStatus === $opt) ? 'selected' : '';
                                         echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';

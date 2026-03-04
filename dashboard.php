@@ -50,35 +50,45 @@ include __DIR__ . '/header.php';
 
 <?php if ($role === 'procurement'): ?>
     <?php
-    // Procurement dashboard stats - Real-time accurate counts
-    // Active PO's: Transactions with procurement status (currently in procurement phase)
-    $activePOs = (int)$db->query('SELECT COUNT(*) AS c FROM transactions WHERE proc_status IS NOT NULL AND supply_status IS NULL')->fetch()['c'];
-    
-    // Pending Review: Transactions that have moved past procurement but not yet completed (supply or accounting stages)
-    $pendingReview = (int)$db->query('SELECT COUNT(*) AS c FROM transactions WHERE (supply_status IS NOT NULL OR acct_pre_status IS NOT NULL OR budget_status IS NOT NULL OR acct_post_status IS NOT NULL) AND cashier_status IS NULL')->fetch()['c'];
-    
-    // Approved: Transactions completed (have cashier status which means fully processed)
-    $approved = (int)$db->query('SELECT COUNT(*) AS c FROM transactions WHERE cashier_status IS NOT NULL')->fetch()['c'];
+    $activePOs = 0;
+    $pendingReview = 0;
+    $approved = 0;
+    $stmtStats = $db->query('SELECT proc_status, proc_date, supply_status, acct_pre_status, budget_status, acct_post_status, cashier_status FROM transactions');
+    $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
+    foreach ($rowsStats as $t) {
+        $stage = '';
+        if (!empty($t['cashier_status'])) {
+            $stage = 'Approved';
+        } elseif (!empty($t['supply_status']) || !empty($t['acct_pre_status']) || !empty($t['budget_status']) || !empty($t['acct_post_status'])) {
+            $stage = 'Pending';
+        } elseif (!empty($t['proc_status']) && empty($t['supply_status'])) {
+            $stage = 'Active';
+        }
+
+        if ($stage === 'Active') $activePOs++;
+        if ($stage === 'Pending') $pendingReview++;
+        if ($stage === 'Approved') $approved++;
+    }
     ?>
     <div class="stats-grid">
         <div class="stat-card blue">
             <div class="stat-content">
                 <div class="stat-label">Active PO's</div>
-                <div class="stat-number"><?php echo $activePOs; ?></div>
+                <div class="stat-number" id="statActive"><?php echo $activePOs; ?></div>
             </div>
             <div class="stat-card-icon"><i class="fas fa-file-invoice"></i></div>
         </div>
         <div class="stat-card orange">
             <div class="stat-content">
                 <div class="stat-label">Pending Review</div>
-                <div class="stat-number"><?php echo $pendingReview; ?></div>
+                <div class="stat-number" id="statPending"><?php echo $pendingReview; ?></div>
             </div>
             <div class="stat-card-icon"><i class="fas fa-hourglass-half"></i></div>
         </div>
         <div class="stat-card green">
             <div class="stat-content">
                 <div class="stat-label">Approved</div>
-                <div class="stat-number"><?php echo $approved; ?></div>
+                <div class="stat-number" id="statApproved"><?php echo $approved; ?></div>
             </div>
             <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
         </div>
@@ -242,24 +252,201 @@ include __DIR__ . '/header.php';
     </div>
 
 <?php elseif ($role === 'supply'): ?>
+    <?php
+    $activePOs = 0;
+    $pendingReview = 0;
+    $approved = 0;
+    $stmtStats = $db->query('SELECT proc_date, supply_status, cashier_status FROM transactions WHERE proc_date IS NOT NULL');
+    $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
+    foreach ($rowsStats as $t) {
+        $stage = '';
+        if (!empty($t['cashier_status'])) {
+            $stage = 'Approved';
+        } elseif (!empty($t['supply_status']) && empty($t['cashier_status'])) {
+            $stage = 'Pending';
+        } elseif (!empty($t['proc_date']) && empty($t['supply_status'])) {
+            $stage = 'Active';
+        }
+
+        if ($stage === 'Active') $activePOs++;
+        if ($stage === 'Pending') $pendingReview++;
+        if ($stage === 'Approved') $approved++;
+    }
+    ?>
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <div class="stat-content">
+                <div class="stat-label">Active PO's</div>
+                <div class="stat-number" id="statActive"><?php echo $activePOs; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-file-invoice"></i></div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-content">
+                <div class="stat-label">Pending Review</div>
+                <div class="stat-number" id="statPending"><?php echo $pendingReview; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-hourglass-half"></i></div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-content">
+                <div class="stat-label">Approved</div>
+                <div class="stat-number" id="statApproved"><?php echo $approved; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
+        </div>
+    </div>
     <h8 class="mb-3">Supply Unit - For Verification</h8>
     <div id="transactionsContainer">
         <?php include __DIR__ . '/partials_transactions_table.php'; ?>
     </div>
 
 <?php elseif ($role === 'accounting'): ?>
+    <?php
+    $activePOs = 0;
+    $pendingReview = 0;
+    $approved = 0;
+    $stmtStats = $db->query('SELECT supply_status, acct_pre_status, budget_status, acct_post_status, cashier_status FROM transactions WHERE supply_status IS NOT NULL');
+    $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
+    foreach ($rowsStats as $t) {
+        $stage = '';
+        if (!empty($t['cashier_status'])) {
+            $stage = 'Approved';
+        } elseif ((!empty($t['acct_pre_status']) && empty($t['budget_status'])) || (!empty($t['acct_post_status']) && empty($t['cashier_status']))) {
+            $stage = 'Pending';
+        } elseif ((!empty($t['supply_status']) && empty($t['acct_pre_status'])) || (!empty($t['budget_status']) && empty($t['acct_post_status']))) {
+            $stage = 'Active';
+        }
+
+        if ($stage === 'Active') $activePOs++;
+        if ($stage === 'Pending') $pendingReview++;
+        if ($stage === 'Approved') $approved++;
+    }
+    ?>
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <div class="stat-content">
+                <div class="stat-label">Active PO's</div>
+                <div class="stat-number" id="statActive"><?php echo $activePOs; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-file-invoice"></i></div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-content">
+                <div class="stat-label">Pending Review</div>
+                <div class="stat-number" id="statPending"><?php echo $pendingReview; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-hourglass-half"></i></div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-content">
+                <div class="stat-label">Approved</div>
+                <div class="stat-number" id="statApproved"><?php echo $approved; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
+        </div>
+    </div>
     <h8 class="mb-3">Accounting Unit - All Transactions</h8>
     <div id="transactionsContainer">
         <?php include __DIR__ . '/partials_transactions_table.php'; ?>
     </div>
 
 <?php elseif ($role === 'budget'): ?>
+    <?php
+    $activePOs = 0;
+    $pendingReview = 0;
+    $approved = 0;
+    $stmtStats = $db->query('SELECT acct_pre_status, budget_status, cashier_status FROM transactions WHERE acct_pre_status IS NOT NULL');
+    $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
+    foreach ($rowsStats as $t) {
+        $stage = '';
+        if (!empty($t['cashier_status'])) {
+            $stage = 'Approved';
+        } elseif (!empty($t['budget_status']) && empty($t['cashier_status'])) {
+            $stage = 'Pending';
+        } elseif (!empty($t['acct_pre_status']) && empty($t['budget_status'])) {
+            $stage = 'Active';
+        }
+
+        if ($stage === 'Active') $activePOs++;
+        if ($stage === 'Pending') $pendingReview++;
+        if ($stage === 'Approved') $approved++;
+    }
+    ?>
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <div class="stat-content">
+                <div class="stat-label">Active PO's</div>
+                <div class="stat-number" id="statActive"><?php echo $activePOs; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-file-invoice"></i></div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-content">
+                <div class="stat-label">Pending Review</div>
+                <div class="stat-number" id="statPending"><?php echo $pendingReview; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-hourglass-half"></i></div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-content">
+                <div class="stat-label">Approved</div>
+                <div class="stat-number" id="statApproved"><?php echo $approved; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
+        </div>
+    </div>
     <h8 class="mb-3">Budget Unit - For DV Preparation</h8>
     <div id="transactionsContainer">
         <?php include __DIR__ . '/partials_transactions_table.php'; ?>
     </div>
 
 <?php elseif ($role === 'cashier'): ?>
+    <?php
+    $activePOs = 0;
+    $pendingReview = 0;
+    $approved = 0;
+    $stmtStats = $db->query('SELECT acct_post_status, cashier_status FROM transactions WHERE acct_post_status IS NOT NULL');
+    $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
+    foreach ($rowsStats as $t) {
+        $stage = '';
+        $cashierUpper = strtoupper(trim((string)($t['cashier_status'] ?? '')));
+        if ($cashierUpper === 'COMPLETED') {
+            $stage = 'Approved';
+        } elseif (!empty($t['cashier_status'])) {
+            $stage = 'Pending';
+        } elseif (!empty($t['acct_post_status']) && empty($t['cashier_status'])) {
+            $stage = 'Active';
+        }
+
+        if ($stage === 'Active') $activePOs++;
+        if ($stage === 'Pending') $pendingReview++;
+        if ($stage === 'Approved') $approved++;
+    }
+    ?>
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <div class="stat-content">
+                <div class="stat-label">Active PO's</div>
+                <div class="stat-number" id="statActive"><?php echo $activePOs; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-file-invoice"></i></div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-content">
+                <div class="stat-label">Pending Review</div>
+                <div class="stat-number" id="statPending"><?php echo $pendingReview; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-hourglass-half"></i></div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-content">
+                <div class="stat-label">Approved</div>
+                <div class="stat-number" id="statApproved"><?php echo $approved; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
+        </div>
+    </div>
     <h8 class="mb-3">Cashier Unit - For Payment / OR</h8>
     <div id="transactionsContainer">
         <?php include __DIR__ . '/partials_transactions_table.php'; ?>
@@ -348,10 +535,48 @@ document.addEventListener('DOMContentLoaded', function () {
     // Dashboard transactions auto-refresh (only table body)
     var txBody = document.getElementById('transactionsBody');
     if (txBody) {
+        var statActive = document.getElementById('statActive');
+        var statPending = document.getElementById('statPending');
+        var statApproved = document.getElementById('statApproved');
+
+        var txRefreshInFlight = false;
+        var statsRefreshInFlight = false;
+
+        function refreshDashboardStats() {
+            if (!statActive || !statPending || !statApproved) {
+                return;
+            }
+            if (document.visibilityState !== 'visible') {
+                return;
+            }
+            if (statsRefreshInFlight) {
+                return;
+            }
+            statsRefreshInFlight = true;
+            fetch('api_dashboard_stats.php', { cache: 'no-store' })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data || !data.success) return;
+                    statActive.textContent = String(data.active ?? 0);
+                    statPending.textContent = String(data.pending ?? 0);
+                    statApproved.textContent = String(data.approved ?? 0);
+                })
+                .catch(function () {
+                });
+                .finally(function () {
+                    statsRefreshInFlight = false;
+                });
+        }
+
         function refreshDashboardTransactions() {
             if (document.visibilityState !== 'visible') {
                 return;
             }
+
+            if (txRefreshInFlight) {
+                return;
+            }
+            txRefreshInFlight = true;
 
             fetch('transactions_rows_partial.php', { cache: 'no-store' })
                 .then(function (res) {
@@ -384,6 +609,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Replace tbody with fresh rows
                     txBody.innerHTML = html;
 
+                    refreshDashboardStats();
+
                     // Re-initialize DataTables and restore previous state
                     if (window.jQuery && jQuery.fn.DataTable) {
                         var dtNew = jQuery('#transactionsTable').DataTable({
@@ -403,11 +630,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })
                 .catch(function () {
-                    // Silent fail – keep last known data
+                    // fail silently
+                })
+                .finally(function () {
+                    txRefreshInFlight = false;
                 });
         }
 
-        setInterval(refreshDashboardTransactions, 5000);
+        refreshDashboardStats();
+        setInterval(function () {
+            refreshDashboardTransactions();
+            refreshDashboardStats();
+        }, 5000);
     }
 
     // Admin "Online Users" auto-refresh

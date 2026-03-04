@@ -75,27 +75,100 @@ $transactions = $stmt->fetchAll();
                     $status = 'NEW';
                     $statusDept = '';
 
-                    if (!empty($t['cashier_status'])) {
+                    $has = function ($v): bool {
+                        return trim((string)($v ?? '')) !== '';
+                    };
+
+                    if ($has($t['cashier_status'])) {
                         $status = $t['cashier_status'];
                         $statusDept = 'Cashier';
-                    } elseif (!empty($t['acct_post_status'])) {
+                    } elseif ($has($t['acct_post_status'])) {
                         $status = $t['acct_post_status'];
                         $statusDept = 'Accounting';
-                    } elseif (!empty($t['budget_status'])) {
+                    } elseif ($has($t['budget_status'])) {
                         $status = $t['budget_status'];
                         $statusDept = 'Budget';
-                    } elseif (!empty($t['acct_pre_status'])) {
+                    } elseif ($has($t['acct_pre_status'])) {
                         $status = $t['acct_pre_status'];
                         $statusDept = 'Accounting';
-                    } elseif (!empty($t['supply_status'])) {
+                    } elseif ($has($t['supply_status'])) {
                         $status = $t['supply_status'];
                         $statusDept = 'Supply';
-                    } elseif (!empty($t['proc_status'])) {
+                    } elseif ($has($t['proc_status'])) {
                         $status = $t['proc_status'];
                         $statusDept = 'Procurement';
                     }
 
                     $statusLabel = $statusDept ? ($statusDept . ' - ' . $status) : $status;
+
+                    $stageLabel = '';
+                    $stageClass = '';
+                    if ($role === 'procurement') {
+                        if ($has($t['cashier_status'])) {
+                            $stageLabel = 'Approved';
+                            $stageClass = 'bg-success';
+                        } elseif ($has($t['supply_status']) || $has($t['acct_pre_status']) || $has($t['budget_status']) || $has($t['acct_post_status'])) {
+                            $stageLabel = 'Pending';
+                            $stageClass = 'bg-warning text-dark';
+                        } elseif ($has($t['proc_status']) && !$has($t['supply_status'])) {
+                            $stageLabel = 'Active';
+                            $stageClass = 'bg-primary';
+                        }
+                    } elseif ($role === 'supply') {
+                        if ($has($t['cashier_status'])) {
+                            $stageLabel = 'Approved';
+                            $stageClass = 'bg-success';
+                        } elseif ($has($t['supply_status']) && !$has($t['cashier_status'])) {
+                            $stageLabel = 'Pending';
+                            $stageClass = 'bg-warning text-dark';
+                        } elseif ($has($t['proc_date']) && !$has($t['supply_status'])) {
+                            $stageLabel = 'Active';
+                            $stageClass = 'bg-primary';
+                        }
+                    } elseif ($role === 'accounting') {
+                        if ($has($t['cashier_status'])) {
+                            $stageLabel = 'Approved';
+                            $stageClass = 'bg-success';
+                        } elseif (($has($t['acct_pre_status']) && !$has($t['budget_status'])) || ($has($t['acct_post_status']) && !$has($t['cashier_status']))) {
+                            $stageLabel = 'Pending';
+                            $stageClass = 'bg-warning text-dark';
+                        } elseif (($has($t['supply_status']) && !$has($t['acct_pre_status'])) || ($has($t['budget_status']) && !$has($t['acct_post_status']))) {
+                            $stageLabel = 'Active';
+                            $stageClass = 'bg-primary';
+                        }
+                    } elseif ($role === 'budget') {
+                        if ($has($t['cashier_status'])) {
+                            $stageLabel = 'Approved';
+                            $stageClass = 'bg-success';
+                        } elseif ($has($t['budget_status']) && !$has($t['cashier_status'])) {
+                            $stageLabel = 'Pending';
+                            $stageClass = 'bg-warning text-dark';
+                        } elseif ($has($t['acct_pre_status']) && !$has($t['budget_status'])) {
+                            $stageLabel = 'Active';
+                            $stageClass = 'bg-primary';
+                        }
+                    } elseif ($role === 'cashier') {
+                        $cashierStatusUpper = strtoupper(trim((string)($t['cashier_status'] ?? '')));
+                        if ($cashierStatusUpper === 'COMPLETED') {
+                            $stageLabel = 'Approved';
+                            $stageClass = 'bg-success';
+                        } elseif ($has($t['cashier_status'])) {
+                            $stageLabel = 'Pending';
+                            $stageClass = 'bg-warning text-dark';
+                        } elseif ($has($t['acct_post_status']) && !$has($t['cashier_status'])) {
+                            $stageLabel = 'Active';
+                            $stageClass = 'bg-primary';
+                        }
+                    } elseif ($role === 'supplier') {
+                        $cashierStatusUpper = strtoupper(trim((string)($t['cashier_status'] ?? '')));
+                        if ($cashierStatusUpper === 'COMPLETED') {
+                            $stageLabel = 'Approved';
+                            $stageClass = 'bg-success';
+                        } elseif ($has($t['cashier_status'])) {
+                            $stageLabel = 'Pending';
+                            $stageClass = 'bg-warning text-dark';
+                        }
+                    }
 
                     // Map status to badge styles based on the status text
                     $statusUpper = strtoupper(trim($status));
@@ -113,7 +186,14 @@ $transactions = $stmt->fetchAll();
                         <td><?php echo htmlspecialchars($t['supplier_name']); ?></td>
                         <td><?php echo htmlspecialchars($t['program_title']); ?></td>
                         <td>₱ <?php echo number_format($t['amount'], 2); ?></td>
-                        <td><span class="badge <?php echo $statusClass; ?>"><?php echo htmlspecialchars($statusLabel); ?></span></td>
+                        <td>
+                            <div class="d-flex justify-content-between align-items-center gap-2">
+                                <span class="badge <?php echo $statusClass; ?>"><?php echo htmlspecialchars($statusLabel); ?></span>
+                                <?php if ($stageLabel !== ''): ?>
+                                    <span class="badge <?php echo htmlspecialchars($stageClass); ?>"><?php echo htmlspecialchars($stageLabel); ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </td>
                         <td><?php echo htmlspecialchars($t['created_at']); ?></td>
                         <td class="text-end">
                             <a class="btn btn-outline-primary btn-sm" aria-label="View or update transaction" title="View / Update"

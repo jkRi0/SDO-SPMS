@@ -19,10 +19,11 @@ try {
     $amount = trim($_POST['amount'] ?? '');
     $po_number = trim($_POST['po_number'] ?? '');
     $po_type = trim($_POST['po_type'] ?? '');
+    $po_type_other = trim($_POST['po_type_other'] ?? '');
 
     // Validation
     if (empty($supplier_name) || empty($program_title) || empty($proponent)
-        || empty($coverage_start) || empty($coverage_end) || empty($amount) || empty($po_type) || empty($po_number)) {
+        || empty($amount) || empty($po_number)) {
         echo json_encode([
             'success' => false,
             'message' => 'Please fill in all required fields'
@@ -30,18 +31,38 @@ try {
         exit;
     }
 
-    // Validate PO type
-    $allowedTypes = ['Transpo/venue', 'Supplies'];
-    if (!in_array($po_type, $allowedTypes, true)) {
+    // Validate PO number is digits only
+    if (!preg_match('/^\d+$/', $po_number)) {
         echo json_encode([
             'success' => false,
-            'message' => 'Invalid PO type selected'
+            'message' => 'PO number must contain numbers only'
         ]);
         exit;
     }
 
-    // Validate coverage date range
-    if ($coverage_start > $coverage_end) {
+    $final_po_type = $po_type_other !== '' ? $po_type_other : $po_type;
+    if ($final_po_type === '') {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Please select a type or enter another type'
+        ]);
+        exit;
+    }
+
+    // Validate PO type
+    $allowedTypes = ['Transpo/venue', 'Supplies', 'Meals', 'Services'];
+    if ($po_type_other === '') {
+        if (!in_array($final_po_type, $allowedTypes, true)) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Invalid PO type selected'
+            ]);
+            exit;
+        }
+    }
+
+    // Validate coverage date range (optional)
+    if ($coverage_start !== '' && $coverage_end !== '' && $coverage_start > $coverage_end) {
         echo json_encode([
             'success' => false,
             'message' => 'Coverage start date cannot be after end date'
@@ -62,6 +83,13 @@ try {
 
     if ($expected_date === '') {
         $expected_date = null;
+    }
+
+    if ($coverage_start === '') {
+        $coverage_start = null;
+    }
+    if ($coverage_end === '') {
+        $coverage_end = null;
     }
 
     // Check if supplier exists or create new one
@@ -86,7 +114,7 @@ try {
         $supplier_id,
         $po_number,
         $program_title,
-        $po_type,
+        $final_po_type,
         $proponent,
         $coverage_start,
         $coverage_end,

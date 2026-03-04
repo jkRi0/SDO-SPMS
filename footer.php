@@ -108,6 +108,84 @@
                 setInterval(refreshNotifications, 5000);
             }
 
+            // Auto-refresh department notifications in header bell
+            var deptNotifBadge = document.getElementById('deptNotifBadge');
+            var deptNotifList = document.getElementById('deptNotifList');
+            if (deptNotifBadge && deptNotifList) {
+                function refreshDeptNotifications() {
+                    if (document.visibilityState !== 'visible') {
+                        return;
+                    }
+
+                    fetch('api_dept_notifications.php', { cache: 'no-store' })
+                        .then(function (res) { return res.json(); })
+                        .then(function (data) {
+                            if (!data || !data.success) return;
+
+                            var unread = data.unread_count || 0;
+                            if (unread > 0) {
+                                deptNotifBadge.style.display = 'inline-block';
+                                deptNotifBadge.textContent = unread > 9 ? '9+' : unread;
+                            } else {
+                                deptNotifBadge.style.display = 'none';
+                                deptNotifBadge.textContent = '';
+                            }
+
+                            var items = data.notifications || [];
+
+                            while (deptNotifList.children.length > 1) {
+                                deptNotifList.removeChild(deptNotifList.lastChild);
+                            }
+
+                            if (items.length === 0) {
+                                var emptyLi = document.createElement('li');
+                                emptyLi.className = 'px-3 py-2 small text-muted';
+                                emptyLi.textContent = 'No notifications yet.';
+                                deptNotifList.appendChild(emptyLi);
+                                return;
+                            }
+
+                            items.forEach(function (n) {
+                                var li = document.createElement('li');
+                                li.className = 'px-0 py-0 small';
+
+                                var a = document.createElement('a');
+                                a.href = n.link ? ('dept_notification_open.php?id=' + encodeURIComponent(n.id)) : '#';
+                                a.className = 'd-block px-3 py-2 text-reset text-decoration-none' + (n.is_read ? '' : ' fw-semibold notif-unread');
+
+                                var topRow = document.createElement('div');
+                                topRow.className = 'd-flex justify-content-between';
+
+                                var spanTitle = document.createElement('span');
+                                spanTitle.textContent = n.title || '';
+                                var spanTime = document.createElement('span');
+                                spanTime.className = 'text-muted';
+                                spanTime.style.fontSize = '0.75rem';
+                                spanTime.textContent = n.created_at || '';
+
+                                topRow.appendChild(spanTitle);
+                                topRow.appendChild(spanTime);
+
+                                var msgDiv = document.createElement('div');
+                                msgDiv.className = 'text-muted';
+                                msgDiv.style.fontSize = '0.8rem';
+                                msgDiv.textContent = n.message || '';
+
+                                a.appendChild(topRow);
+                                a.appendChild(msgDiv);
+
+                                li.appendChild(a);
+                                deptNotifList.appendChild(li);
+                            });
+                        })
+                        .catch(function () {
+                        });
+                }
+
+                refreshDeptNotifications();
+                setInterval(refreshDeptNotifications, 5000);
+            }
+
             // Auto-refresh admin feedback dropdown (admin role only)
             var adminFeedbackBadge = document.getElementById('adminFeedbackBadge');
             var adminFeedbackList = document.getElementById('adminFeedbackList');
