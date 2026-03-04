@@ -94,6 +94,20 @@ include __DIR__ . '/header.php';
 
 <?php elseif ($role === 'admin'): ?>
     <?php
+    $recentLoginLogs = [];
+    try {
+        $stmtLoginLogs = $db->prepare('SELECT al.created_at, al.action, al.details, u.username
+                                       FROM activity_logs al
+                                       LEFT JOIN users u ON al.user_id = u.id
+                                       WHERE al.action IN (?,?,?)
+                                       ORDER BY al.created_at DESC
+                                       LIMIT 8');
+        $stmtLoginLogs->execute(['login', 'logout', 'login_failed']);
+        $recentLoginLogs = $stmtLoginLogs->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $recentLoginLogs = [];
+    }
+
     $onlineUsers = [];
     $onlineCount = 0;
     try {
@@ -101,7 +115,8 @@ include __DIR__ . '/header.php';
         $stmtOnline = $db->prepare('SELECT u.id, u.username, r.name AS role_name, u.active_session_last_seen
                                     FROM users u
                                     LEFT JOIN roles r ON u.role_id = r.id
-                                    WHERE u.active_session_last_seen IS NOT NULL
+                                    WHERE u.active_session_id IS NOT NULL
+                                      AND u.active_session_last_seen IS NOT NULL
                                       AND u.active_session_last_seen >= (NOW() - INTERVAL ? SECOND)
                                     ORDER BY u.active_session_last_seen DESC
                                     LIMIT 8');
@@ -132,49 +147,95 @@ include __DIR__ . '/header.php';
         <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title mb-1">System Activity & Login Logs</h5>
+                    <h5 class="card-title mb-1">Activity Logs</h5>
                     <p class="card-text text-muted" style="font-size: 0.9rem;">
-                        Review recent admin actions and system activity logs, including logins.
+                        Review all system activities (transactions, updates, account changes, etc.).
                     </p>
                     <div class="mt-auto">
-                        <a href="admin_logs.php" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-list me-1"></i> View Logs
+                        <a href="activity_logs.php" class="btn btn-primary btn-sm">
+                            <i class="fas fa-clipboard-list me-1"></i> View Activity
                         </a>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Online Users</h6>
-                        <span class="badge bg-success"><?php echo (int)$onlineCount; ?></span>
-                    </div>
-                    <?php if (empty($onlineUsers)): ?>
-                        <div class="text-muted small">No active users detected.</div>
-                    <?php else: ?>
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle mb-0">
-                                <thead class="table-light">
-                                <tr>
-                                    <th>User</th>
-                                    <th>Role</th>
-                                    <th>Last Seen</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <?php foreach ($onlineUsers as $ou): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($ou['username']); ?></td>
-                                        <td><?php echo htmlspecialchars($ou['role_name'] ?? ''); ?></td>
-                                        <td class="text-muted small"><?php echo htmlspecialchars($ou['active_session_last_seen']); ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                                </tbody>
-                            </table>
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title mb-1">Login Logs</h5>
+                            <?php if (empty($recentLoginLogs)): ?>
+                                <div class="text-muted small">No login activity yet.</div>
+                            <?php else: ?>
+                                <div class="table-responsive mt-auto" style="max-height: 320px; overflow-y: auto;">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead class="table-light">
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>User</th>
+                                            <th>Event</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="loginLogsTbody">
+                                        <?php foreach ($recentLoginLogs as $ll): ?>
+                                            <tr>
+                                                <td class="text-muted small"><?php echo htmlspecialchars(date('m/d/Y H:i', strtotime($ll['created_at']))); ?></td>
+                                                <td>
+                                                    <?php
+                                                    $loginLogUsername = $ll['username'] ?? 'System';
+                                                    if (($ll['action'] ?? '') === 'login_failed' && empty($ll['username']) && !empty($ll['details'])) {
+                                                        $decodedLL = json_decode($ll['details'], true);
+                                                        if (json_last_error() === JSON_ERROR_NONE && is_array($decodedLL) && !empty($decodedLL['attempted_username'])) {
+                                                            $loginLogUsername = (string)$decodedLL['attempted_username'];
+                                                        }
+                                                    }
+                                                    echo htmlspecialchars($loginLogUsername);
+                                                    ?>
+                                                </td>
+                                                <td><?php echo htmlspecialchars($ll['action'] ?? ''); ?></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php endif; ?>
                         </div>
-                    <?php endif; ?>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">Online Users</h6>
+                                <span class="badge bg-success" id="onlineUsersBadge"><?php echo (int)$onlineCount; ?></span>
+                            </div>
+                            <?php if (empty($onlineUsers)): ?>
+                                <div class="text-muted small">No active users detected.</div>
+                            <?php else: ?>
+                                <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead class="table-light">
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Role</th>
+                                            <th>Last Seen</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="onlineUsersTbody">
+                                        <?php foreach ($onlineUsers as $ou): ?>
+                                            <tr>
+                                                <td><?php echo htmlspecialchars($ou['username']); ?></td>
+                                                <td><?php echo htmlspecialchars($ou['role_name'] ?? ''); ?></td>
+                                                <td class="text-muted small"><?php echo htmlspecialchars($ou['active_session_last_seen']); ?></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -347,6 +408,121 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         setInterval(refreshDashboardTransactions, 5000);
+    }
+
+    // Admin "Online Users" auto-refresh
+    var onlineUsersBadge = document.getElementById('onlineUsersBadge');
+    var onlineUsersTbody = document.getElementById('onlineUsersTbody');
+    if (onlineUsersBadge && onlineUsersTbody) {
+        function refreshOnlineUsers() {
+            if (document.visibilityState !== 'visible') {
+                return;
+            }
+
+            fetch('api_online_users.php', { cache: 'no-store' })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data || !data.success) return;
+
+                    var users = data.users || [];
+                    onlineUsersBadge.textContent = (data.count != null) ? String(data.count) : String(users.length);
+
+                    onlineUsersTbody.innerHTML = '';
+
+                    if (users.length === 0) {
+                        var trEmpty = document.createElement('tr');
+                        var tdEmpty = document.createElement('td');
+                        tdEmpty.colSpan = 3;
+                        tdEmpty.className = 'text-muted small';
+                        tdEmpty.textContent = 'No active users detected.';
+                        trEmpty.appendChild(tdEmpty);
+                        onlineUsersTbody.appendChild(trEmpty);
+                        return;
+                    }
+
+                    users.forEach(function (u) {
+                        var tr = document.createElement('tr');
+
+                        var tdUser = document.createElement('td');
+                        tdUser.textContent = u.username || '';
+
+                        var tdRole = document.createElement('td');
+                        tdRole.textContent = u.role_name || '';
+
+                        var tdLast = document.createElement('td');
+                        tdLast.className = 'text-muted small';
+                        tdLast.textContent = u.last_seen || '';
+
+                        tr.appendChild(tdUser);
+                        tr.appendChild(tdRole);
+                        tr.appendChild(tdLast);
+
+                        onlineUsersTbody.appendChild(tr);
+                    });
+                })
+                .catch(function () {
+                    // ignore errors
+                });
+        }
+
+        refreshOnlineUsers();
+        setInterval(refreshOnlineUsers, 5000);
+    }
+
+    // Admin "Login Logs" auto-refresh
+    var loginLogsTbody = document.getElementById('loginLogsTbody');
+    if (loginLogsTbody) {
+        function refreshLoginLogs() {
+            if (document.visibilityState !== 'visible') {
+                return;
+            }
+
+            fetch('api_login_logs.php?limit=8', { cache: 'no-store' })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data || !data.success) return;
+
+                    var logs = data.logs || [];
+                    loginLogsTbody.innerHTML = '';
+
+                    if (logs.length === 0) {
+                        var trEmpty = document.createElement('tr');
+                        var tdEmpty = document.createElement('td');
+                        tdEmpty.colSpan = 3;
+                        tdEmpty.className = 'text-muted small';
+                        tdEmpty.textContent = 'No login activity yet.';
+                        trEmpty.appendChild(tdEmpty);
+                        loginLogsTbody.appendChild(trEmpty);
+                        return;
+                    }
+
+                    logs.forEach(function (l) {
+                        var tr = document.createElement('tr');
+
+                        var tdTime = document.createElement('td');
+                        tdTime.className = 'text-muted small';
+                        tdTime.textContent = l.time || '';
+
+                        var tdUser = document.createElement('td');
+                        tdUser.textContent = l.username || 'System';
+
+                        var tdEvent = document.createElement('td');
+                        tdEvent.textContent = l.event || '';
+
+                        tr.appendChild(tdTime);
+                        tr.appendChild(tdUser);
+                        tr.appendChild(tdEvent);
+
+                        loginLogsTbody.appendChild(tr);
+                    });
+                })
+                .catch(function () {
+                    // ignore errors
+                });
+        }
+
+        refreshLoginLogs();
+        setInterval(refreshLoginLogs, 5000);
     }
 });
 </script>

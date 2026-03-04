@@ -64,7 +64,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $error = 'Invalid username or password.';
             if ($user) {
-                create_log($db, $user['id'], 'login_failed', 'user', $user['id'], 'Invalid password');
+                create_log($db, $user['id'], 'login_failed', 'user', $user['id'], json_encode([
+                    'attempted_username' => $username,
+                    'reason' => 'invalid_password'
+                ]));
+            } else {
+                create_log($db, null, 'login_failed', 'user', null, json_encode([
+                    'attempted_username' => $username,
+                    'reason' => 'unknown_username'
+                ]));
             }
         }
     }

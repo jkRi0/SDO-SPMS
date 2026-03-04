@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/audit.php';
 
 // Handle Google OAuth 2.0 callback for suppliers
 
@@ -210,6 +211,8 @@ $_SESSION['user_id']      = $user['id'];
 $_SESSION['username']     = $user['username'];
 $_SESSION['role']         = $user['role_name'];
 $_SESSION['supplier_id']  = $user['supplier_id'];
+
+create_log($db, $user['id'], 'login', 'user', $user['id'], 'Successful login (Google OAuth)');
 
 header('Location: dashboard.php');
 exit;

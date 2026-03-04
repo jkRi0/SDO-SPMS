@@ -952,7 +952,7 @@ if (session_status() === PHP_SESSION_NONE) {
                             <span class="d-none d-md-inline"><?php echo htmlspecialchars(ucfirst($_SESSION['role'] ?? 'User')); ?></span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                            <?php if (($_SESSION['role'] ?? '') === 'supplier'): ?>
+                            <?php if (!empty($_SESSION['role'])): ?>
                                 <li>
                                     <a class="dropdown-item d-flex align-items-center" href="change_password.php">
                                         <i class="fas fa-user-cog me-2"></i> Account settings

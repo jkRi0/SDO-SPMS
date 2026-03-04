@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/audit.php';
 
 require_login();
 
@@ -16,12 +17,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $new = $_POST['new_password'] ?? '';
     $confirm = $_POST['confirm_password'] ?? '';
     $username = trim($_POST['username'] ?? '');
+    $oldUsername = $user['username'] ?? '';
 
-    if ($username === '' || $current === '' || $new === '' || $confirm === '') {
-        $errors[] = 'Please fill in all fields.';
-    } elseif ($new !== $confirm) {
-        $errors[] = 'New password and confirmation do not match.';
+    if ($username === '' || $current === '') {
+        $errors[] = 'Please fill in all required fields.';
     } else {
+        $new = (string)$new;
+        $confirm = (string)$confirm;
+
+        if (($new !== '' || $confirm !== '') && $new !== $confirm) {
+            $errors[] = 'New password and confirmation do not match.';
+        }
+    }
+
+    if (!$errors) {
         try {
             $stmt = $db->prepare('SELECT password_hash FROM users WHERE id = ?');
             $stmt->execute([$user['id']]);
@@ -35,9 +44,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($check->fetch()) {
                     $errors[] = 'Username is already taken.';
                 } else {
-                    $newHash = password_hash($new, PASSWORD_DEFAULT);
-                    $update = $db->prepare('UPDATE users SET username = ?, password_hash = ? WHERE id = ?');
-                    $update->execute([$username, $newHash, $user['id']]);
+                    if ($new !== '') {
+                        $newHash = password_hash($new, PASSWORD_DEFAULT);
+                        $update = $db->prepare('UPDATE users SET username = ?, password_hash = ? WHERE id = ?');
+                        $update->execute([$username, $newHash, $user['id']]);
+                    } else {
+                        $update = $db->prepare('UPDATE users SET username = ? WHERE id = ?');
+                        $update->execute([$username, $user['id']]);
+                    }
+
+                    $pwChanged = ($new !== '');
+                    if ($oldUsername !== $username || $pwChanged) {
+                        $details = json_encode([
+                            'old_username' => $oldUsername,
+                            'new_username' => $username,
+                            'password_changed' => $pwChanged,
+                        ]);
+                        create_log($db, $user['id'], 'update_account', 'user', $user['id'], $details);
+                    }
+
                     $_SESSION['username'] = $username;
                     $success = 'Your account details have been updated successfully.';
                 }
@@ -52,7 +77,7 @@ include __DIR__ . '/header.php';
 ?>
 
 <div class="container mt-4" style="max-width: 480px;">
-    <h3 class="mb-3">Update Account</h3>
+    <h3 class="mb-3">Account Settings</h3>
 
     <?php if ($success): ?>
         <div class="alert alert-success" role="alert">
@@ -81,13 +106,13 @@ include __DIR__ . '/header.php';
         </div>
         <div class="mb-3">
             <label for="new_password" class="form-label">New Password</label>
-            <input type="password" class="form-control" id="new_password" name="new_password" required>
+            <input type="password" class="form-control" id="new_password" name="new_password">
         </div>
         <div class="mb-3">
             <label for="confirm_password" class="form-label">Confirm New Password</label>
-            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+            <input type="password" class="form-control" id="confirm_password" name="confirm_password">
         </div>
-        <button type="submit" class="btn btn-primary">Update Password</button>
+        <button type="submit" class="btn btn-primary">Update Account</button>
         <a href="dashboard.php" class="btn btn-link">Back to Dashboard</a>
     </form>
 </div>

@@ -16,7 +16,7 @@ $filters = [];
 if (!empty($_GET['role'])) $filters['role'] = $_GET['role'];
 if (!empty($_GET['date'])) $filters['date'] = $_GET['date'];
 
-$filters['actions'] = ['login', 'logout', 'login_failed'];
+$filters['exclude_actions'] = ['login', 'logout', 'login_failed'];
 
 $logs = fetch_logs($db, $filters);
 $roles = $db->query('SELECT name FROM roles ORDER BY name')->fetchAll(PDO::FETCH_COLUMN);
@@ -25,14 +25,14 @@ include __DIR__ . '/header.php';
 ?>
 
 <div class="page-header">
-    <h2 class="page-title">Login Logs</h2>
-    <p class="page-subtitle">Login and logout history</p>
+    <h2 class="page-title">Activity Logs</h2>
+    <p class="page-subtitle">System activity history</p>
 </div>
 
 <div class="admin-toolbar mb-3">
     <div>
-        <div class="admin-breadcrumb">Admin <small class="text-muted">/ Login Logs</small></div>
-        <h5 class="mb-0">Login Logs</h5>
+        <div class="admin-breadcrumb">Admin <small class="text-muted">/ Activity Logs</small></div>
+        <h5 class="mb-0">Activity Logs</h5>
     </div>
     <div class="btn-group">
         <a href="dashboard.php" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back</a>
@@ -67,12 +67,12 @@ include __DIR__ . '/header.php';
 
         <div class="table-wrapper">
             <table class="table table-striped table-compact" id="activityLogsTable">
-
                 <thead>
                     <tr>
                         <th>Time</th>
                         <th>User</th>
-                        <th>Event</th>
+                        <th>Action</th>
+                        <th>Target</th>
                         <th>Details</th>
                     </tr>
                 </thead>
@@ -82,6 +82,7 @@ include __DIR__ . '/header.php';
                             <td><?php echo htmlspecialchars($l['created_at']); ?></td>
                             <td><?php echo htmlspecialchars($l['username'] ?? 'System'); ?></td>
                             <td><?php echo htmlspecialchars($l['action']); ?></td>
+                            <td><?php echo htmlspecialchars(($l['target_type'] ? $l['target_type'] : '') . ($l['target_id'] ? ' #' . $l['target_id'] : '')); ?></td>
                             <td><?php echo htmlspecialchars(format_log_details($l['action'], $l['details'] ?? null)); ?></td>
                         </tr>
                     <?php endforeach; ?>
@@ -103,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        var url = 'admin_logs_partial.php' + window.location.search;
+        var url = 'activity_logs_partial.php' + window.location.search;
 
         fetch(url, { cache: 'no-store' })
             .then(function (res) {

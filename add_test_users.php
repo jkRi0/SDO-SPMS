@@ -22,11 +22,11 @@ try {
     
     // Test users for each role
     $testUsers = [
-        ['username' => 'procurement@deped.gov', 'role' => 'procurement', 'password' => 'password123'],
-        ['username' => 'supply@deped.gov', 'role' => 'supply', 'password' => 'password123'],
-        ['username' => 'accounting@deped.gov', 'role' => 'accounting', 'password' => 'password123'],
-        ['username' => 'budget@deped.gov', 'role' => 'budget', 'password' => 'password123'],
-        ['username' => 'cashier@deped.gov', 'role' => 'cashier', 'password' => 'password123'],
+        ['username' => 'procurement', 'role' => 'procurement', 'password' => 'password123'],
+        ['username' => 'supply', 'role' => 'supply', 'password' => 'password123'],
+        ['username' => 'accounting', 'role' => 'accounting', 'password' => 'password123'],
+        ['username' => 'budget', 'role' => 'budget', 'password' => 'password123'],
+        ['username' => 'cashier', 'role' => 'cashier', 'password' => 'password123'],
     ];
     
     $created = 0;

@@ -1,9 +1,0 @@
----
-pid: 20836
-cwd: |
-  C:\STMS
-last_command: DIR
-last_exit_code: 0
----
-PS C:\STMS> DIR
-PS C:\STMS>
