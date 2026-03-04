@@ -175,6 +175,37 @@ if (!$user) {
 }
 
 // Successful OAuth login: establish the same session as normal login
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+session_regenerate_id(true);
+$sid = session_id();
+
+try {
+    $checkStmt = $db->prepare('SELECT active_session_id, active_session_last_seen FROM users WHERE id = ?');
+    $checkStmt->execute([$user['id']]);
+    $sessRow = $checkStmt->fetch();
+    $activeSessionId = $sessRow['active_session_id'] ?? null;
+    $lastSeen = $sessRow['active_session_last_seen'] ?? null;
+    $lastSeenTs = $lastSeen ? strtotime($lastSeen) : 0;
+    $ttl = defined('SESSION_TTL_SECONDS') ? (int)SESSION_TTL_SECONDS : 600;
+    $isStale = !$lastSeenTs || (time() - $lastSeenTs) > $ttl;
+    if (!empty($activeSessionId) && $activeSessionId !== $sid) {
+        if (!$isStale) {
+            $_SESSION = [];
+            session_destroy();
+            header('Location: login.php?session=conflict');
+            exit;
+        }
+    }
+
+    $setStmt = $db->prepare('UPDATE users SET active_session_id = ?, active_session_last_seen = NOW(), last_login_at = NOW(), last_login_ip = ? WHERE id = ?');
+    $setStmt->execute([$sid, ($_SERVER['REMOTE_ADDR'] ?? null), $user['id']]);
+} catch (Exception $e) {
+    // Skip single-session enforcement if DB is not migrated
+}
+
 $_SESSION['user_id']      = $user['id'];
 $_SESSION['username']     = $user['username'];
 $_SESSION['role']         = $user['role_name'];

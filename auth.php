@@ -10,6 +10,30 @@ function require_login()
         header('Location: login.php');
         exit;
     }
+
+    try {
+        $db = get_db();
+        $stmt = $db->prepare('SELECT active_session_id FROM users WHERE id = ?');
+        $stmt->execute([$_SESSION['user_id']]);
+        $row = $stmt->fetch();
+        $activeSessionId = $row['active_session_id'] ?? null;
+        $currentSessionId = session_id();
+
+        if (!empty($activeSessionId) && $activeSessionId !== $currentSessionId) {
+            $_SESSION = [];
+            session_destroy();
+            header('Location: login.php?session=conflict');
+            exit;
+        }
+
+        try {
+            $touch = $db->prepare('UPDATE users SET active_session_last_seen = NOW() WHERE id = ? AND active_session_id = ?');
+            $touch->execute([$_SESSION['user_id'], $currentSessionId]);
+        } catch (Exception $e) {
+        }
+    } catch (Exception $e) {
+        // If column/table not available, skip session enforcement
+    }
 }
 
 /**

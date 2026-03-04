@@ -93,6 +93,26 @@ include __DIR__ . '/header.php';
     </div>
 
 <?php elseif ($role === 'admin'): ?>
+    <?php
+    $onlineUsers = [];
+    $onlineCount = 0;
+    try {
+        $ttl = defined('SESSION_TTL_SECONDS') ? (int)SESSION_TTL_SECONDS : 600;
+        $stmtOnline = $db->prepare('SELECT u.id, u.username, r.name AS role_name, u.active_session_last_seen
+                                    FROM users u
+                                    LEFT JOIN roles r ON u.role_id = r.id
+                                    WHERE u.active_session_last_seen IS NOT NULL
+                                      AND u.active_session_last_seen >= (NOW() - INTERVAL ? SECOND)
+                                    ORDER BY u.active_session_last_seen DESC
+                                    LIMIT 8');
+        $stmtOnline->execute([$ttl]);
+        $onlineUsers = $stmtOnline->fetchAll();
+        $onlineCount = count($onlineUsers);
+    } catch (Exception $e) {
+        $onlineUsers = [];
+        $onlineCount = 0;
+    }
+    ?>
     <div class="row g-3 mt-1">
         <div class="col-md-6">
             <div class="card h-100">
@@ -121,6 +141,40 @@ include __DIR__ . '/header.php';
                             <i class="fas fa-list me-1"></i> View Logs
                         </a>
                     </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Online Users</h6>
+                        <span class="badge bg-success"><?php echo (int)$onlineCount; ?></span>
+                    </div>
+                    <?php if (empty($onlineUsers)): ?>
+                        <div class="text-muted small">No active users detected.</div>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Last Seen</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <?php foreach ($onlineUsers as $ou): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($ou['username']); ?></td>
+                                        <td><?php echo htmlspecialchars($ou['role_name'] ?? ''); ?></td>
+                                        <td class="text-muted small"><?php echo htmlspecialchars($ou['active_session_last_seen']); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

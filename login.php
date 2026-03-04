@@ -5,6 +5,10 @@ require_once __DIR__ . '/audit.php';
 
 $error = '';
 
+if (!empty($_GET['session']) && $_GET['session'] === 'conflict') {
+    $error = 'This account is already logged in on another device/browser.';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -21,21 +25,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
+            session_regenerate_id(true);
+            $sid = session_id();
+
+            try {
+                $checkStmt = $db->prepare('SELECT active_session_id, active_session_last_seen FROM users WHERE id = ?');
+                $checkStmt->execute([$user['id']]);
+                $sessRow = $checkStmt->fetch();
+                $activeSessionId = $sessRow['active_session_id'] ?? null;
+                $lastSeen = $sessRow['active_session_last_seen'] ?? null;
+                $lastSeenTs = $lastSeen ? strtotime($lastSeen) : 0;
+                $ttl = defined('SESSION_TTL_SECONDS') ? (int)SESSION_TTL_SECONDS : 600;
+                $isStale = !$lastSeenTs || (time() - $lastSeenTs) > $ttl;
+                if (!empty($activeSessionId) && $activeSessionId !== $sid) {
+                    if (!$isStale) {
+                        $_SESSION = [];
+                        session_destroy();
+                        $error = 'This account is already logged in on another device/browser.';
+                        goto render_login;
+                    }
+                }
+
+                $setStmt = $db->prepare('UPDATE users SET active_session_id = ?, active_session_last_seen = NOW(), last_login_at = NOW(), last_login_ip = ? WHERE id = ?');
+                $setStmt->execute([$sid, ($_SERVER['REMOTE_ADDR'] ?? null), $user['id']]);
+            } catch (Exception $e) {
+                // Skip single-session enforcement if DB is not migrated
+            }
+
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role_name'];
             $_SESSION['supplier_id'] = $user['supplier_id'];
 
-            // Log successful login to activity_logs for admin visibility
             create_log($db, $user['id'], 'login', 'user', $user['id'], 'Successful login');
 
             header('Location: dashboard.php');
             exit;
         } else {
             $error = 'Invalid username or password.';
+            if ($user) {
+                create_log($db, $user['id'], 'login_failed', 'user', $user['id'], 'Invalid password');
+            }
         }
     }
 }
+
+render_login:
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
