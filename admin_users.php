@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        var url = 'admin_users_partial.php' + window.location.search;
+        var url = 'partials/admin_users_partial.php' + window.location.search;
 
         fetch(url, { cache: 'no-store' })
             .then(function (res) {

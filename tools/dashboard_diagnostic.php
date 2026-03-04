@@ -1,7 +1,15 @@
 <?php
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/auth.php';
+if (PHP_SAPI !== 'cli') {
+    $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
+    if (!in_array($remoteAddr, ['127.0.0.1', '::1'], true)) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+}
+
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../auth.php';
 
 echo "<h2>Dashboard Diagnostic</h2>";
 echo "<hr>";
@@ -18,7 +26,7 @@ if (isset($_SESSION['user_id'])) {
     echo "<p>✓ Role: " . $_SESSION['role'] . "</p>";
 } else {
     echo "<p>✗ User is NOT logged in</p>";
-    echo "<p><a href='login.php'>Go to Login</a></p>";
+    echo "<p><a href='../login.php'>Go to Login</a></p>";
     exit;
 }
 
@@ -49,5 +57,5 @@ try {
 }
 
 echo "<hr>";
-echo "<p><a href='dashboard.php'>Back to Dashboard</a></p>";
+echo "<p><a href='../dashboard.php'>Back to Dashboard</a></p>";
 ?>

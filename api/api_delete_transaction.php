@@ -1,11 +1,14 @@
 <?php
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../auth.php';
 
 header('Content-Type: application/json');
 
-require_role(['procurement']);
+require_login();
+if (($_SESSION['role'] ?? '') !== 'procurement') {
+    http_response_code(403);
+}
 
 $db = get_db();
 

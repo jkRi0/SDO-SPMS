@@ -227,11 +227,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const id = this.getAttribute('data-tx-id');
             if (!id) return;
 
-            if (!confirm('Delete this transaction? This action cannot be undone.')) {
+            if (!confirm('Delete this transaction? This cannot be undone.')) {
                 return;
             }
 
-            fetch('api_delete_transaction.php', {
+            fetch('api/api_delete_transaction.php', {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 body: new URLSearchParams({ id: id })

@@ -36,7 +36,7 @@
                         return;
                     }
 
-                    fetch('api_notifications.php', { cache: 'no-store' })
+                    fetch('api/api_notifications.php', { cache: 'no-store' })
                         .then(function (res) { return res.json(); })
                         .then(function (data) {
                             if (!data || !data.success) return;
@@ -117,7 +117,7 @@
                         return;
                     }
 
-                    fetch('api_dept_notifications.php', { cache: 'no-store' })
+                    fetch('api/api_dept_notifications.php', { cache: 'no-store' })
                         .then(function (res) { return res.json(); })
                         .then(function (data) {
                             if (!data || !data.success) return;
@@ -195,7 +195,7 @@
                         return;
                     }
 
-                    fetch('api_admin_feedback.php', { cache: 'no-store' })
+                    fetch('api/api_admin_feedback.php', { cache: 'no-store' })
                         .then(function (res) { return res.json(); })
                         .then(function (data) {
                             if (!data || !data.success) return;

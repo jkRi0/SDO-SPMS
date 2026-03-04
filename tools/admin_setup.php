@@ -1,6 +1,14 @@
 <?php
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/db.php';
+if (PHP_SAPI !== 'cli') {
+    $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
+    if (!in_array($remoteAddr, ['127.0.0.1', '::1'], true)) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+}
+
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../db.php';
 
 // Simple one-time admin setup. Run only when initializing the system.
 $db = get_db();
@@ -66,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="password" name="password" class="form-control" required>
                 </div>
                 <div class="d-flex justify-content-between">
-                    <a href="index.php" class="btn btn-outline-secondary">Cancel</a>
+                    <a href="../index.php" class="btn btn-outline-secondary">Cancel</a>
                     <button class="btn btn-primary" type="submit">Create Admin</button>
                 </div>
             </form>

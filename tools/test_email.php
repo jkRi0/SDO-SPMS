@@ -1,5 +1,13 @@
 <?php
-require_once __DIR__ . '/email_helper.php';
+if (PHP_SAPI !== 'cli') {
+    $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
+    if (!in_array($remoteAddr, ['127.0.0.1', '::1'], true)) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+}
+
+require_once __DIR__ . '/../email_helper.php';
 
 // CHANGE THIS to the Gmail address you want to test with
 $testRecipient = 'alphanum0001@gmail.com'; // or set a specific email string

@@ -1152,7 +1152,7 @@ if (createPOModal) {
 }
 
 function loadSuppliers() {
-    fetch('api_load_suppliers.php')
+    fetch('api/api_load_suppliers.php')
         .then(response => response.json())
         .then(data => {
             const supplierSelect = document.getElementById('supplierSelect');
@@ -1208,7 +1208,7 @@ function submitPO() {
     submitBtn.disabled = true;
     submitBtn.innerHTML = 'Submitting...';
 
-    fetch('api_create_po.php', {
+    fetch('api/api_create_po.php', {
         method: 'POST',
         body: formData
     })

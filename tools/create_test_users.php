@@ -1,6 +1,14 @@
 <?php
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/db.php';
+if (PHP_SAPI !== 'cli') {
+    $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
+    if (!in_array($remoteAddr, ['127.0.0.1', '::1'], true)) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+}
+
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../db.php';
 
 echo "<h2>Create Test Users for Each Role</h2>";
 echo "<hr>";
@@ -77,7 +85,7 @@ try {
     echo "</ul>";
     
     echo "<hr>";
-    echo "<p><a href='login.php' style='padding: 10px 20px; background: #3b7ca8; color: white; text-decoration: none; border-radius: 6px;'>Go to Login</a></p>";
+    echo "<p><a href='../login.php' style='padding: 10px 20px; background: #3b7ca8; color: white; text-decoration: none; border-radius: 6px;'>Go to Login</a></p>";
     
 } catch (Exception $e) {
     echo "<p style='color: red;'><strong>Error:</strong> " . $e->getMessage() . "</p>";

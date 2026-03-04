@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        var url = 'admin_logs_partial.php' + window.location.search;
+        var url = 'partials/admin_logs_partial.php' + window.location.search;
 
         fetch(url, { cache: 'no-store' })
             .then(function (res) {

@@ -1,5 +1,13 @@
 <?php
-require_once __DIR__ . '/db.php';
+if (PHP_SAPI !== 'cli') {
+    $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
+    if (!in_array($remoteAddr, ['127.0.0.1', '::1'], true)) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+}
+
+require_once __DIR__ . '/../db.php';
 
 $db = get_db();
 

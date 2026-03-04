@@ -1,5 +1,13 @@
 <?php
-require_once __DIR__ . '/config.php';
+if (PHP_SAPI !== 'cli') {
+    $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
+    if (!in_array($remoteAddr, ['127.0.0.1', '::1'], true)) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+}
+
+require_once __DIR__ . '/../config.php';
 
 echo "<h2>Database Setup</h2>";
 echo "<p>Initializing database tables...</p>";
@@ -8,7 +16,7 @@ try {
     $db = get_db();
     
     // Read the SQL file
-    $sql = file_get_contents(__DIR__ . '/init_db.sql');
+    $sql = file_get_contents(__DIR__ . '/../init_db.sql');
     
     // Split the SQL into individual statements
     $statements = array_filter(
@@ -29,7 +37,7 @@ try {
     }
     
     echo "<p style='color: green;'><strong>Success!</strong> Database tables have been initialized.</p>";
-    echo "<p><a href='login.php'>Go to Login</a></p>";
+    echo "<p><a href='../login.php'>Go to Login</a></p>";
     
 } catch (Exception $e) {
     echo "<p style='color: red;'><strong>Error:</strong> " . $e->getMessage() . "</p>";

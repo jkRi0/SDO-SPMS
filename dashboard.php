@@ -99,7 +99,7 @@ include __DIR__ . '/header.php';
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPOModal"><i class="fas fa-plus"></i> New Transaction</button>
     </div>
     <div id="transactionsContainer">
-        <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+        <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
     </div>
 
 <?php elseif ($role === 'admin'): ?>
@@ -301,7 +301,7 @@ include __DIR__ . '/header.php';
     </div>
     <h8 class="mb-3">Supply Unit - For Verification</h8>
     <div id="transactionsContainer">
-        <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+        <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
     </div>
 
 <?php elseif ($role === 'accounting'): ?>
@@ -354,7 +354,7 @@ include __DIR__ . '/header.php';
     </div>
     <h8 class="mb-3">Accounting Unit - All Transactions</h8>
     <div id="transactionsContainer">
-        <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+        <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
     </div>
 
 <?php elseif ($role === 'budget'): ?>
@@ -407,7 +407,7 @@ include __DIR__ . '/header.php';
     </div>
     <h8 class="mb-3">Budget Unit - For DV Preparation</h8>
     <div id="transactionsContainer">
-        <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+        <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
     </div>
 
 <?php elseif ($role === 'cashier'): ?>
@@ -461,13 +461,13 @@ include __DIR__ . '/header.php';
     </div>
     <h8 class="mb-3">Cashier Unit - For Payment / OR</h8>
     <div id="transactionsContainer">
-        <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+        <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
     </div>
 
 <?php elseif ($role === 'supplier'): ?>
     <h8 class="mb-3">My Transactions</h8>
     <div id="transactionsContainer">
-        <?php include __DIR__ . '/partials_transactions_table.php'; ?>
+        <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
     </div>
 
 <?php else: ?>
@@ -525,7 +525,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             var formData = new FormData(feedbackForm);
 
-            fetch('api_submit_feedback.php', {
+            fetch('api/api_submit_feedback.php', {
                 method: 'POST',
                 body: formData
             })
@@ -584,7 +584,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
             statsRefreshInFlight = true;
-            fetch('api_dashboard_stats.php', { cache: 'no-store' })
+            fetch('api/api_dashboard_stats.php', { cache: 'no-store' })
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
                     if (!data || !data.success) return;
@@ -609,7 +609,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             txRefreshInFlight = true;
 
-            fetch('transactions_rows_partial.php', { cache: 'no-store' })
+            fetch('partials/transactions_rows_partial.php', { cache: 'no-store' })
                 .then(function (res) {
                     if (!res.ok) throw new Error('Network error');
                     return res.text();
@@ -659,7 +659,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            fetch('api_online_users.php', { cache: 'no-store' })
+            fetch('api/api_online_users.php', { cache: 'no-store' })
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
                     if (!data || !data.success) return;
@@ -717,7 +717,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            fetch('api_login_logs.php?limit=8', { cache: 'no-store' })
+            fetch('api/api_login_logs.php?limit=8', { cache: 'no-store' })
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
                     if (!data || !data.success) return;
