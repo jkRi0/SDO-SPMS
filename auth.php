@@ -13,26 +13,40 @@ function require_login()
 
     try {
         $db = get_db();
-        $stmt = $db->prepare('SELECT active_session_id FROM users WHERE id = ?');
-        $stmt->execute([$_SESSION['user_id']]);
-        $row = $stmt->fetch();
-        $activeSessionId = $row['active_session_id'] ?? null;
-        $currentSessionId = session_id();
+        $db->exec('CREATE TABLE IF NOT EXISTS user_sessions (
+            id INT(11) NOT NULL AUTO_INCREMENT,
+            user_id INT(11) NOT NULL,
+            session_id VARCHAR(128) NOT NULL,
+            device_label VARCHAR(100) DEFAULT NULL,
+            ip VARCHAR(45) DEFAULT NULL,
+            user_agent VARCHAR(255) DEFAULT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            last_seen TIMESTAMP NULL DEFAULT NULL,
+            revoked_at TIMESTAMP NULL DEFAULT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY uq_session_id (session_id),
+            KEY idx_user_last_seen (user_id, last_seen)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
 
-        if (!empty($activeSessionId) && $activeSessionId !== $currentSessionId) {
+        $sid = session_id();
+        $check = $db->prepare('SELECT revoked_at FROM user_sessions WHERE session_id = ? LIMIT 1');
+        $check->execute([$sid]);
+        $row = $check->fetch();
+        if ($row && !empty($row['revoked_at'])) {
             $_SESSION = [];
             session_destroy();
-            header('Location: login.php?session=conflict');
+            header('Location: login.php');
             exit;
         }
 
-        try {
-            $touch = $db->prepare('UPDATE users SET active_session_last_seen = NOW() WHERE id = ? AND active_session_id = ?');
-            $touch->execute([$_SESSION['user_id'], $currentSessionId]);
-        } catch (Exception $e) {
-        }
+        $ua = substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255);
+        $touch = $db->prepare('INSERT INTO user_sessions (user_id, session_id, user_agent, last_seen)
+                               VALUES (?, ?, ?, NOW())
+                               ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), user_agent = VALUES(user_agent), last_seen = NOW()');
+        $touch->execute([(int)$_SESSION['user_id'], $sid, $ua]);
+
+        $_SESSION['session_id'] = $sid;
     } catch (Exception $e) {
-        // If column/table not available, skip session enforcement
     }
 }
 

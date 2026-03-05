@@ -9,8 +9,14 @@ try {
 
         create_log($db, $_SESSION['user_id'], 'logout', 'user', $_SESSION['user_id'], 'User logged out');
 
-        $stmt = $db->prepare('UPDATE users SET active_session_id = NULL, active_session_last_seen = NULL WHERE id = ?');
-        $stmt->execute([$_SESSION['user_id']]);
+        try {
+            $sid = session_id();
+            if (!empty($sid)) {
+                $stmt = $db->prepare('UPDATE user_sessions SET revoked_at = NOW() WHERE session_id = ?');
+                $stmt->execute([$sid]);
+            }
+        } catch (Exception $e) {
+        }
     }
 } catch (Exception $e) {
     // ignore

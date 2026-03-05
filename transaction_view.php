@@ -767,7 +767,8 @@ include __DIR__ . '/header.php';
                 <h6 class="mb-3">
                     <i class="fas fa-stream me-2"></i>Flow Timeline
                 </h6>
-                <div class="timeline" style="max-height: 70vh; overflow-y: auto; padding-right: 8px;">
+                <div class="timeline-scroll" style="max-height: 70vh; overflow-y: auto; padding-right: 8px;">
+                <div class="timeline">
                     <!-- Procurement -->
                     <div class="timeline-item <?php echo !empty($transaction['proc_status']) ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
@@ -1049,6 +1050,7 @@ include __DIR__ . '/header.php';
                             <?php endif; ?>
                         </div>
                     </div>
+                </div>
                 </div>
 
     </div>

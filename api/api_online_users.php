@@ -18,13 +18,15 @@ $db = get_db();
 try {
     $ttl = defined('SESSION_TTL_SECONDS') ? (int)SESSION_TTL_SECONDS : 600;
 
-    $stmt = $db->prepare('SELECT u.id, u.username, r.name AS role_name, u.active_session_last_seen
-                          FROM users u
+    $stmt = $db->prepare('SELECT u.id, u.username, r.name AS role_name, MAX(us.last_seen) AS last_seen
+                          FROM user_sessions us
+                          JOIN users u ON us.user_id = u.id
                           LEFT JOIN roles r ON u.role_id = r.id
-                          WHERE u.active_session_id IS NOT NULL
-                            AND u.active_session_last_seen IS NOT NULL
-                            AND u.active_session_last_seen >= (NOW() - INTERVAL ? SECOND)
-                          ORDER BY u.active_session_last_seen DESC
+                          WHERE us.revoked_at IS NULL
+                            AND us.last_seen IS NOT NULL
+                            AND us.last_seen >= (NOW() - INTERVAL ? SECOND)
+                          GROUP BY u.id, u.username, r.name
+                          ORDER BY last_seen DESC
                           LIMIT 20');
     $stmt->execute([$ttl]);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -35,7 +37,7 @@ try {
             'id' => (int)$row['id'],
             'username' => $row['username'] ?? '',
             'role_name' => $row['role_name'] ?? '',
-            'last_seen' => !empty($row['active_session_last_seen']) ? date('m/d/Y H:i', strtotime($row['active_session_last_seen'])) : '',
+            'last_seen' => !empty($row['last_seen']) ? date('m/d/Y H:i', strtotime($row['last_seen'])) : '',
         ];
     }
 

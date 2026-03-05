@@ -5,10 +5,6 @@ require_once __DIR__ . '/audit.php';
 
 $error = '';
 
-if (!empty($_GET['session']) && $_GET['session'] === 'conflict') {
-    $error = 'This account is already logged in on another device/browser.';
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -29,33 +25,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $sid = session_id();
 
             try {
-                $checkStmt = $db->prepare('SELECT active_session_id, active_session_last_seen FROM users WHERE id = ?');
-                $checkStmt->execute([$user['id']]);
-                $sessRow = $checkStmt->fetch();
-                $activeSessionId = $sessRow['active_session_id'] ?? null;
-                $lastSeen = $sessRow['active_session_last_seen'] ?? null;
-                $lastSeenTs = $lastSeen ? strtotime($lastSeen) : 0;
-                $ttl = defined('SESSION_TTL_SECONDS') ? (int)SESSION_TTL_SECONDS : 600;
-                $isStale = !$lastSeenTs || (time() - $lastSeenTs) > $ttl;
-                if (!empty($activeSessionId) && $activeSessionId !== $sid) {
-                    if (!$isStale) {
-                        $_SESSION = [];
-                        session_destroy();
-                        $error = 'This account is already logged in on another device/browser.';
-                        goto render_login;
-                    }
-                }
-
-                $setStmt = $db->prepare('UPDATE users SET active_session_id = ?, active_session_last_seen = NOW(), last_login_at = NOW(), last_login_ip = ? WHERE id = ?');
-                $setStmt->execute([$sid, ($_SERVER['REMOTE_ADDR'] ?? null), $user['id']]);
+                $setStmt = $db->prepare('UPDATE users SET last_login_at = NOW(), last_login_ip = ? WHERE id = ?');
+                $setStmt->execute([($_SERVER['REMOTE_ADDR'] ?? null), $user['id']]);
             } catch (Exception $e) {
-                // Skip single-session enforcement if DB is not migrated
+                // ignore
+            }
+
+            try {
+                $db->exec('CREATE TABLE IF NOT EXISTS user_sessions (
+                    id INT(11) NOT NULL AUTO_INCREMENT,
+                    user_id INT(11) NOT NULL,
+                    session_id VARCHAR(128) NOT NULL,
+                    device_label VARCHAR(100) DEFAULT NULL,
+                    ip VARCHAR(45) DEFAULT NULL,
+                    user_agent VARCHAR(255) DEFAULT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    last_seen TIMESTAMP NULL DEFAULT NULL,
+                    revoked_at TIMESTAMP NULL DEFAULT NULL,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uq_session_id (session_id),
+                    KEY idx_user_last_seen (user_id, last_seen)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
+
+                $ua = substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255);
+
+                $sessStmt = $db->prepare('INSERT INTO user_sessions (user_id, session_id, user_agent, last_seen)
+                                          VALUES (?, ?, ?, NOW())
+                                          ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), user_agent = VALUES(user_agent), last_seen = NOW(), revoked_at = NULL');
+                $sessStmt->execute([$user['id'], $sid, $ua]);
+            } catch (Exception $e) {
             }
 
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role_name'];
             $_SESSION['supplier_id'] = $user['supplier_id'];
+            $_SESSION['session_id'] = $sid;
 
             create_log($db, $user['id'], 'login', 'user', $user['id'], 'Successful login');
 

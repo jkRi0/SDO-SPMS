@@ -122,13 +122,15 @@ include __DIR__ . '/header.php';
     $onlineCount = 0;
     try {
         $ttl = defined('SESSION_TTL_SECONDS') ? (int)SESSION_TTL_SECONDS : 600;
-        $stmtOnline = $db->prepare('SELECT u.id, u.username, r.name AS role_name, u.active_session_last_seen
-                                    FROM users u
+        $stmtOnline = $db->prepare('SELECT u.id, u.username, r.name AS role_name, MAX(us.last_seen) AS last_seen
+                                    FROM user_sessions us
+                                    JOIN users u ON us.user_id = u.id
                                     LEFT JOIN roles r ON u.role_id = r.id
-                                    WHERE u.active_session_id IS NOT NULL
-                                      AND u.active_session_last_seen IS NOT NULL
-                                      AND u.active_session_last_seen >= (NOW() - INTERVAL ? SECOND)
-                                    ORDER BY u.active_session_last_seen DESC
+                                    WHERE us.revoked_at IS NULL
+                                      AND us.last_seen IS NOT NULL
+                                      AND us.last_seen >= (NOW() - INTERVAL ? SECOND)
+                                    GROUP BY u.id, u.username, r.name
+                                    ORDER BY last_seen DESC
                                     LIMIT 8');
         $stmtOnline->execute([$ttl]);
         $onlineUsers = $stmtOnline->fetchAll();
@@ -237,7 +239,7 @@ include __DIR__ . '/header.php';
                                             <tr>
                                                 <td><?php echo htmlspecialchars($ou['username']); ?></td>
                                                 <td><?php echo htmlspecialchars($ou['role_name'] ?? ''); ?></td>
-                                                <td class="text-muted small"><?php echo htmlspecialchars($ou['active_session_last_seen']); ?></td>
+                                                <td class="text-muted small"><?php echo htmlspecialchars($ou['last_seen']); ?></td>
                                             </tr>
                                         <?php endforeach; ?>
                                         </tbody>
