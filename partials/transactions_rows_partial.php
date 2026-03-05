@@ -59,6 +59,8 @@ if (!$transactions) {
 foreach ($transactions as $t) {
     $status = 'NEW';
     $statusDept = '';
+    $nextDept = '';
+    $globalStage = 'active';
 
     $has = function ($v): bool {
         return trim((string)($v ?? '')) !== '';
@@ -67,24 +69,42 @@ foreach ($transactions as $t) {
     if ($has($t['cashier_status'])) {
         $status = $t['cashier_status'];
         $statusDept = 'Cashier';
+        $nextDept = '';
     } elseif ($has($t['acct_post_status'])) {
         $status = $t['acct_post_status'];
         $statusDept = 'Accounting';
+        $nextDept = 'cashier';
     } elseif ($has($t['budget_status'])) {
         $status = $t['budget_status'];
         $statusDept = 'Budget';
+        $nextDept = 'accounting';
     } elseif ($has($t['acct_pre_status'])) {
         $status = $t['acct_pre_status'];
         $statusDept = 'Accounting';
+        $nextDept = 'budget';
     } elseif ($has($t['supply_status'])) {
         $status = $t['supply_status'];
         $statusDept = 'Supply';
+        $nextDept = 'accounting';
     } elseif ($has($t['proc_status'])) {
         $status = $t['proc_status'];
         $statusDept = 'Procurement';
+        $nextDept = 'supply';
+    } elseif (!empty($t['proc_date'])) {
+        $nextDept = 'supply';
+    } else {
+        $nextDept = 'procurement';
     }
 
     $statusLabel = $statusDept ? ($statusDept . ' - ' . $status) : $status;
+
+    if ($has($t['cashier_status'])) {
+        $globalStage = 'approved';
+    } elseif ($has($t['supply_status']) || $has($t['acct_pre_status']) || $has($t['budget_status']) || $has($t['acct_post_status'])) {
+        $globalStage = 'pending';
+    } else {
+        $globalStage = 'active';
+    }
 
     $stageLabel = '';
     $stageClass = '';
@@ -165,7 +185,7 @@ foreach ($transactions as $t) {
         $statusClass = 'badge-danger';
     }
 
-    echo '<tr>';
+    echo '<tr data-next-dept="' . htmlspecialchars($nextDept) . '" data-status-dept="' . htmlspecialchars(strtolower($statusDept)) . '" data-stage="' . htmlspecialchars($globalStage) . '">';
     echo '<td>' . htmlspecialchars($t['po_number']) . '</td>';
     echo '<td>' . htmlspecialchars($t['supplier_name']) . '</td>';
     echo '<td>' . htmlspecialchars($t['program_title']) . '</td>';

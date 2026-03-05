@@ -20,12 +20,101 @@
                     responsive: true,
                     pageLength: 10,
                     lengthMenu: [10, 25, 50, 100],
+                    lengthChange: (tbl && tbl.id === 'transactionsTable') ? false : true,
                     columnDefs: [{ orderable: false, targets: -1 }],
                     // Default sort: Created column (index 5) descending
                     order: [[5, 'desc']],
                     language: { searchPlaceholder: "Search...", search: "" }
                 });
             });
+
+            if (window.jQuery && jQuery.fn && jQuery.fn.dataTable) {
+                if (!window.__txDeptFilterInitialized) {
+                    window.__txDeptFilterInitialized = true;
+                    jQuery.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+                        if (!settings || settings.nTable == null || settings.nTable.id !== 'transactionsTable') {
+                            return true;
+                        }
+
+                        var select = document.getElementById('transactionsDeptFilter');
+                        if (!select) {
+                            select = null;
+                        }
+
+                        var stageSelect = document.getElementById('transactionsStageFilter');
+                        if (!stageSelect) {
+                            stageSelect = null;
+                        }
+
+                        if (!select && !stageSelect) {
+                            return true;
+                        }
+
+                        var dept = select ? String(select.value || '') : '';
+                        var stage = stageSelect ? String(stageSelect.value || '') : '';
+
+                        var rowNode = settings.aoData && settings.aoData[dataIndex] ? settings.aoData[dataIndex].nTr : null;
+                        if (!rowNode || !rowNode.dataset) {
+                            return true;
+                        }
+
+                        var okDept = true;
+                        if (dept !== '') {
+                            var nextDept = String(rowNode.dataset.nextDept || '');
+                            var statusDept = String(rowNode.dataset.statusDept || '');
+                            okDept = (nextDept === dept || statusDept === dept);
+                        }
+
+                        var okStage = true;
+                        if (stage !== '') {
+                            okStage = String(rowNode.dataset.stage || '') === stage;
+                        }
+
+                        return okDept && okStage;
+                    });
+                }
+
+                var filterWrap = document.getElementById('transactionsDeptFilterWrap');
+                var filterSelect = document.getElementById('transactionsDeptFilter');
+                var stageWrap = document.getElementById('transactionsStageFilterWrap');
+                var stageSelect = document.getElementById('transactionsStageFilter');
+                var dtFilter = document.getElementById('transactionsTable_filter');
+                var searchSlot = document.getElementById('transactionsSearchSlot');
+
+                if (dtFilter) {
+                    dtFilter.classList.add('m-0');
+                    dtFilter.classList.add('p-0');
+                    dtFilter.classList.add('d-flex');
+                    dtFilter.classList.add('align-items-center');
+
+                    if (searchSlot && !searchSlot.contains(dtFilter)) {
+                        searchSlot.appendChild(dtFilter);
+                    }
+                }
+
+                if (filterWrap && filterSelect) {
+                    filterWrap.classList.remove('d-none');
+                    filterWrap.classList.add('d-inline-flex');
+                    filterWrap.classList.add('align-items-center');
+                    filterSelect.addEventListener('change', function () {
+                        if (jQuery.fn.dataTable.isDataTable('#transactionsTable')) {
+                            jQuery('#transactionsTable').DataTable().draw();
+                        }
+                    });
+                }
+
+                if (stageWrap && stageSelect) {
+                    stageWrap.classList.remove('d-none');
+                    stageWrap.classList.add('d-inline-flex');
+                    stageWrap.classList.add('align-items-center');
+
+                    stageSelect.addEventListener('change', function () {
+                        if (jQuery.fn.dataTable.isDataTable('#transactionsTable')) {
+                            jQuery('#transactionsTable').DataTable().draw();
+                        }
+                    });
+                }
+            }
 
             // Auto-refresh supplier notifications in header bell
             var notifBadge = document.getElementById('notifBadge');

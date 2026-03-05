@@ -44,20 +44,50 @@ $transactions = $stmt->fetchAll();
 ?>
 
 <div class="card table-wrapper">
-    <div class="card-body table-responsive">
-        <table id="transactionsTable" class="table table-sm table-hover table-striped align-middle datatable table-compact">
-            <thead class="table-light">
-            <tr>
-                <th>PO #</th>
-                <th>Supplier</th>
-                <th>Program Title</th>
-                <th>Amount</th>
-                <th>Current Status</th>
-                <th>Created</th>
-                <th></th>
-            </tr>
-            </thead>
-            <tbody id="transactionsBody">
+    <div class="card-body">
+        <div id="transactionsToolbar" class="d-flex justify-content-between align-items-center gap-2 mb-2" style="flex-wrap: nowrap; overflow-x: auto; white-space: nowrap;">
+            <div class="d-flex align-items-center gap-2" style="flex-wrap: nowrap;">
+                <div id="transactionsDeptFilterWrap" class="d-none">
+                    <label class="mb-0 small text-muted" for="transactionsDeptFilter">Department</label>
+                    <select id="transactionsDeptFilter" class="form-select form-select-sm ms-2" style="width: 180px; display: inline-block;">
+                        <option value="">All</option>
+                        <option value="procurement">Procurement</option>
+                        <option value="supply">Supply</option>
+                        <option value="accounting">Accounting</option>
+                        <option value="budget">Budget</option>
+                        <option value="cashier">Cashier</option>
+                    </select>
+                </div>
+
+                <?php if ($role !== 'admin'): ?>
+                    <div id="transactionsStageFilterWrap" class="d-none">
+                        <label class="mb-0 small text-muted" for="transactionsStageFilter">Stage</label>
+                        <select id="transactionsStageFilter" class="form-select form-select-sm ms-2" style="width: 140px; display: inline-block;">
+                            <option value="">All</option>
+                            <option value="active">Active</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                        </select>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div id="transactionsSearchSlot" class="d-flex align-items-center"></div>
+        </div>
+        <div class="table-responsive">
+            <table id="transactionsTable" class="table table-sm table-hover table-striped align-middle datatable table-compact">
+                <thead class="table-light">
+                <tr>
+                    <th>PO #</th>
+                    <th>Supplier</th>
+                    <th>Program Title</th>
+                    <th>Amount</th>
+                    <th>Current Status</th>
+                    <th>Created</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody id="transactionsBody">
             <?php if (!$transactions): ?>
                 <tr>
                     <td class="text-center text-muted">No transactions found.</td>
@@ -74,6 +104,8 @@ $transactions = $stmt->fetchAll();
                     // Derive a simple current status text from the flow and which department owns it
                     $status = 'NEW';
                     $statusDept = '';
+                    $nextDept = '';
+                    $globalStage = 'active';
 
                     $has = function ($v): bool {
                         return trim((string)($v ?? '')) !== '';
@@ -82,24 +114,42 @@ $transactions = $stmt->fetchAll();
                     if ($has($t['cashier_status'])) {
                         $status = $t['cashier_status'];
                         $statusDept = 'Cashier';
+                        $nextDept = '';
                     } elseif ($has($t['acct_post_status'])) {
                         $status = $t['acct_post_status'];
                         $statusDept = 'Accounting';
+                        $nextDept = 'cashier';
                     } elseif ($has($t['budget_status'])) {
                         $status = $t['budget_status'];
                         $statusDept = 'Budget';
+                        $nextDept = 'accounting';
                     } elseif ($has($t['acct_pre_status'])) {
                         $status = $t['acct_pre_status'];
                         $statusDept = 'Accounting';
+                        $nextDept = 'budget';
                     } elseif ($has($t['supply_status'])) {
                         $status = $t['supply_status'];
                         $statusDept = 'Supply';
+                        $nextDept = 'accounting';
                     } elseif ($has($t['proc_status'])) {
                         $status = $t['proc_status'];
                         $statusDept = 'Procurement';
+                        $nextDept = 'supply';
+                    } elseif (!empty($t['proc_date'])) {
+                        $nextDept = 'supply';
+                    } else {
+                        $nextDept = 'procurement';
                     }
 
                     $statusLabel = $statusDept ? ($statusDept . ' - ' . $status) : $status;
+
+                    if ($has($t['cashier_status'])) {
+                        $globalStage = 'approved';
+                    } elseif ($has($t['supply_status']) || $has($t['acct_pre_status']) || $has($t['budget_status']) || $has($t['acct_post_status'])) {
+                        $globalStage = 'pending';
+                    } else {
+                        $globalStage = 'active';
+                    }
 
                     $stageLabel = '';
                     $stageClass = '';
@@ -181,7 +231,7 @@ $transactions = $stmt->fetchAll();
                         $statusClass = 'badge-danger';
                     }
                     ?>
-                    <tr>
+                    <tr data-next-dept="<?php echo htmlspecialchars($nextDept); ?>" data-status-dept="<?php echo htmlspecialchars(strtolower($statusDept)); ?>" data-stage="<?php echo htmlspecialchars($globalStage); ?>">
                         <td><?php echo htmlspecialchars($t['po_number']); ?></td>
                         <td><?php echo htmlspecialchars($t['supplier_name']); ?></td>
                         <td><?php echo htmlspecialchars($t['program_title']); ?></td>
@@ -213,8 +263,9 @@ $transactions = $stmt->fetchAll();
                     </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
     </div>
 </div>

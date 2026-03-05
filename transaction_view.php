@@ -198,18 +198,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $logStatus = $params[0];
             $logRemarks = $params[1];
         } elseif ($role === 'supply') {
-            $fields[] = 'supply_status = ?';
-            $fields[] = 'supply_delivery_receipt = ?';
-            $fields[] = 'supply_sales_invoice = ?';
-            $fields[] = 'supply_remarks = ?';
-            $fields[] = 'supply_date = CURDATE()';
-            $params[] = trim($_POST['supply_status'] ?? '');
-            $params[] = trim($_POST['supply_delivery_receipt'] ?? '');
-            $params[] = trim($_POST['supply_sales_invoice'] ?? '');
-            $params[] = trim($_POST['supply_remarks'] ?? '');
-            $logStage = 'supply';
-            $logStatus = $params[0];
-            $logRemarks = $params[3];
+            $supplyStatus = trim($_POST['supply_status'] ?? '');
+            $supplyDeliveryReceipt = trim($_POST['supply_delivery_receipt'] ?? '');
+            $supplySalesInvoice = trim($_POST['supply_sales_invoice'] ?? '');
+            $supplyRemarks = trim($_POST['supply_remarks'] ?? '');
+
+            if ($supplyDeliveryReceipt !== '' && !preg_match('/^\d+$/', $supplyDeliveryReceipt)) {
+                $error = 'Delivery Receipt must be numbers only.';
+            } elseif ($supplySalesInvoice !== '' && !preg_match('/^\d+$/', $supplySalesInvoice)) {
+                $error = 'Sales Invoice must be numbers only.';
+            } else {
+                $fields[] = 'supply_status = ?';
+                $fields[] = 'supply_delivery_receipt = ?';
+                $fields[] = 'supply_sales_invoice = ?';
+                $fields[] = 'supply_remarks = ?';
+                $fields[] = 'supply_date = CURDATE()';
+                $params[] = $supplyStatus;
+                $params[] = $supplyDeliveryReceipt;
+                $params[] = $supplySalesInvoice;
+                $params[] = $supplyRemarks;
+                $logStage = 'supply';
+                $logStatus = $params[0];
+                $logRemarks = $params[3];
+            }
         } elseif ($role === 'accounting') {
             // Single Accounting form: status (For Voucher checkbox), remarks, DV amount
             $acctStatus      = isset($_POST['acct_status']) ? trim($_POST['acct_status']) : '';
@@ -252,19 +263,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $logRemarks = $combinedRemarks;
             }
         } elseif ($role === 'budget') {
-            $fields[] = 'budget_dv_number = ?';
-            $fields[] = 'budget_dv_date = ?';
-            $fields[] = 'budget_status = ?';
-            $fields[] = 'budget_demandability = ?';
-            $fields[] = 'budget_remarks = ?';
-            $params[] = trim($_POST['budget_dv_number'] ?? '');
-            $params[] = trim($_POST['budget_dv_date'] ?? '');
-            $params[] = trim($_POST['budget_status'] ?? '');
-            $params[] = trim($_POST['budget_demandability'] ?? '');
-            $params[] = trim($_POST['budget_remarks'] ?? '');
-            $logStage = 'budget';
-            $logStatus = $params[2];
-            $logRemarks = $params[4];
+            $budgetDvNumber = trim($_POST['budget_dv_number'] ?? '');
+            $budgetDvDate = trim($_POST['budget_dv_date'] ?? '');
+            $budgetStatus = trim($_POST['budget_status'] ?? '');
+            $budgetDemandability = trim($_POST['budget_demandability'] ?? '');
+            $budgetRemarks = trim($_POST['budget_remarks'] ?? '');
+
+            if ($budgetDvNumber !== '' && !preg_match('/^\d+$/', $budgetDvNumber)) {
+                $error = 'DV Number must be numbers only.';
+            } else {
+                $fields[] = 'budget_dv_number = ?';
+                $fields[] = 'budget_dv_date = ?';
+                $fields[] = 'budget_status = ?';
+                $fields[] = 'budget_demandability = ?';
+                $fields[] = 'budget_remarks = ?';
+                $params[] = $budgetDvNumber;
+                $params[] = $budgetDvDate;
+                $params[] = $budgetStatus;
+                $params[] = $budgetDemandability;
+                $params[] = $budgetRemarks;
+                $logStage = 'budget';
+                $logStatus = $params[2];
+                $logRemarks = $params[4];
+            }
         } elseif ($role === 'cashier') {
             $fields[] = 'cashier_status = ?';
             $fields[] = 'cashier_remarks = ?';
@@ -280,13 +301,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $cashierOrDate  = trim($_POST['cashier_or_date'] ?? '');
             $cashierPayDate = trim($_POST['cashier_payment_date'] ?? '');
 
-            // Store raw values on the transaction
-            $params[] = $cashierStatus;
-            $params[] = $cashierRemarks;
-            $params[] = $cashierOrNum;
-            $params[] = $cashierOrDate;
-            $params[] = $cashierAmount;
-            $params[] = $cashierPayDate;
+            if ($cashierOrNum !== '' && !preg_match('/^\d+$/', $cashierOrNum)) {
+                $error = 'ACIC Number must be numbers only.';
+            } else {
+                // Store raw values on the transaction
+                $params[] = $cashierStatus;
+                $params[] = $cashierRemarks;
+                $params[] = $cashierOrNum;
+                $params[] = $cashierOrDate;
+                $params[] = $cashierAmount;
+                $params[] = $cashierPayDate;
+            }
 
             // For history/timeline, append Amount as its own line (if provided)
             $logStage = 'cashier';
@@ -451,28 +476,20 @@ include __DIR__ . '/header.php';
                             <p class="info-value"><?php echo htmlspecialchars($transaction['program_title']); ?></p>
                         </div>
                     </div>
-                    
-                    <div class="info-item">
-                        <div class="info-icon"><i class="fas fa-money-bill-wave"></i></div>
-                        <div class="info-content">
-                            <p class="info-label">PO (Gross Amount)</p>
-                            <p class="info-value">₱ <?php echo number_format($transaction['amount'], 2); ?></p>
-                        </div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-icon"><i class="fas fa-calendar"></i></div>
-                        <div class="info-content">
-                            <p class="info-label">Date Coverage</p>
-                            <p class="info-value"><?php echo $coverageDisplay; ?></p>
-                        </div>
-                    </div>
-                    
+
                     <div class="info-item">
                         <div class="info-icon"><i class="fas fa-clock"></i></div>
                         <div class="info-content">
                             <p class="info-label">Date Created</p>
                             <p class="info-value"><?php echo date('m/d/Y H:i:s', strtotime($transaction['created_at'])); ?></p>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-icon"><i class="fas fa-calendar"></i></div>
+                        <div class="info-content">
+                            <p class="info-label">Date Coverage</p>
+                            <p class="info-value"><?php echo $coverageDisplay; ?></p>
                         </div>
                     </div>
 
@@ -488,6 +505,37 @@ include __DIR__ . '/header.php';
                             </p>
                         </div>
                     </div>
+
+                    <div class="info-item">
+                        <div class="info-icon"><i class="fas fa-money-bill-wave"></i></div>
+                        <div class="info-content">
+                            <p class="info-label">PO (Gross Amount)</p>
+                            <p class="info-value">₱ <?php echo number_format($transaction['amount'], 2); ?></p>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-icon"><i class="fas fa-tags"></i></div>
+                        <div class="info-content">
+                            <p class="info-label">Transaction Type</p>
+                            <p class="info-value">
+                                <?php
+                                $poType = trim((string)($transaction['po_type'] ?? ''));
+                                echo $poType !== '' ? htmlspecialchars($poType) : '—';
+                                ?>
+                            </p>
+                        </div>
+                    </div>
+
+                    <?php if (!empty($transaction['budget_dv_number'])): ?>
+                        <div class="info-item">
+                            <div class="info-icon"><i class="fas fa-receipt"></i></div>
+                            <div class="info-content">
+                                <p class="info-label">DV Number</p>
+                                <p class="info-value"><?php echo htmlspecialchars($transaction['budget_dv_number']); ?></p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -524,11 +572,15 @@ include __DIR__ . '/header.php';
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Delivery Receipt</label>
-                                    <textarea name="supply_delivery_receipt" class="form-control" rows="2"><?php echo htmlspecialchars($transaction['supply_delivery_receipt'] ?? ''); ?></textarea>
+                                    <input type="text" name="supply_delivery_receipt" class="form-control"
+                                           inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
+                                           value="<?php echo htmlspecialchars($transaction['supply_delivery_receipt'] ?? ''); ?>">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Sales Invoice</label>
-                                    <textarea name="supply_sales_invoice" class="form-control" rows="2"><?php echo htmlspecialchars($transaction['supply_sales_invoice'] ?? ''); ?></textarea>
+                                    <input type="text" name="supply_sales_invoice" class="form-control"
+                                           inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
+                                           value="<?php echo htmlspecialchars($transaction['supply_sales_invoice'] ?? ''); ?>">
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -562,7 +614,7 @@ include __DIR__ . '/header.php';
                                     <select name="acct_status" class="form-control">
                                         <?php
                                         echo '<option value="">-- Select status --</option>';
-                                        $acctOptions = ['FOR VOUCHER', 'COMPLETED'];
+                                        $acctOptions = ['FOR ORS', 'FOR VOUCHER', 'COMPLETED'];
                                         foreach ($acctOptions as $opt) {
                                             $selected = (strtoupper(trim($currentAcctStatus)) === strtoupper(trim($opt))) ? 'selected' : '';
                                             echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
@@ -586,6 +638,7 @@ include __DIR__ . '/header.php';
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">DV Number</label>
                                     <input type="text" name="budget_dv_number" class="form-control"
+                                           inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
                                            value="<?php echo htmlspecialchars($transaction['budget_dv_number'] ?? ''); ?>">
                                 </div>
                                 <div class="col-md-6 mb-3">
@@ -601,7 +654,7 @@ include __DIR__ . '/header.php';
                                     $currentBudgetStatus = $transaction['budget_status'] ?? '';
                                     // Empty placeholder option
                                     echo '<option value="">-- Select status --</option>';
-                                    $budgetStatusOptions = ['FOR PAYMENT', 'ACCOUNTS PAYABLE', 'FOR ORS', 'COMPLETED'];
+                                    $budgetStatusOptions = ['FOR PAYMENT', 'ACCOUNTS PAYABLE', 'COMPLETED'];
                                     foreach ($budgetStatusOptions as $opt) {
                                         $selected = ($currentBudgetStatus === $opt) ? 'selected' : '';
                                         echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
@@ -654,10 +707,11 @@ include __DIR__ . '/header.php';
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">ACIC Number</label>
                                     <input type="text" name="cashier_or_number" class="form-control"
+                                           inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
                                            value="<?php echo htmlspecialchars($transaction['cashier_or_number'] ?? ''); ?>">
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">OR Date</label>
+                                    <label class="form-label">ACIC Date</label>
                                     <input type="date" name="cashier_or_date" class="form-control"
                                            value="<?php echo htmlspecialchars($transaction['cashier_or_date'] ?? ''); ?>">
                                 </div>
@@ -713,7 +767,7 @@ include __DIR__ . '/header.php';
                 <h6 class="mb-3">
                     <i class="fas fa-stream me-2"></i>Flow Timeline
                 </h6>
-                <div class="timeline">
+                <div class="timeline" style="max-height: 70vh; overflow-y: auto; padding-right: 8px;">
                     <!-- Procurement -->
                     <div class="timeline-item <?php echo !empty($transaction['proc_status']) ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">

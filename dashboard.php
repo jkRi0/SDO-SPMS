@@ -251,6 +251,13 @@ include __DIR__ . '/header.php';
         </div>
     </div>
 
+    <div class="section-header mt-4">
+        <h5 class="section-title">All Transactions</h5>
+    </div>
+    <div id="transactionsContainer">
+        <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
+    </div>
+
 <?php elseif ($role === 'supply'): ?>
     <?php
     $activePOs = 0;

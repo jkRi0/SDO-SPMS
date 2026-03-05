@@ -98,6 +98,7 @@ if (session_status() === PHP_SESSION_NONE) {
             display: flex;
             align-items: center;
             margin-left: auto;
+            gap: 1rem;
         }
 
         .user-info {
