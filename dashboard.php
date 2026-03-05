@@ -184,15 +184,14 @@ include __DIR__ . '/header.php';
                                     <table class="table table-sm align-middle mb-0">
                                         <thead class="table-light">
                                         <tr>
-                                            <th>Time</th>
                                             <th>User</th>
                                             <th>Event</th>
+                                            <th>Time</th>
                                         </tr>
                                         </thead>
                                         <tbody id="loginLogsTbody">
                                         <?php foreach ($recentLoginLogs as $ll): ?>
                                             <tr>
-                                                <td class="text-muted small"><?php echo htmlspecialchars(date('m/d/Y H:i', strtotime($ll['created_at']))); ?></td>
                                                 <td>
                                                     <?php
                                                     $loginLogUsername = $ll['username'] ?? 'System';
@@ -206,6 +205,7 @@ include __DIR__ . '/header.php';
                                                     ?>
                                                 </td>
                                                 <td><?php echo htmlspecialchars($ll['action'] ?? ''); ?></td>
+                                                <td class="text-muted small"><?php echo htmlspecialchars(date('m/d/Y H:i', strtotime($ll['created_at']))); ?></td>
                                             </tr>
                                         <?php endforeach; ?>
                                         </tbody>
@@ -748,19 +748,19 @@ document.addEventListener('DOMContentLoaded', function () {
                     logs.forEach(function (l) {
                         var tr = document.createElement('tr');
 
-                        var tdTime = document.createElement('td');
-                        tdTime.className = 'text-muted small';
-                        tdTime.textContent = l.time || '';
-
                         var tdUser = document.createElement('td');
                         tdUser.textContent = l.username || 'System';
 
                         var tdEvent = document.createElement('td');
                         tdEvent.textContent = l.event || '';
 
-                        tr.appendChild(tdTime);
+                        var tdTime = document.createElement('td');
+                        tdTime.className = 'text-muted small';
+                        tdTime.textContent = l.time || '';
+
                         tr.appendChild(tdUser);
                         tr.appendChild(tdEvent);
+                        tr.appendChild(tdTime);
 
                         loginLogsTbody.appendChild(tr);
                     });

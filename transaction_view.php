@@ -212,6 +212,59 @@ if (!function_exists('get_last_stage_timestamp')) {
     }
 }
 
+if (!function_exists('render_handoff_between')) {
+    function render_handoff_between(string $fromDept, string $toDept, array $handoffHistory): void
+    {
+        $filtered = [];
+        foreach ($handoffHistory as $h) {
+            if ((string)($h['from_dept'] ?? '') === $fromDept && (string)($h['to_dept'] ?? '') === $toDept) {
+                $filtered[] = $h;
+            }
+        }
+        if (empty($filtered)) {
+            return;
+        }
+        $fromLabel = strtoupper($fromDept);
+        $toLabel = strtoupper($toDept);
+        $countH = count($filtered);
+        ?>
+        <div class="timeline-item completed handoff-between">
+            <div class="timeline-marker">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+            <div class="timeline-content">
+                <h6 class="timeline-title d-flex justify-content-between align-items-center">
+                    <span>Handoff: <?php echo htmlspecialchars($fromLabel . ' → ' . $toLabel); ?></span>
+                    <span class="small text-muted"></span>
+                </h6>
+                <div class="timeline-history mt-1 p-2 border rounded bg-white">
+                    <?php foreach ($filtered as $idx => $h): ?>
+                        <?php
+                        $isLatest = ($idx === $countH - 1);
+                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+                        $forwardedAt = !empty($h['forwarded_at']) ? date('m/d/Y H:i:s', strtotime($h['forwarded_at'])) : '';
+                        $receivedAt = !empty($h['received_at']) ? date('m/d/Y H:i:s', strtotime($h['received_at'])) : '';
+                        ?>
+                        <div class="<?php echo $rowClass; ?>">
+                            <?php if ($forwardedAt !== ''): ?>
+                                <div class="text-muted"><?php echo htmlspecialchars($forwardedAt); ?></div>
+                            <?php endif; ?>
+                            <div class="fw-semibold">FORWARDED</div>
+                            <?php if ($receivedAt !== ''): ?>
+                                <div class="text-muted mt-1"><?php echo htmlspecialchars($receivedAt); ?></div>
+                                <div class="fw-semibold">RECEIVED</div>
+                            <?php else: ?>
+                                <div class="text-muted mt-1">Pending receive</div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Special action: cashier clicking "Notify Supplier" (no transaction field updates)
     if ($role === 'cashier' && isset($_POST['notify_supplier']) && $_POST['notify_supplier'] === '1') {
@@ -1328,45 +1381,6 @@ include __DIR__ . '/header.php';
                 </h6>
                 <div class="timeline-scroll" style="max-height: 70vh; overflow-y: auto; padding-right: 8px;">
                 <div class="timeline">
-                    <?php if (!empty($handoffHistory)): ?>
-                        <div class="timeline-item completed">
-                            <div class="timeline-marker">
-                                <i class="fas fa-exchange-alt"></i>
-                            </div>
-                            <div class="timeline-content">
-                                <h6 class="timeline-title d-flex justify-content-between align-items-center">
-                                    <span>Handoffs</span>
-                                    <span class="small text-muted"></span>
-                                </h6>
-                                <div class="timeline-history mt-2 p-2 border rounded bg-white">
-                                    <div class="small text-muted mb-1">Forward / Receive history</div>
-                                    <?php $countH = count($handoffHistory); ?>
-                                    <?php foreach ($handoffHistory as $idx => $h): ?>
-                                        <?php
-                                        $isLatest = ($idx === $countH - 1);
-                                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
-                                        $fromH = strtoupper((string)($h['from_dept'] ?? ''));
-                                        $toH = strtoupper((string)($h['to_dept'] ?? ''));
-                                        $forwardedAt = !empty($h['forwarded_at']) ? date('m/d/Y H:i:s', strtotime($h['forwarded_at'])) : '';
-                                        $receivedAt = !empty($h['received_at']) ? date('m/d/Y H:i:s', strtotime($h['received_at'])) : '';
-                                        ?>
-                                        <div class="<?php echo $rowClass; ?>">
-                                            <?php if ($forwardedAt !== ''): ?>
-                                                <div class="text-muted"><?php echo htmlspecialchars($forwardedAt); ?></div>
-                                            <?php endif; ?>
-                                            <div class="fw-semibold">FORWARDED: <?php echo htmlspecialchars($fromH . ' → ' . $toH); ?></div>
-                                            <?php if ($receivedAt !== ''): ?>
-                                                <div class="text-muted mt-1"><?php echo htmlspecialchars($receivedAt); ?></div>
-                                                <div class="fw-semibold">RECEIVED: <?php echo htmlspecialchars($toH); ?></div>
-                                            <?php else: ?>
-                                                <div class="text-muted mt-1">Pending receive</div>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endif; ?>
                     <!-- Procurement -->
                     <div class="timeline-item <?php echo !empty($transaction['proc_status']) ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
@@ -1417,6 +1431,8 @@ include __DIR__ . '/header.php';
                         </div>
                     </div>
 
+                    <?php if (!empty($handoffHistory)) { render_handoff_between('procurement', 'supply', $handoffHistory); } ?>
+
                     <!-- Supply Unit -->
                     <div class="timeline-item <?php echo !empty($transaction['supply_status']) ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
@@ -1463,6 +1479,8 @@ include __DIR__ . '/header.php';
                         </div>
                     </div>
 
+                    <?php if (!empty($handoffHistory)) { render_handoff_between('supply', 'accounting_pre', $handoffHistory); } ?>
+
                     <!-- Accounting -->
                     <div class="timeline-item <?php echo !empty($updatesByStage['accounting_pre']) ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
@@ -1508,6 +1526,8 @@ include __DIR__ . '/header.php';
                             <?php endif; ?>
                         </div>
                     </div>
+
+                    <?php if (!empty($handoffHistory)) { render_handoff_between('accounting_pre', 'budget', $handoffHistory); } ?>
 
                     <!-- Budget Unit -->
                     <div class="timeline-item <?php echo !empty($transaction['budget_status']) ? 'completed' : 'pending'; ?>">
@@ -1558,6 +1578,8 @@ include __DIR__ . '/header.php';
                         </div>
                     </div>
 
+                    <?php if (!empty($handoffHistory)) { render_handoff_between('budget', 'accounting_post', $handoffHistory); } ?>
+
                     <!-- Accounting -->
                     <div class="timeline-item <?php echo !empty($updatesByStage['accounting_post']) ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
@@ -1603,6 +1625,8 @@ include __DIR__ . '/header.php';
                             <?php endif; ?>
                         </div>
                     </div>
+
+                    <?php if (!empty($handoffHistory)) { render_handoff_between('accounting_post', 'cashier', $handoffHistory); } ?>
 
                     <!-- Cashier -->
                     <div class="timeline-item <?php echo !empty($transaction['cashier_status']) ? 'completed' : 'pending'; ?>">
@@ -1666,6 +1690,28 @@ include __DIR__ . '/header.php';
     border-radius: .375rem;
     padding: .375rem .5rem;
     animation: handoffBlinkBorder 1s infinite;
+}
+
+.timeline-item.handoff-between .timeline-marker {
+    background: #e7f1ff;
+    border-color: #0d6efd;
+}
+
+.timeline-item.handoff-between .timeline-content {
+    background: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+    border-radius: .5rem;
+    padding: .5rem .75rem;
+}
+
+.timeline-item.handoff-between .timeline-title {
+    font-size: .9rem;
+    margin-bottom: .25rem;
+}
+
+.timeline-item.handoff-between .timeline-history {
+    background: #ffffff;
+    border-color: #cfe2ff !important;
 }
 </style>
 
