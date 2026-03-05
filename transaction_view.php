@@ -45,6 +45,75 @@ $updatesByStage = [
     'cashier' => [],
 ];
 
+$handoffGraceSeconds = 20; //adjust the time for grace period
+$handoffOpen = null;
+$handoffHistory = [];
+$handoffExtras = [
+    'procurement' => 0,
+    'supply' => 0,
+    'accounting_pre' => 0,
+    'budget' => 0,
+    'accounting_post' => 0,
+    'cashier' => 0,
+];
+
+try {
+    $db->exec('CREATE TABLE IF NOT EXISTS transaction_handoffs (
+        id INT(11) NOT NULL AUTO_INCREMENT,
+        transaction_id INT(11) NOT NULL,
+        from_dept VARCHAR(32) NOT NULL,
+        to_dept VARCHAR(32) NOT NULL,
+        forwarded_at DATETIME NOT NULL,
+        received_at DATETIME NULL DEFAULT NULL,
+        delay_seconds INT(11) NULL DEFAULT NULL,
+        exceeded_grace TINYINT(1) NOT NULL DEFAULT 0,
+        created_by_user_id INT(11) DEFAULT NULL,
+        received_by_user_id INT(11) DEFAULT NULL,
+        PRIMARY KEY (id),
+        KEY idx_tx_open (transaction_id, received_at),
+        KEY idx_tx_time (transaction_id, forwarded_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
+
+    $stmtOpen = $db->prepare('SELECT *,
+                                     UNIX_TIMESTAMP(forwarded_at) AS forwarded_ts,
+                                     UNIX_TIMESTAMP(NOW()) AS server_now_ts
+                              FROM transaction_handoffs
+                              WHERE transaction_id = ? AND received_at IS NULL
+                              ORDER BY forwarded_at DESC
+                              LIMIT 1');
+    $stmtOpen->execute([$id]);
+    $handoffOpen = $stmtOpen->fetch(PDO::FETCH_ASSOC);
+
+    $stmtAll = $db->prepare('SELECT *
+                             FROM transaction_handoffs
+                             WHERE transaction_id = ?
+                             ORDER BY forwarded_at ASC, id ASC');
+    $stmtAll->execute([$id]);
+    $handoffHistory = $stmtAll->fetchAll(PDO::FETCH_ASSOC);
+
+    $stmtDelays = $db->prepare('SELECT from_dept, to_dept, delay_seconds
+                                FROM transaction_handoffs
+                                WHERE transaction_id = ? AND received_at IS NOT NULL AND exceeded_grace = 1 AND delay_seconds IS NOT NULL');
+    $stmtDelays->execute([$id]);
+    $delayRows = $stmtDelays->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($delayRows as $dr) {
+        $from = (string)($dr['from_dept'] ?? '');
+        $to = (string)($dr['to_dept'] ?? '');
+        $secs = (int)($dr['delay_seconds'] ?? 0);
+        if ($secs <= 0) {
+            continue;
+        }
+        if (isset($handoffExtras[$from])) {
+            $handoffExtras[$from] += $secs;
+        }
+        if (isset($handoffExtras[$to])) {
+            $handoffExtras[$to] += $secs;
+        }
+    }
+} catch (Exception $e) {
+    $handoffOpen = null;
+}
+
 try {
     $logStmt = $db->prepare('SELECT transaction_id, stage, status, remarks, created_at FROM transaction_updates WHERE transaction_id = ? ORDER BY created_at ASC');
     $logStmt->execute([$id]);
@@ -147,7 +216,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Special action: cashier clicking "Notify Supplier" (no transaction field updates)
     if ($role === 'cashier' && isset($_POST['notify_supplier']) && $_POST['notify_supplier'] === '1') {
         try {
-            // Insert a basic in-app notification for this transaction's supplier
             $notifyStmt = $db->prepare('INSERT INTO notifications (supplier_id, transaction_id, title, message, link, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
             $title = 'Payment status update';
             $message = 'Your PO ' . ($transaction['po_number'] ?? '') . ' has been updated by Cashier.';
@@ -178,6 +246,211 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Redirect back so refresh does not re-send notification
         header('Location: transaction_view.php?id=' . $id . '&notified=1');
+        exit;
+    }
+
+    // Enforce that only the current owning department can update (and only after receive if it was handed off).
+    $budgetDoneForEdit = !empty($transaction['budget_status']) || !empty($transaction['budget_dv_number']) || !empty($transaction['budget_dv_date']);
+    $deptForRoleEdit = [
+        'procurement' => 'procurement',
+        'supply' => 'supply',
+        'accounting' => $budgetDoneForEdit ? 'accounting_post' : 'accounting_pre',
+        'budget' => 'budget',
+        'cashier' => 'cashier',
+    ];
+    $roleDeptEdit = $deptForRoleEdit[$role] ?? '';
+
+    $ownerDeptEdit = 'procurement';
+    if (!empty($handoffOpen) && !empty($handoffOpen['from_dept'])) {
+        // While a handoff is pending, the sender still owns the transaction (receiver must click Receive first).
+        $ownerDeptEdit = (string)$handoffOpen['from_dept'];
+    } elseif (!empty($handoffHistory)) {
+        $lastH = end($handoffHistory);
+        if (!empty($lastH['received_at']) && !empty($lastH['to_dept'])) {
+            $ownerDeptEdit = (string)$lastH['to_dept'];
+        }
+        reset($handoffHistory);
+    }
+
+    $overrideEditUsed = ($role !== 'supplier' && isset($_POST['override_edit']) && (string)($_POST['override_edit'] ?? '') === '1');
+    $canEditUpdates = ($role !== 'supplier' && $role !== 'admin' && $roleDeptEdit !== '' && $roleDeptEdit === $ownerDeptEdit);
+    if ($overrideEditUsed) {
+        $canEditUpdates = true;
+    }
+    if (!$canEditUpdates && !isset($_POST['handoff_action'])) {
+        $error = 'You cannot edit this transaction until it is forwarded to your department and received.';
+    }
+
+    if (isset($_POST['handoff_action']) && $role !== 'supplier' && $role !== 'admin') {
+        $action = (string)($_POST['handoff_action'] ?? '');
+
+        $nextDept = '';
+        $fromDept = '';
+
+        $currentDeptByHandoff = '';
+        if (!empty($handoffOpen['to_dept'])) {
+            $currentDeptByHandoff = (string)$handoffOpen['to_dept'];
+        } elseif (!empty($handoffHistory)) {
+            $lastH = end($handoffHistory);
+            if (!empty($lastH['received_at']) && !empty($lastH['to_dept'])) {
+                $currentDeptByHandoff = (string)$lastH['to_dept'];
+            }
+            reset($handoffHistory);
+        }
+
+        // Determine "who should forward" and "who is next" based on current workflow state.
+        // These mirror the notifications gating logic (empty -> non-empty transitions) and common stage ownership.
+        if ($currentDeptByHandoff !== '') {
+            $fromDept = $currentDeptByHandoff;
+            $nextMap = [
+                'procurement' => 'supply',
+                'supply' => 'accounting_pre',
+                'accounting_pre' => 'budget',
+                'budget' => 'accounting_post',
+                'accounting_post' => 'cashier',
+                'cashier' => '',
+            ];
+            $nextDept = $nextMap[$fromDept] ?? '';
+        } elseif (!empty($transaction['cashier_status'])) {
+            $fromDept = '';
+            $nextDept = '';
+        } elseif (!empty($transaction['acct_post_status'])) {
+            $fromDept = 'accounting_post';
+            $nextDept = empty($transaction['cashier_status']) ? 'cashier' : '';
+        } elseif (!empty($transaction['budget_status']) || !empty($transaction['budget_dv_number']) || !empty($transaction['budget_dv_date'])) {
+            $fromDept = 'budget';
+            $nextDept = empty($transaction['acct_post_status']) ? 'accounting_post' : '';
+        } elseif (!empty($transaction['acct_pre_status'])) {
+            $fromDept = 'accounting_pre';
+            $nextDept = empty($transaction['budget_status']) && empty($transaction['budget_dv_number']) && empty($transaction['budget_dv_date']) ? 'budget' : '';
+        } elseif (!empty($transaction['supply_status']) || !empty($transaction['supply_date'])) {
+            $fromDept = 'supply';
+            $nextDept = empty($transaction['acct_pre_status']) ? 'accounting_pre' : '';
+        } elseif (!empty($transaction['proc_date']) || !empty($transaction['proc_status'])) {
+            $fromDept = 'procurement';
+            $nextDept = empty($transaction['supply_status']) && empty($transaction['supply_date']) ? 'supply' : '';
+        } else {
+            $fromDept = 'procurement';
+            $nextDept = 'supply';
+        }
+
+        $deptForRole = [
+            'procurement' => 'procurement',
+            'supply' => 'supply',
+            'accounting' => (!empty($transaction['budget_status']) || !empty($transaction['budget_dv_number']) || !empty($transaction['budget_dv_date'])) ? 'accounting_post' : 'accounting_pre',
+            'budget' => 'budget',
+            'cashier' => 'cashier',
+        ];
+        $roleDept = $deptForRole[$role] ?? '';
+
+        $isDeptCompleted = function (string $dept) use ($transaction): bool {
+            if ($dept === 'procurement') {
+                return strtoupper(trim((string)($transaction['proc_status'] ?? ''))) === 'COMPLETED';
+            }
+            if ($dept === 'supply') {
+                return strtoupper(trim((string)($transaction['supply_status'] ?? ''))) === 'COMPLETED';
+            }
+            if ($dept === 'accounting_pre') {
+                return strtoupper(trim((string)($transaction['acct_pre_status'] ?? ''))) === 'COMPLETED';
+            }
+            if ($dept === 'budget') {
+                return strtoupper(trim((string)($transaction['budget_status'] ?? ''))) === 'COMPLETED';
+            }
+            if ($dept === 'accounting_post') {
+                return strtoupper(trim((string)($transaction['acct_post_status'] ?? ''))) === 'COMPLETED';
+            }
+            if ($dept === 'cashier') {
+                return strtoupper(trim((string)($transaction['cashier_status'] ?? ''))) === 'COMPLETED';
+            }
+            return false;
+        };
+
+        try {
+            $db->exec('CREATE TABLE IF NOT EXISTS transaction_handoffs (
+                id INT(11) NOT NULL AUTO_INCREMENT,
+                transaction_id INT(11) NOT NULL,
+                from_dept VARCHAR(32) NOT NULL,
+                to_dept VARCHAR(32) NOT NULL,
+                forwarded_at DATETIME NOT NULL,
+                received_at DATETIME NULL DEFAULT NULL,
+                delay_seconds INT(11) NULL DEFAULT NULL,
+                exceeded_grace TINYINT(1) NOT NULL DEFAULT 0,
+                created_by_user_id INT(11) DEFAULT NULL,
+                received_by_user_id INT(11) DEFAULT NULL,
+                PRIMARY KEY (id),
+                KEY idx_tx_open (transaction_id, received_at),
+                KEY idx_tx_time (transaction_id, forwarded_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
+
+            if ($action === 'forward') {
+                if ($roleDept !== '' && $fromDept !== '' && $nextDept !== '' && $roleDept === $fromDept && $isDeptCompleted($fromDept)) {
+                    $stmtOpen = $db->prepare('SELECT id FROM transaction_handoffs WHERE transaction_id = ? AND received_at IS NULL LIMIT 1');
+                    $stmtOpen->execute([$id]);
+                    $open = $stmtOpen->fetch(PDO::FETCH_ASSOC);
+
+                    if (!$open) {
+                        $stmtIns = $db->prepare('INSERT INTO transaction_handoffs (transaction_id, from_dept, to_dept, forwarded_at, created_by_user_id)
+                                                 VALUES (?, ?, ?, NOW(), ?)');
+                        $stmtIns->execute([$id, $fromDept, $nextDept, (int)($_SESSION['user_id'] ?? 0)]);
+
+                        try {
+                            $poNum = $transaction['po_number'] ?? '';
+                            $link = 'transaction_view.php?id=' . (int)$id;
+                            $pendingTitle = 'Handoff Forwarded';
+                            $pendingMsg = strtoupper($fromDept) . ' forwarded PO ' . $poNum . ' to ' . strtoupper($nextDept) . '. Please receive it.';
+                            $notifyRole = $nextDept === 'accounting_pre' || $nextDept === 'accounting_post' ? 'accounting' : $nextDept;
+                            create_dept_notification_once($db, $notifyRole, $id, $pendingTitle, $pendingMsg, $link);
+                        } catch (Exception $e) {
+                        }
+                    }
+                }
+            } elseif ($action === 'receive') {
+                if ($roleDept !== '' && $handoffOpen && !empty($handoffOpen['id'])) {
+                    $toDept = (string)($handoffOpen['to_dept'] ?? '');
+                    $from = (string)($handoffOpen['from_dept'] ?? '');
+                    if ($toDept !== '' && $roleDept === $toDept) {
+                        $forwardedAt = strtotime((string)($handoffOpen['forwarded_at'] ?? ''));
+                        $now = time();
+                        $delay = ($forwardedAt !== false && $forwardedAt > 0) ? max(0, $now - $forwardedAt) : 0;
+                        $exceeded = ($delay > $handoffGraceSeconds) ? 1 : 0;
+
+                        $stmtUpd = $db->prepare('UPDATE transaction_handoffs
+                                                 SET received_at = NOW(), delay_seconds = ?, exceeded_grace = ?, received_by_user_id = ?
+                                                 WHERE id = ? AND received_at IS NULL');
+                        $stmtUpd->execute([$delay, $exceeded, (int)($_SESSION['user_id'] ?? 0), (int)$handoffOpen['id']]);
+
+                        try {
+                            $poNum = $transaction['po_number'] ?? '';
+                            $link = 'transaction_view.php?id=' . (int)$id;
+                            $msgOk = 'Transaction was successfully received for PO ' . $poNum . '.';
+                            $fromRoleOk = $from === 'accounting_pre' || $from === 'accounting_post' ? 'accounting' : $from;
+                            create_dept_notification_once($db, $fromRoleOk, $id, 'Handoff Received', $msgOk, $link);
+                        } catch (Exception $e) {
+                        }
+
+                        if ($exceeded) {
+                            try {
+                                $poNum = $transaction['po_number'] ?? '';
+                                $link = 'transaction_view.php?id=' . (int)$id;
+                                $msg = 'Handoff delay exceeded grace period (' . (int)round($delay / 60) . ' min) for PO ' . $poNum . '.';
+                                $fromRole = $from === 'accounting_pre' || $from === 'accounting_post' ? 'accounting' : $from;
+                                $toRole = $toDept === 'accounting_pre' || $toDept === 'accounting_post' ? 'accounting' : $toDept;
+                                create_dept_notification_once($db, $fromRole, $id, 'Handoff Delay', $msg, $link);
+                                create_dept_notification_once($db, $toRole, $id, 'Handoff Delay', $msg, $link);
+                            } catch (Exception $e) {
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception $e) {
+        }
+
+        if ($action === 'receive' && !empty($from) && !empty($toDept)) {
+            header('Location: transaction_view.php?id=' . $id . '&handoff_received=1&handoff_from=' . urlencode((string)$from) . '&handoff_to=' . urlencode((string)$toDept));
+        } else {
+            header('Location: transaction_view.php?id=' . $id);
+        }
         exit;
     }
     try {
@@ -326,14 +599,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($fields) {
-            $params[] = $id;
-            $sql = 'UPDATE transactions SET ' . implode(', ', $fields) . ' WHERE id = ?';
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
+            if (!$canEditUpdates) {
+                $error = 'You cannot edit this transaction until it is forwarded to your department and received.';
+            } else {
+                $params[] = $id;
+                $sql = 'UPDATE transactions SET ' . implode(', ', $fields) . ' WHERE id = ?';
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
 
             // Record history if table exists and there is something meaningful to log
             if ($logStage && ($logStatus !== '' || $logRemarks !== '')) {
                 try {
+                    if (!empty($overrideEditUsed)) {
+                        $ovrStmt = $db->prepare('INSERT INTO transaction_updates (transaction_id, stage, status, remarks, created_at) VALUES (?, ?, ?, ?, NOW())');
+                        $ovrStmt->execute([$id, $logStage, 'OVERRIDE EDIT', 'Force enabled update to allow processing.']);
+                    }
                     $histStmt = $db->prepare('INSERT INTO transaction_updates (transaction_id, stage, status, remarks, created_at) VALUES (?, ?, ?, ?, NOW())');
                     $histStmt->execute([$id, $logStage, $logStatus, $logRemarks]);
                 } catch (Exception $e) {
@@ -393,9 +673,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            // Completed should broadcast to all previous departments in the workflow.
+            // Completed should notify the next department in the workflow.
             if ($statusUpper === 'COMPLETED') {
-                $completedNotifyRoles = $prevStagesByStage[$logStage] ?? [];
+                $nextRoleByStage = [
+                    'procurement' => 'supply',
+                    'supply' => 'accounting',
+                    'accounting_pre' => 'budget',
+                    'budget' => 'accounting',
+                    'accounting_post' => 'cashier',
+                    'cashier' => null,
+                ];
+                $nextRole = $nextRoleByStage[$logStage] ?? null;
+                if ($nextRole) {
+                    $completedNotifyRoles = [$nextRole];
+                }
             }
 
             foreach ($pendingRoles as $r) {
@@ -427,9 +718,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            // Redirect to avoid duplicate submissions on refresh (Post/Redirect/Get)
-            header('Location: transaction_view.php?id=' . $id . '&updated=1');
-            exit;
+                // Redirect to avoid duplicate submissions on refresh (Post/Redirect/Get)
+                header('Location: transaction_view.php?id=' . $id . '&updated=1');
+                exit;
+            }
         }
     } catch (Exception $e) {
         $error = 'Error updating transaction.';
@@ -468,7 +760,7 @@ include __DIR__ . '/header.php';
         <div class="card mb-3">
             <div class="card-body">
                 <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Basic Information</h6>
-                <div class="info-grid">
+                <div id="basicInfoContainer" class="info-grid">
                     <div class="info-item info-item-full">
                         <div class="info-icon"><i class="fas fa-file-alt"></i></div>
                         <div class="info-content">
@@ -536,6 +828,46 @@ include __DIR__ . '/header.php';
                             </div>
                         </div>
                     <?php endif; ?>
+
+                    <?php if (!empty($transaction['budget_dv_date'])): ?>
+                        <div class="info-item">
+                            <div class="info-icon"><i class="fas fa-calendar-check"></i></div>
+                            <div class="info-content">
+                                <p class="info-label">DV Date</p>
+                                <p class="info-value"><?php echo htmlspecialchars($transaction['budget_dv_date']); ?></p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($transaction['budget_demandability'])): ?>
+                        <div class="info-item">
+                            <div class="info-icon"><i class="fas fa-balance-scale"></i></div>
+                            <div class="info-content">
+                                <p class="info-label">Demandability</p>
+                                <p class="info-value"><?php echo htmlspecialchars($transaction['budget_demandability']); ?></p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($transaction['supply_delivery_receipt'])): ?>
+                        <div class="info-item">
+                            <div class="info-icon"><i class="fas fa-truck"></i></div>
+                            <div class="info-content">
+                                <p class="info-label">Delivery Receipt</p>
+                                <p class="info-value"><?php echo htmlspecialchars($transaction['supply_delivery_receipt']); ?></p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($transaction['supply_sales_invoice'])): ?>
+                        <div class="info-item">
+                            <div class="info-icon"><i class="fas fa-file-invoice"></i></div>
+                            <div class="info-content">
+                                <p class="info-label">Sales Invoice</p>
+                                <p class="info-value"><?php echo htmlspecialchars($transaction['supply_sales_invoice']); ?></p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -546,7 +878,199 @@ include __DIR__ . '/header.php';
                 <?php if ($role === 'supplier'): ?>
                     <p class="text-muted mb-0">Suppliers can only view the status of their transactions.</p>
                 <?php else: ?>
+                    <?php
+                    $budgetDoneForHandoff = !empty($transaction['budget_status']) || !empty($transaction['budget_dv_number']) || !empty($transaction['budget_dv_date']);
+                    $deptForRoleUi = [
+                        'procurement' => 'procurement',
+                        'supply' => 'supply',
+                        'accounting' => $budgetDoneForHandoff ? 'accounting_post' : 'accounting_pre',
+                        'budget' => 'budget',
+                        'cashier' => 'cashier',
+                    ];
+                    $roleDeptUi = $deptForRoleUi[$role] ?? '';
+
+                    $currentDeptByHandoffUi = '';
+                    if ($handoffOpen && !empty($handoffOpen['to_dept'])) {
+                        $currentDeptByHandoffUi = (string)$handoffOpen['to_dept'];
+                    } elseif (!empty($handoffHistory)) {
+                        $lastH = end($handoffHistory);
+                        if (!empty($lastH['received_at']) && !empty($lastH['to_dept'])) {
+                            $currentDeptByHandoffUi = (string)$lastH['to_dept'];
+                        }
+                        reset($handoffHistory);
+                    }
+
+                    $nextDeptUi = '';
+                    $fromDeptUi = '';
+                    if ($currentDeptByHandoffUi !== '') {
+                        $fromDeptUi = $currentDeptByHandoffUi;
+                        $nextMapUi = [
+                            'procurement' => 'supply',
+                            'supply' => 'accounting_pre',
+                            'accounting_pre' => 'budget',
+                            'budget' => 'accounting_post',
+                            'accounting_post' => 'cashier',
+                            'cashier' => '',
+                        ];
+                        $nextDeptUi = $nextMapUi[$fromDeptUi] ?? '';
+                    } elseif (!empty($transaction['cashier_status'])) {
+                        $fromDeptUi = '';
+                        $nextDeptUi = '';
+                    } elseif (!empty($transaction['acct_post_status'])) {
+                        $fromDeptUi = 'accounting_post';
+                        $nextDeptUi = empty($transaction['cashier_status']) ? 'cashier' : '';
+                    } elseif ($budgetDoneForHandoff) {
+                        $fromDeptUi = 'budget';
+                        $nextDeptUi = empty($transaction['acct_post_status']) ? 'accounting_post' : '';
+                    } elseif (!empty($transaction['acct_pre_status'])) {
+                        $fromDeptUi = 'accounting_pre';
+                        $nextDeptUi = !$budgetDoneForHandoff ? 'budget' : '';
+                    } elseif (!empty($transaction['supply_status']) || !empty($transaction['supply_date'])) {
+                        $fromDeptUi = 'supply';
+                        $nextDeptUi = empty($transaction['acct_pre_status']) ? 'accounting_pre' : '';
+                    } elseif (!empty($transaction['proc_date']) || !empty($transaction['proc_status'])) {
+                        $fromDeptUi = 'procurement';
+                        $nextDeptUi = (empty($transaction['supply_status']) && empty($transaction['supply_date'])) ? 'supply' : '';
+                    } else {
+                        $fromDeptUi = 'procurement';
+                        $nextDeptUi = 'supply';
+                    }
+
+                    $isFromDeptCompletedUi = false;
+                    if ($fromDeptUi === 'procurement') {
+                        $isFromDeptCompletedUi = strtoupper(trim((string)($transaction['proc_status'] ?? ''))) === 'COMPLETED';
+                    } elseif ($fromDeptUi === 'supply') {
+                        $isFromDeptCompletedUi = strtoupper(trim((string)($transaction['supply_status'] ?? ''))) === 'COMPLETED';
+                    } elseif ($fromDeptUi === 'accounting_pre') {
+                        $isFromDeptCompletedUi = strtoupper(trim((string)($transaction['acct_pre_status'] ?? ''))) === 'COMPLETED';
+                    } elseif ($fromDeptUi === 'budget') {
+                        $isFromDeptCompletedUi = strtoupper(trim((string)($transaction['budget_status'] ?? ''))) === 'COMPLETED';
+                    } elseif ($fromDeptUi === 'accounting_post') {
+                        $isFromDeptCompletedUi = strtoupper(trim((string)($transaction['acct_post_status'] ?? ''))) === 'COMPLETED';
+                    } elseif ($fromDeptUi === 'cashier') {
+                        $isFromDeptCompletedUi = strtoupper(trim((string)($transaction['cashier_status'] ?? ''))) === 'COMPLETED';
+                    }
+
+                    $canForward = ($roleDeptUi !== '' && $roleDeptUi === $fromDeptUi && $nextDeptUi !== '' && $isFromDeptCompletedUi);
+                    $canReceive = false;
+                    $receiveCountdown = '';
+                    $handoffForwardedTs = null;
+                    $handoffGraceEndsTs = null;
+                    $handoffFromDept = '';
+                    $handoffToDept = '';
+                    $showHandoffBanner = false;
+                    $handoffBannerText = '';
+                    $handoffReceivedFlash = '';
+                    if ($handoffOpen) {
+                        $handoffFromDept = (string)($handoffOpen['from_dept'] ?? '');
+                        $handoffToDept = (string)($handoffOpen['to_dept'] ?? '');
+                        $fwdTs = (int)($handoffOpen['forwarded_ts'] ?? 0);
+                        if ($fwdTs > 0) {
+                            $handoffForwardedTs = $fwdTs;
+                            $handoffGraceEndsTs = $fwdTs + $handoffGraceSeconds;
+                        }
+                    }
+
+                    if ($roleDeptUi !== '' && $handoffOpen && !empty($handoffOpen['to_dept'])) {
+                        $canReceive = ((string)$handoffOpen['to_dept'] === $roleDeptUi);
+                    }
+
+                    if ($roleDeptUi !== '' && $handoffOpen && $handoffForwardedTs && $handoffFromDept !== '' && $handoffToDept !== '') {
+                        $showHandoffBanner = ($roleDeptUi === $handoffFromDept || $roleDeptUi === $handoffToDept);
+                        if ($showHandoffBanner) {
+                            $serverNowForRender = (int)($handoffOpen['server_now_ts'] ?? time());
+                            $remaining = ($handoffGraceSeconds - ($serverNowForRender - $handoffForwardedTs));
+                            if ($remaining > 0) {
+                                $receiveCountdown = 'Grace ends in ' . gmdate('i:s', (int)$remaining);
+                            } else {
+                                $receiveCountdown = 'Grace period exceeded';
+                            }
+
+                            if ($roleDeptUi === $handoffToDept) {
+                                $handoffBannerText = 'Pending handoff from ' . strtoupper($handoffFromDept) . ' to ' . strtoupper($handoffToDept) . '.';
+                            } else {
+                                $handoffBannerText = 'Waiting for ' . strtoupper($handoffToDept) . ' to receive (forwarded by ' . strtoupper($handoffFromDept) . ')';
+                            }
+                        }
+                    }
+
+                    if (isset($_GET['handoff_received']) && (string)($_GET['handoff_received'] ?? '') === '1') {
+                        $flashFrom = (string)($_GET['handoff_from'] ?? '');
+                        $flashTo = (string)($_GET['handoff_to'] ?? '');
+                        if ($roleDeptUi !== '' && $flashFrom !== '' && $flashTo !== '' && ($roleDeptUi === $flashFrom || $roleDeptUi === $flashTo)) {
+                            $handoffReceivedFlash = 'Handoff received: ' . strtoupper($flashFrom) . ' → ' . strtoupper($flashTo) . '.';
+                        }
+                    }
+
+                    $ownerDeptUi = 'procurement';
+                    if ($handoffOpen && !empty($handoffFromDept)) {
+                        $ownerDeptUi = $handoffFromDept;
+                    } elseif (!empty($handoffHistory)) {
+                        $lastH = end($handoffHistory);
+                        if (!empty($lastH['received_at']) && !empty($lastH['to_dept'])) {
+                            $ownerDeptUi = (string)$lastH['to_dept'];
+                        }
+                        reset($handoffHistory);
+                    }
+
+                    $canEditUpdatesUi = ($role !== 'admin' && $roleDeptUi !== '' && $roleDeptUi === $ownerDeptUi);
+                    ?>
+
+                    <div id="handoffStatusContainer" class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3" data-forwarded-ts="<?php echo $handoffForwardedTs ? (int)$handoffForwardedTs : ''; ?>" data-grace-ends-ts="<?php echo $handoffGraceEndsTs ? (int)$handoffGraceEndsTs : ''; ?>" data-server-now-ts="<?php echo !empty($handoffOpen['server_now_ts']) ? (int)$handoffOpen['server_now_ts'] : (int)time(); ?>" data-client-sync-ts="">
+                        <div class="text-muted small">
+                            <?php if ($showHandoffBanner && $handoffBannerText !== ''): ?>
+                                <?php echo htmlspecialchars($handoffBannerText); ?>
+                            <?php else: ?>
+                                No pending handoff.
+                            <?php endif; ?>
+                            <?php if ($handoffReceivedFlash !== ''): ?>
+                                <span class="ms-2 text-success fw-semibold"><?php echo htmlspecialchars($handoffReceivedFlash); ?></span>
+                            <?php endif; ?>
+                            <?php if ($receiveCountdown !== ''): ?>
+                                <span class="ms-2 text-danger" data-handoff-countdown><?php echo htmlspecialchars($receiveCountdown); ?></span>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <?php if ($canForward && !$handoffOpen): ?>
+                                <form method="post" class="m-0">
+                                    <input type="hidden" name="handoff_action" value="forward">
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">Forward</button>
+                                </form>
+                            <?php endif; ?>
+
+                            <?php if ($canReceive && $handoffOpen && !empty($handoffOpen['id'])): ?>
+                                <form method="post" class="m-0">
+                                    <input type="hidden" name="handoff_action" value="receive">
+                                    <button type="submit" class="btn btn-success btn-sm">Receive</button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <?php if (!$canEditUpdatesUi): ?>
+                        <div class="alert alert-secondary py-2 mb-2" style="opacity: 0.85;">
+                            View only. You can update once this transaction is forwarded to your department and received.
+                        </div>
+
+                        <?php if ($role !== 'supplier' && $role !== 'admin'): ?>
+                            <div class="border rounded p-2 mb-2 bg-light">
+                                <div class="small fw-semibold mb-1">Force enable update</div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="force_enable_update_ui" id="forceEnableUpdateNo" value="0" checked>
+                                    <label class="form-check-label" for="forceEnableUpdateNo">Off</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="force_enable_update_ui" id="forceEnableUpdateYes" value="1">
+                                    <label class="form-check-label" for="forceEnableUpdateYes">On</label>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
+
                     <form method="post" novalidate>
+                        <input type="hidden" name="override_edit" id="overrideEditInput" value="0">
+                        <fieldset id="updateFieldset" <?php echo !$canEditUpdatesUi ? 'disabled' : ''; ?> style="<?php echo !$canEditUpdatesUi ? 'opacity:0.65;' : ''; ?>">
                         <?php if ($role === 'procurement'): ?>
                             <div class="mb-3">
                                 <label class="form-label">Procurement Status</label>
@@ -732,10 +1256,45 @@ include __DIR__ . '/header.php';
 
                         <?php if ($role !== 'supplier'): ?>
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">Save Updates</button>
+                                <button type="submit" class="btn btn-primary" id="saveUpdatesBtn">Save Updates</button>
                             </div>
                         <?php endif; ?>
+                        </fieldset>
                     </form>
+
+                    <script>
+                        (function () {
+                            var fs = document.getElementById('updateFieldset');
+                            var overrideInput = document.getElementById('overrideEditInput');
+                            var saveBtn = document.getElementById('saveUpdatesBtn');
+                            var on = document.getElementById('forceEnableUpdateYes');
+                            var off = document.getElementById('forceEnableUpdateNo');
+
+                            if (!fs || !overrideInput || !on || !off) {
+                                return;
+                            }
+
+                            function applyToggle() {
+                                var enabled = on.checked;
+                                if (enabled) {
+                                    fs.removeAttribute('disabled');
+                                    fs.style.opacity = '1';
+                                    overrideInput.value = '1';
+                                } else {
+                                    fs.setAttribute('disabled', 'disabled');
+                                    fs.style.opacity = '0.65';
+                                    overrideInput.value = '0';
+                                }
+                                if (saveBtn) {
+                                    saveBtn.disabled = !enabled && fs.hasAttribute('disabled');
+                                }
+                            }
+
+                            on.addEventListener('change', applyToggle);
+                            off.addEventListener('change', applyToggle);
+                            applyToggle();
+                        })();
+                    </script>
                 <?php endif; ?>
             </div>
         </div>
@@ -769,6 +1328,45 @@ include __DIR__ . '/header.php';
                 </h6>
                 <div class="timeline-scroll" style="max-height: 70vh; overflow-y: auto; padding-right: 8px;">
                 <div class="timeline">
+                    <?php if (!empty($handoffHistory)): ?>
+                        <div class="timeline-item completed">
+                            <div class="timeline-marker">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title d-flex justify-content-between align-items-center">
+                                    <span>Handoffs</span>
+                                    <span class="small text-muted"></span>
+                                </h6>
+                                <div class="timeline-history mt-2 p-2 border rounded bg-white">
+                                    <div class="small text-muted mb-1">Forward / Receive history</div>
+                                    <?php $countH = count($handoffHistory); ?>
+                                    <?php foreach ($handoffHistory as $idx => $h): ?>
+                                        <?php
+                                        $isLatest = ($idx === $countH - 1);
+                                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+                                        $fromH = strtoupper((string)($h['from_dept'] ?? ''));
+                                        $toH = strtoupper((string)($h['to_dept'] ?? ''));
+                                        $forwardedAt = !empty($h['forwarded_at']) ? date('m/d/Y H:i:s', strtotime($h['forwarded_at'])) : '';
+                                        $receivedAt = !empty($h['received_at']) ? date('m/d/Y H:i:s', strtotime($h['received_at'])) : '';
+                                        ?>
+                                        <div class="<?php echo $rowClass; ?>">
+                                            <?php if ($forwardedAt !== ''): ?>
+                                                <div class="text-muted"><?php echo htmlspecialchars($forwardedAt); ?></div>
+                                            <?php endif; ?>
+                                            <div class="fw-semibold">FORWARDED: <?php echo htmlspecialchars($fromH . ' → ' . $toH); ?></div>
+                                            <?php if ($receivedAt !== ''): ?>
+                                                <div class="text-muted mt-1"><?php echo htmlspecialchars($receivedAt); ?></div>
+                                                <div class="fw-semibold">RECEIVED: <?php echo htmlspecialchars($toH); ?></div>
+                                            <?php else: ?>
+                                                <div class="text-muted mt-1">Pending receive</div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                     <!-- Procurement -->
                     <div class="timeline-item <?php echo !empty($transaction['proc_status']) ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
@@ -784,7 +1382,7 @@ include __DIR__ . '/header.php';
                                 $lastTs    = strtotime($lastProc['created_at']);
                                 $createdTs = strtotime($transaction['created_at']);
                                 if ($lastTs !== false && $createdTs !== false && $lastTs >= $createdTs) {
-                                    $elapsedProc = format_elapsed_time($lastTs - $createdTs);
+                                    $elapsedProc = format_elapsed_time(($lastTs - $createdTs) + (int)($handoffExtras['procurement'] ?? 0));
                                 }
                             }
                             ?>
@@ -831,7 +1429,7 @@ include __DIR__ . '/header.php';
                             $prevTs = get_last_stage_timestamp($updatesByStage, 'procurement');
                             $currTs = get_last_stage_timestamp($updatesByStage, 'supply');
                             if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
-                                $elapsedSupply = format_elapsed_time($currTs - $prevTs);
+                                $elapsedSupply = format_elapsed_time(($currTs - $prevTs) + (int)($handoffExtras['supply'] ?? 0));
                             }
                             ?>
                             <h6 class="timeline-title d-flex justify-content-between align-items-center">
@@ -877,7 +1475,7 @@ include __DIR__ . '/header.php';
                             $prevTs = get_last_stage_timestamp($updatesByStage, 'supply');
                             $currTs = get_last_stage_timestamp($updatesByStage, 'accounting_pre');
                             if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
-                                $elapsedAcctPre = format_elapsed_time($currTs - $prevTs);
+                                $elapsedAcctPre = format_elapsed_time(($currTs - $prevTs) + (int)($handoffExtras['accounting_pre'] ?? 0));
                             }
                             ?>
                             <h6 class="timeline-title d-flex justify-content-between align-items-center">
@@ -923,7 +1521,7 @@ include __DIR__ . '/header.php';
                             $prevTs = get_last_stage_timestamp($updatesByStage, 'accounting_pre');
                             $currTs = get_last_stage_timestamp($updatesByStage, 'budget');
                             if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
-                                $elapsedBudget = format_elapsed_time($currTs - $prevTs);
+                                $elapsedBudget = format_elapsed_time(($currTs - $prevTs) + (int)($handoffExtras['budget'] ?? 0));
                             }
                             ?>
                             <h6 class="timeline-title d-flex justify-content-between align-items-center">
@@ -972,7 +1570,7 @@ include __DIR__ . '/header.php';
                             $prevTs = get_last_stage_timestamp($updatesByStage, 'budget');
                             $currTs = get_last_stage_timestamp($updatesByStage, 'accounting_post');
                             if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
-                                $elapsedAcctPost = format_elapsed_time($currTs - $prevTs);
+                                $elapsedAcctPost = format_elapsed_time(($currTs - $prevTs) + (int)($handoffExtras['accounting_post'] ?? 0));
                             }
                             ?>
                             <h6 class="timeline-title d-flex justify-content-between align-items-center">
@@ -1018,7 +1616,7 @@ include __DIR__ . '/header.php';
                             $prevTs = get_last_stage_timestamp($updatesByStage, 'accounting_post');
                             $currTs = get_last_stage_timestamp($updatesByStage, 'cashier');
                             if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
-                                $elapsedCashier = format_elapsed_time($currTs - $prevTs);
+                                $elapsedCashier = format_elapsed_time(($currTs - $prevTs) + (int)($handoffExtras['cashier'] ?? 0));
                             }
                             ?>
                             <h6 class="timeline-title d-flex justify-content-between align-items-center">
@@ -1056,6 +1654,21 @@ include __DIR__ . '/header.php';
     </div>
 </div>
 
+<style>
+@keyframes handoffBlinkBorder {
+    0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.0); }
+    50% { box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.55); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.0); }
+}
+
+.handoff-overdue {
+    border: 1px solid #dc3545 !important;
+    border-radius: .375rem;
+    padding: .375rem .5rem;
+    animation: handoffBlinkBorder 1s infinite;
+}
+</style>
+
 <script>
 // Periodically refresh only the Flow Timeline without reloading the whole page
 document.addEventListener('DOMContentLoaded', function () {
@@ -1081,7 +1694,101 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
+    function refreshBasicInfo() {
+        const current = document.getElementById('basicInfoContainer');
+        if (!current) return;
+
+        fetch(window.location.href, { cache: 'no-store' })
+            .then(function (response) { return response.text(); })
+            .then(function (html) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const next = doc.getElementById('basicInfoContainer');
+                if (next) {
+                    current.innerHTML = next.innerHTML;
+                }
+            })
+            .catch(function () {
+            });
+    }
+
     setInterval(refreshTimeline, refreshIntervalMs);
+
+    function refreshHandoffStatus() {
+        const current = document.getElementById('handoffStatusContainer');
+        if (!current) return;
+
+        fetch(window.location.href, { cache: 'no-store' })
+            .then(function (response) { return response.text(); })
+            .then(function (html) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const next = doc.getElementById('handoffStatusContainer');
+                if (next) {
+                    current.innerHTML = next.innerHTML;
+                    current.setAttribute('data-forwarded-ts', next.getAttribute('data-forwarded-ts') || '');
+                    current.setAttribute('data-grace-ends-ts', next.getAttribute('data-grace-ends-ts') || '');
+                    current.setAttribute('data-server-now-ts', next.getAttribute('data-server-now-ts') || '');
+                    current.setAttribute('data-client-sync-ts', String(Math.floor(Date.now() / 1000)));
+                    tickHandoffCountdown();
+                }
+            })
+            .catch(function () {
+            });
+    }
+
+    function tickHandoffCountdown() {
+        const container = document.getElementById('handoffStatusContainer');
+        if (!container) return;
+        const el = container.querySelector('[data-handoff-countdown]');
+        if (!el) {
+            container.classList.remove('handoff-overdue');
+            return;
+        }
+        const graceEnds = parseInt(container.getAttribute('data-grace-ends-ts') || '', 10);
+        if (!graceEnds) {
+            container.classList.remove('handoff-overdue');
+            return;
+        }
+        const forwardedTs = parseInt(container.getAttribute('data-forwarded-ts') || '', 10);
+        const serverNow = parseInt(container.getAttribute('data-server-now-ts') || '', 10);
+        const clientSync = parseInt(container.getAttribute('data-client-sync-ts') || '', 10);
+        const nowClient = Math.floor(Date.now() / 1000);
+        const elapsedSinceSync = (serverNow && clientSync) ? Math.max(0, nowClient - clientSync) : 0;
+        var nowEstimatedServer = serverNow ? (serverNow + elapsedSinceSync) : nowClient;
+        if (forwardedTs && nowEstimatedServer < forwardedTs) {
+            nowEstimatedServer = forwardedTs;
+        }
+        const remainingRaw = graceEnds - nowEstimatedServer;
+        const remaining = Math.max(0, Math.min(600, remainingRaw));
+        if (remainingRaw >= 0) {
+            const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
+            const ss = String(remaining % 60).padStart(2, '0');
+            el.textContent = 'Grace ends in ' + mm + ':' + ss;
+            container.classList.remove('handoff-overdue');
+        } else {
+            const overdue = Math.abs(remainingRaw);
+            const hh = Math.floor(overdue / 3600);
+            const mm = String(Math.floor((overdue % 3600) / 60)).padStart(2, '0');
+            const ss = String(overdue % 60).padStart(2, '0');
+            el.textContent = 'Overdue by ' + (hh > 0 ? String(hh).padStart(2, '0') + ':' : '') + mm + ':' + ss;
+            container.classList.add('handoff-overdue');
+        }
+    }
+
+    var initialHandoffContainer = document.getElementById('handoffStatusContainer');
+    if (initialHandoffContainer) {
+        initialHandoffContainer.setAttribute('data-client-sync-ts', String(Math.floor(Date.now() / 1000)));
+    }
+
+    refreshHandoffStatus();
+    tickHandoffCountdown();
+
+    refreshBasicInfo();
+
+    setInterval(refreshHandoffStatus, refreshIntervalMs);
+    setInterval(tickHandoffCountdown, 1000);
+    setInterval(refreshBasicInfo, refreshIntervalMs);
 
     // Accounting: keep a notion of which stage (pre vs post) was last edited for logging,
     // but allow editing of both sections at the same time.

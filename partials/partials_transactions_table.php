@@ -278,6 +278,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const id = this.getAttribute('data-tx-id');
             if (!id) return;
 
+            const row = this.closest('tr');
+
             if (!confirm('Delete this transaction? This cannot be undone.')) {
                 return;
             }
@@ -290,8 +292,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(resp => resp.json())
                 .then(data => {
                     if (data.success) {
-                        // Simple reload to refresh table
-                        window.location.reload();
+                        if (row) {
+                            row.remove();
+                        }
+
+                        const tbody = document.getElementById('transactionsBody');
+                        if (tbody && tbody.querySelectorAll('tr').length === 0) {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = '<td class="text-center text-muted">No transactions found.</td><td></td><td></td><td></td><td></td><td></td><td></td>';
+                            tbody.appendChild(tr);
+                        }
                     } else {
                         alert(data.message || 'Failed to delete transaction.');
                     }
