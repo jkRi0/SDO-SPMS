@@ -271,7 +271,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $notifyStmt = $db->prepare('INSERT INTO notifications (supplier_id, transaction_id, title, message, link, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
             $title = 'Payment status update';
-            $message = 'Your PO ' . ($transaction['po_number'] ?? '') . ' has been updated by Cashier.';
+            $defaultMessage = 'Your PO ' . ($transaction['po_number'] ?? '') . ' is now marked as COMPLETED. Please check the portal for details.';
+            $message = trim((string)($_POST['notify_message'] ?? ''));
+            if ($message === '') {
+                $message = $defaultMessage;
+            }
             $link = 'transaction_view.php?id=' . $transaction['id'];
             $notifyStmt->execute([
                 $transaction['supplier_id'],
@@ -1362,8 +1366,15 @@ include __DIR__ . '/header.php';
                        class="btn btn-success w-100 mb-2">
                         Proceed to Landbank Site
                     </a>
+                    <?php $notifyDefaultMsgUi = 'Your PO ' . ($transaction['po_number'] ?? '') . ' is now marked as COMPLETED. Please check the portal for details.'; ?>
                     <form method="post" class="mt-1">
                         <input type="hidden" name="notify_supplier" value="1">
+
+                        <div class="mb-2">
+                            <label class="form-label small mb-1">Message</label>
+                            <textarea class="form-control" name="notify_message" id="notifyMessageTextarea" rows="3"><?php echo htmlspecialchars($notifyDefaultMsgUi); ?></textarea>
+                        </div>
+
                         <button type="submit" class="btn btn-outline-primary w-100">
                             Notify Supplier
                         </button>
