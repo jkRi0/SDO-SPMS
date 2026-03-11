@@ -91,23 +91,30 @@ try {
     $stmtAll->execute([$id]);
     $handoffHistory = $stmtAll->fetchAll(PDO::FETCH_ASSOC);
 
-    $stmtDelays = $db->prepare('SELECT from_dept, to_dept, delay_seconds
-                                FROM transaction_handoffs
-                                WHERE transaction_id = ? AND received_at IS NOT NULL AND exceeded_grace = 1 AND delay_seconds IS NOT NULL');
-    $stmtDelays->execute([$id]);
-    $delayRows = $stmtDelays->fetchAll(PDO::FETCH_ASSOC);
-    foreach ($delayRows as $dr) {
-        $from = (string)($dr['from_dept'] ?? '');
-        $to = (string)($dr['to_dept'] ?? '');
-        $secs = (int)($dr['delay_seconds'] ?? 0);
-        if ($secs <= 0) {
+    // Attribute only the overdue beyond grace to both departments involved in a handoff.
+    // Compute directly from forwarded_at/received_at to ensure consistency with the UI.
+    foreach ($handoffHistory as $h) {
+        if (empty($h['received_at']) || empty($h['forwarded_at'])) {
+            continue;
+        }
+        $from = (string)($h['from_dept'] ?? '');
+        $to = (string)($h['to_dept'] ?? '');
+        $forwardTs = strtotime((string)$h['forwarded_at']);
+        $recvTs = strtotime((string)$h['received_at']);
+        if ($forwardTs === false || $recvTs === false || $recvTs < $forwardTs) {
+            continue;
+        }
+
+        $delaySecs = (int)($recvTs - $forwardTs);
+        $overdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
+        if ($overdue <= 0) {
             continue;
         }
         if (isset($handoffExtras[$from])) {
-            $handoffExtras[$from] += $secs;
+            $handoffExtras[$from] += $overdue;
         }
         if (isset($handoffExtras[$to])) {
-            $handoffExtras[$to] += $secs;
+            $handoffExtras[$to] += $overdue;
         }
     }
 } catch (Exception $e) {
@@ -212,8 +219,28 @@ if (!function_exists('get_last_stage_timestamp')) {
     }
 }
 
+if (!function_exists('get_handoff_timestamp')) {
+    function get_handoff_timestamp(array $handoffHistory, string $fromDept, string $toDept, string $field): ?int
+    {
+        $last = null;
+        foreach ($handoffHistory as $h) {
+            if ((string)($h['from_dept'] ?? '') !== $fromDept || (string)($h['to_dept'] ?? '') !== $toDept) {
+                continue;
+            }
+            if (empty($h[$field])) {
+                continue;
+            }
+            $ts = strtotime((string)$h[$field]);
+            if ($ts !== false) {
+                $last = $ts;
+            }
+        }
+        return $last;
+    }
+}
+
 if (!function_exists('render_handoff_between')) {
-    function render_handoff_between(string $fromDept, string $toDept, array $handoffHistory): void
+    function render_handoff_between(string $fromDept, string $toDept, array $handoffHistory, int $handoffGraceSeconds): void
     {
         $filtered = [];
         foreach ($handoffHistory as $h) {
@@ -242,8 +269,17 @@ if (!function_exists('render_handoff_between')) {
                         <?php
                         $isLatest = ($idx === $countH - 1);
                         $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
-                        $forwardedAt = !empty($h['forwarded_at']) ? date('m/d/Y H:i:s', strtotime($h['forwarded_at'])) : '';
-                        $receivedAt = !empty($h['received_at']) ? date('m/d/Y H:i:s', strtotime($h['received_at'])) : '';
+                        $forwardTs = !empty($h['forwarded_at']) ? strtotime((string)$h['forwarded_at']) : false;
+                        $recvTs = !empty($h['received_at']) ? strtotime((string)$h['received_at']) : false;
+                        $forwardedAt = $forwardTs !== false ? date('m/d/Y H:i:s', $forwardTs) : '';
+                        $receivedAt = $recvTs !== false ? date('m/d/Y H:i:s', $recvTs) : '';
+
+                        $delaySecs = 0;
+                        if ($forwardTs !== false) {
+                            $endTs = $recvTs !== false ? $recvTs : time();
+                            $delaySecs = max(0, (int)$endTs - (int)$forwardTs);
+                        }
+                        $overdueSecs = max(0, (int)$delaySecs - (int)$handoffGraceSeconds);
                         ?>
                         <div class="<?php echo $rowClass; ?>">
                             <?php if ($forwardedAt !== ''): ?>
@@ -255,6 +291,10 @@ if (!function_exists('render_handoff_between')) {
                                 <div class="fw-semibold">RECEIVED</div>
                             <?php else: ?>
                                 <div class="text-muted mt-1">Pending receive</div>
+                            <?php endif; ?>
+
+                            <?php if ($overdueSecs > 0): ?>
+                                <div class="text-danger fw-semibold mt-1">Overdue: <?php echo htmlspecialchars(format_elapsed_time($overdueSecs)); ?></div>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
@@ -1399,15 +1439,16 @@ include __DIR__ . '/header.php';
                         </div>
                         <div class="timeline-content">
                             <?php
-                            // Elapsed from transaction created_at to latest Procurement update
+                            // Elapsed from transaction created_at to forwarded_at (handoff) or latest Procurement update
                             $elapsedProc = '';
                             if (!empty($updatesByStage['procurement'])) {
-                                $logsProc  = $updatesByStage['procurement'];
-                                $lastProc  = $logsProc[count($logsProc) - 1];
-                                $lastTs    = strtotime($lastProc['created_at']);
                                 $createdTs = strtotime($transaction['created_at']);
-                                if ($lastTs !== false && $createdTs !== false && $lastTs >= $createdTs) {
-                                    $elapsedProc = format_elapsed_time(($lastTs - $createdTs) + (int)($handoffExtras['procurement'] ?? 0));
+                                $endTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'forwarded_at');
+                                if ($endTs === null) {
+                                    $endTs = get_last_stage_timestamp($updatesByStage, 'procurement');
+                                }
+                                if ($createdTs !== false && $endTs !== null && $endTs >= $createdTs) {
+                                    $elapsedProc = format_elapsed_time(($endTs - $createdTs) + (int)($handoffExtras['procurement'] ?? 0));
                                 }
                             }
                             ?>
@@ -1442,7 +1483,7 @@ include __DIR__ . '/header.php';
                         </div>
                     </div>
 
-                    <?php if (!empty($handoffHistory)) { render_handoff_between('procurement', 'supply', $handoffHistory); } ?>
+                    <?php if (!empty($handoffHistory)) { render_handoff_between('procurement', 'supply', $handoffHistory, (int)$handoffGraceSeconds); } ?>
 
                     <!-- Supply Unit -->
                     <div class="timeline-item <?php echo !empty($transaction['supply_status']) ? 'completed' : 'pending'; ?>">
@@ -1451,12 +1492,15 @@ include __DIR__ . '/header.php';
                         </div>
                         <div class="timeline-content">
                             <?php
-                            // Elapsed from latest Procurement update to latest Supply update
+                            // Elapsed from received_at (handoff) to forwarded_at (handoff) or latest Supply update
                             $elapsedSupply = '';
-                            $prevTs = get_last_stage_timestamp($updatesByStage, 'procurement');
-                            $currTs = get_last_stage_timestamp($updatesByStage, 'supply');
-                            if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
-                                $elapsedSupply = format_elapsed_time(($currTs - $prevTs) + (int)($handoffExtras['supply'] ?? 0));
+                            $startTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'received_at');
+                            $endTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting_pre', 'forwarded_at');
+                            if ($endTs === null) {
+                                $endTs = get_last_stage_timestamp($updatesByStage, 'supply');
+                            }
+                            if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
+                                $elapsedSupply = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['supply'] ?? 0));
                             }
                             ?>
                             <h6 class="timeline-title d-flex justify-content-between align-items-center">
@@ -1490,7 +1534,7 @@ include __DIR__ . '/header.php';
                         </div>
                     </div>
 
-                    <?php if (!empty($handoffHistory)) { render_handoff_between('supply', 'accounting_pre', $handoffHistory); } ?>
+                    <?php if (!empty($handoffHistory)) { render_handoff_between('supply', 'accounting_pre', $handoffHistory, (int)$handoffGraceSeconds); } ?>
 
                     <!-- Accounting -->
                     <div class="timeline-item <?php echo !empty($updatesByStage['accounting_pre']) ? 'completed' : 'pending'; ?>">
@@ -1499,12 +1543,15 @@ include __DIR__ . '/header.php';
                         </div>
                         <div class="timeline-content">
                             <?php
-                            // Elapsed from latest Supply update to latest Accounting update (pre-budget)
+                            // Elapsed from received_at (handoff) to forwarded_at (handoff) or latest Accounting (pre-budget) update
                             $elapsedAcctPre = '';
-                            $prevTs = get_last_stage_timestamp($updatesByStage, 'supply');
-                            $currTs = get_last_stage_timestamp($updatesByStage, 'accounting_pre');
-                            if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
-                                $elapsedAcctPre = format_elapsed_time(($currTs - $prevTs) + (int)($handoffExtras['accounting_pre'] ?? 0));
+                            $startTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting_pre', 'received_at');
+                            $endTs = get_handoff_timestamp($handoffHistory, 'accounting_pre', 'budget', 'forwarded_at');
+                            if ($endTs === null) {
+                                $endTs = get_last_stage_timestamp($updatesByStage, 'accounting_pre');
+                            }
+                            if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
+                                $elapsedAcctPre = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['accounting_pre'] ?? 0));
                             }
                             ?>
                             <h6 class="timeline-title d-flex justify-content-between align-items-center">
@@ -1538,7 +1585,7 @@ include __DIR__ . '/header.php';
                         </div>
                     </div>
 
-                    <?php if (!empty($handoffHistory)) { render_handoff_between('accounting_pre', 'budget', $handoffHistory); } ?>
+                    <?php if (!empty($handoffHistory)) { render_handoff_between('accounting_pre', 'budget', $handoffHistory, (int)$handoffGraceSeconds); } ?>
 
                     <!-- Budget Unit -->
                     <div class="timeline-item <?php echo !empty($transaction['budget_status']) ? 'completed' : 'pending'; ?>">
@@ -1547,12 +1594,15 @@ include __DIR__ . '/header.php';
                         </div>
                         <div class="timeline-content">
                             <?php
-                            // Elapsed from latest Accounting (Pre-Budget) update to latest Budget update
+                            // Elapsed from received_at (handoff) to forwarded_at (handoff) or latest Budget update
                             $elapsedBudget = '';
-                            $prevTs = get_last_stage_timestamp($updatesByStage, 'accounting_pre');
-                            $currTs = get_last_stage_timestamp($updatesByStage, 'budget');
-                            if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
-                                $elapsedBudget = format_elapsed_time(($currTs - $prevTs) + (int)($handoffExtras['budget'] ?? 0));
+                            $startTs = get_handoff_timestamp($handoffHistory, 'accounting_pre', 'budget', 'received_at');
+                            $endTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting_post', 'forwarded_at');
+                            if ($endTs === null) {
+                                $endTs = get_last_stage_timestamp($updatesByStage, 'budget');
+                            }
+                            if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
+                                $elapsedBudget = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['budget'] ?? 0));
                             }
                             ?>
                             <h6 class="timeline-title d-flex justify-content-between align-items-center">
@@ -1589,7 +1639,7 @@ include __DIR__ . '/header.php';
                         </div>
                     </div>
 
-                    <?php if (!empty($handoffHistory)) { render_handoff_between('budget', 'accounting_post', $handoffHistory); } ?>
+                    <?php if (!empty($handoffHistory)) { render_handoff_between('budget', 'accounting_post', $handoffHistory, (int)$handoffGraceSeconds); } ?>
 
                     <!-- Accounting -->
                     <div class="timeline-item <?php echo !empty($updatesByStage['accounting_post']) ? 'completed' : 'pending'; ?>">
@@ -1598,12 +1648,15 @@ include __DIR__ . '/header.php';
                         </div>
                         <div class="timeline-content">
                             <?php
-                            // Elapsed from latest Budget update to latest Accounting update (post-budget)
+                            // Elapsed from received_at (handoff) to forwarded_at (handoff) or latest Accounting (post-budget) update
                             $elapsedAcctPost = '';
-                            $prevTs = get_last_stage_timestamp($updatesByStage, 'budget');
-                            $currTs = get_last_stage_timestamp($updatesByStage, 'accounting_post');
-                            if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
-                                $elapsedAcctPost = format_elapsed_time(($currTs - $prevTs) + (int)($handoffExtras['accounting_post'] ?? 0));
+                            $startTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting_post', 'received_at');
+                            $endTs = get_handoff_timestamp($handoffHistory, 'accounting_post', 'cashier', 'forwarded_at');
+                            if ($endTs === null) {
+                                $endTs = get_last_stage_timestamp($updatesByStage, 'accounting_post');
+                            }
+                            if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
+                                $elapsedAcctPost = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['accounting_post'] ?? 0));
                             }
                             ?>
                             <h6 class="timeline-title d-flex justify-content-between align-items-center">
@@ -1637,7 +1690,7 @@ include __DIR__ . '/header.php';
                         </div>
                     </div>
 
-                    <?php if (!empty($handoffHistory)) { render_handoff_between('accounting_post', 'cashier', $handoffHistory); } ?>
+                    <?php if (!empty($handoffHistory)) { render_handoff_between('accounting_post', 'cashier', $handoffHistory, (int)$handoffGraceSeconds); } ?>
 
                     <!-- Cashier -->
                     <div class="timeline-item <?php echo !empty($transaction['cashier_status']) ? 'completed' : 'pending'; ?>">
@@ -1646,12 +1699,12 @@ include __DIR__ . '/header.php';
                         </div>
                         <div class="timeline-content">
                             <?php
-                            // Elapsed from latest Accounting (Post-Budget) update to latest Cashier update
+                            // Elapsed from received_at (handoff) to latest Cashier update
                             $elapsedCashier = '';
-                            $prevTs = get_last_stage_timestamp($updatesByStage, 'accounting_post');
-                            $currTs = get_last_stage_timestamp($updatesByStage, 'cashier');
-                            if ($prevTs !== null && $currTs !== null && $currTs >= $prevTs) {
-                                $elapsedCashier = format_elapsed_time(($currTs - $prevTs) + (int)($handoffExtras['cashier'] ?? 0));
+                            $startTs = get_handoff_timestamp($handoffHistory, 'accounting_post', 'cashier', 'received_at');
+                            $endTs = get_last_stage_timestamp($updatesByStage, 'cashier');
+                            if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
+                                $elapsedCashier = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['cashier'] ?? 0));
                             }
                             ?>
                             <h6 class="timeline-title d-flex justify-content-between align-items-center">
