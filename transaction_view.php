@@ -45,7 +45,7 @@ $updatesByStage = [
     'cashier' => [],
 ];
 
-$handoffGraceSeconds = 20; //adjust the time for grace period
+$handoffGraceSeconds = 60; //adjust the time for grace period, time unit: seconds
 $handoffOpen = null;
 $handoffHistory = [];
 $handoffExtras = [
