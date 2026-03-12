@@ -52,6 +52,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errors[] = 'Error removing session.';
             }
         }
+    } elseif ($action === 'delete_session') {
+        $sid = (string)($_POST['session_id'] ?? '');
+        if ($sid !== '' && !empty($user['id'])) {
+            try {
+                $stmt = $db->prepare('DELETE FROM user_sessions WHERE user_id = ? AND session_id = ?');
+                $stmt->execute([$user['id'], $sid]);
+
+                if (!empty($_SESSION['session_id']) && hash_equals((string)$_SESSION['session_id'], $sid)) {
+                    $_SESSION = [];
+                    session_destroy();
+                    header('Location: login.php');
+                    exit;
+                }
+
+                $success = 'Session deleted.';
+            } catch (Exception $e) {
+                $errors[] = 'Error deleting session.';
+            }
+        }
     } else {
     $current = $_POST['current_password'] ?? '';
     $new = $_POST['new_password'] ?? '';
@@ -252,6 +271,12 @@ include __DIR__ . '/header.php';
                                         <input type="hidden" name="action" value="revoke_session">
                                         <input type="hidden" name="session_id" value="<?php echo htmlspecialchars($sid); ?>">
                                         <button type="submit" class="btn btn-outline-danger btn-sm">Log out</button>
+                                    </form>
+                                <?php else: ?>
+                                    <form method="post" class="d-inline" onsubmit="return confirm('Delete this session entry?');">
+                                        <input type="hidden" name="action" value="delete_session">
+                                        <input type="hidden" name="session_id" value="<?php echo htmlspecialchars($sid); ?>">
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm">Delete</button>
                                     </form>
                                 <?php endif; ?>
                             </td>

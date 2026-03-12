@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../auth.php';
+require_once __DIR__ . '/../audit.php';
 
 header('Content-Type: application/json');
 
@@ -25,6 +26,10 @@ if ($id <= 0) {
 try {
     $db->beginTransaction();
 
+    $stmtTx = $db->prepare('SELECT po_number, supplier_id FROM transactions WHERE id = ? LIMIT 1');
+    $stmtTx->execute([$id]);
+    $txRow = $stmtTx->fetch(PDO::FETCH_ASSOC);
+
     $stmt = $db->prepare('DELETE FROM transaction_updates WHERE transaction_id = ?');
     $stmt->execute([$id]);
 
@@ -32,6 +37,15 @@ try {
     $stmt->execute([$id]);
 
     $db->commit();
+
+    try {
+        create_log($db, $_SESSION['user_id'] ?? null, 'transaction_delete', 'transaction', (int)$id, json_encode([
+            'transaction_id' => (int)$id,
+            'po_number' => (string)($txRow['po_number'] ?? ''),
+            'supplier_id' => (int)($txRow['supplier_id'] ?? 0),
+        ]));
+    } catch (Exception $e) {
+    }
 
     echo json_encode([
         'success' => true,

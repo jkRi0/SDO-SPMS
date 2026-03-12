@@ -72,7 +72,14 @@ $transactions = $stmt->fetchAll();
                 <?php endif; ?>
             </div>
 
-            <div id="transactionsSearchSlot" class="d-flex align-items-center"></div>
+            <div id="transactionsSearchSlot" class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-outline-danger btn-sm" id="btnTransactionsPdf">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button type="button" class="btn btn-outline-success btn-sm" id="btnTransactionsExcel">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+            </div>
         </div>
         <div class="table-responsive">
             <table id="transactionsTable" class="table table-sm table-hover table-striped align-middle datatable table-compact">

@@ -31,6 +31,11 @@ if ($role === 'supplier') {
     $subtitle = 'Supplier Dashboard';
 }
 
+$pageTitle = $subtitle . ' - ' . strtoupper((string)$role) . ' - STMS';
+if ($role === 'supplier') {
+    $pageTitle = $subtitle . ' - STMS';
+}
+
 include __DIR__ . '/header.php';
 ?>
 
@@ -139,7 +144,23 @@ include __DIR__ . '/header.php';
         $onlineUsers = [];
         $onlineCount = 0;
     }
+
+    $totalSuppliers = 0;
+    $totalTransactions = 0;
+    try {
+        $stmtTotalSuppliers = $db->query('SELECT COUNT(*) FROM suppliers');
+        $totalSuppliers = $stmtTotalSuppliers ? (int)$stmtTotalSuppliers->fetchColumn() : 0;
+    } catch (Exception $e) {
+        $totalSuppliers = 0;
+    }
+    try {
+        $stmtTotalTransactions = $db->query('SELECT COUNT(*) FROM transactions');
+        $totalTransactions = $stmtTotalTransactions ? (int)$stmtTotalTransactions->fetchColumn() : 0;
+    } catch (Exception $e) {
+        $totalTransactions = 0;
+    }
     ?>
+
     <div class="row g-3 mt-1">
         <div class="col-md-6">
             <div class="card h-100">
@@ -255,6 +276,22 @@ include __DIR__ . '/header.php';
 
     <div class="section-header mt-4">
         <h5 class="section-title">All Transactions</h5>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <div class="stat-content">
+                <div class="stat-label">Total Suppliers</div>
+                <div class="stat-number" id="statTotalSuppliers"><?php echo (int)$totalSuppliers; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-industry"></i></div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-content">
+                <div class="stat-label">Total Transactions</div>
+                <div class="stat-number" id="statTotalTransactions"><?php echo (int)$totalTransactions; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-file-invoice"></i></div>
+        </div>
     </div>
     <div id="transactionsContainer">
         <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>

@@ -12,8 +12,328 @@
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            async function __readAsDataUrl(url) {
+                try {
+                    const res = await fetch(url, { cache: 'no-store' });
+                    if (!res.ok) return null;
+                    const blob = await res.blob();
+                    return await new Promise(function (resolve) {
+                        const reader = new FileReader();
+                        reader.onloadend = function () { resolve(reader.result || null); };
+                        reader.onerror = function () { resolve(null); };
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            async function __getImageSize(dataUrl) {
+                return await new Promise(function (resolve) {
+                    if (!dataUrl) return resolve(null);
+                    var img = new window.Image();
+                    img.onload = function () {
+                        resolve({ width: img.naturalWidth || 0, height: img.naturalHeight || 0 });
+                    };
+                    img.onerror = function () { resolve(null); };
+                    img.src = dataUrl;
+                });
+            }
+
+            function __fitRect(srcW, srcH, maxW, maxH) {
+                if (!srcW || !srcH || !maxW || !maxH) {
+                    return { w: maxW, h: maxH };
+                }
+                var ratio = Math.min(maxW / srcW, maxH / srcH);
+                return { w: srcW * ratio, h: srcH * ratio };
+            }
+
+            async function exportTransactionsPdf() {
+                if (!window.jspdf || !window.jspdf.jsPDF) {
+                    alert('PDF library not loaded.');
+                    return;
+                }
+                if (!(window.jQuery && jQuery.fn && jQuery.fn.dataTable && jQuery.fn.dataTable.isDataTable('#transactionsTable'))) {
+                    alert('Transactions table is not ready.');
+                    return;
+                }
+
+                const dt = jQuery('#transactionsTable').DataTable();
+                const nodes = dt.rows({ search: 'applied' }).nodes().toArray();
+
+                function __normText(s) {
+                    return String(s || '')
+                        .replace(/\u00a0/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                }
+
+                function __normAmount(s) {
+                    var out = __normText(s);
+                    out = out
+                        .replace(/\s*,\s*/g, ',')
+                        .replace(/\s*\.\s*/g, '.')
+                        .replace(/(\d)\s+(?=[\d,.])/g, '$1');
+
+                    // Keep numbers only (optionally with '.' and '-')
+                    // Example inputs can contain currency symbols or other glyphs.
+                    var numeric = out.replace(/[^0-9.\-]/g, '');
+                    if (numeric === '' || numeric === '-' || numeric === '.' || numeric === '-.') {
+                        return '';
+                    }
+
+                    var num = Number(numeric);
+                    if (!Number.isFinite(num)) {
+                        // Fallback: return the digits-only string
+                        return numeric;
+                    }
+
+                    // Format as plain number with commas; keep decimals only if present in source
+                    var hasDecimal = numeric.indexOf('.') !== -1;
+                    if (hasDecimal) {
+                        var parts = numeric.split('.');
+                        var decLen = parts[1] ? Math.min(parts[1].length, 2) : 0;
+                        return num.toLocaleString(undefined, {
+                            minimumFractionDigits: decLen,
+                            maximumFractionDigits: decLen,
+                        });
+                    }
+                    return Math.trunc(num).toLocaleString(undefined);
+                }
+
+                const rows = [];
+                nodes.forEach(function (tr) {
+                    if (!tr || !tr.cells || tr.cells.length < 6) return;
+                    const po = __normText(tr.cells[0].textContent);
+                    const supplier = __normText(tr.cells[1].textContent);
+                    const program = __normText(tr.cells[2].textContent);
+                    const amount = __normAmount(tr.cells[3].textContent);
+                    const status = __normText(tr.cells[4].textContent);
+                    const created = __normText(tr.cells[5].textContent);
+                    if (po === '' && supplier === '' && program === '') return;
+                    rows.push([po, supplier, program, amount, status, created]);
+                });
+
+                if (rows.length === 0) {
+                    alert('No rows to export (check filters/search).');
+                    return;
+                }
+
+                if (window.__txPdfHeaderDataUrl === undefined) {
+                    window.__txPdfHeaderDataUrl = await __readAsDataUrl('assets/images/header.jpg');
+                }
+                if (window.__txPdfFooterDataUrl === undefined) {
+                    window.__txPdfFooterDataUrl = await __readAsDataUrl('assets/images/footer.jpg');
+                }
+
+                const headerDataUrl = window.__txPdfHeaderDataUrl;
+                const footerDataUrl = window.__txPdfFooterDataUrl;
+
+                const doc = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+
+                const leftMargin = 10;
+                const rightMargin = 10;
+                const headerY = 6;
+                const footerBottomPad = 6;
+
+                const maxHeaderW = pageWidth - (leftMargin + rightMargin);
+                const maxFooterW = pageWidth - (leftMargin + rightMargin);
+                const maxHeaderH = 42;
+                const maxFooterH = 22;
+
+                const headerSizePx = await __getImageSize(headerDataUrl);
+                const footerSizePx = await __getImageSize(footerDataUrl);
+
+                const headerFit = headerDataUrl && headerSizePx ? __fitRect(headerSizePx.width, headerSizePx.height, maxHeaderW, maxHeaderH) : { w: maxHeaderW, h: 0 };
+                const footerFit = footerDataUrl && footerSizePx ? __fitRect(footerSizePx.width, footerSizePx.height, maxFooterW, maxFooterH) : { w: maxFooterW, h: 0 };
+
+                const headerW = headerFit.w;
+                const headerH = headerFit.h;
+                const headerX = (pageWidth - headerW) / 2;
+
+                const footerW = footerFit.w;
+                const footerH = footerFit.h;
+                const footerX = (pageWidth - footerW) / 2;
+                const footerY = pageHeight - footerH - footerBottomPad;
+
+                const topMargin = headerY + headerH + 7;
+                const bottomMargin = footerH + footerBottomPad + 10;
+
+                function drawHeaderFooter() {
+                    if (headerDataUrl) {
+                        doc.addImage(headerDataUrl, 'JPEG', headerX, headerY, headerW, headerH);
+                    }
+                    if (footerDataUrl) {
+                        doc.addImage(footerDataUrl, 'JPEG', footerX, footerY, footerW, footerH);
+                    }
+                    doc.setDrawColor(0);
+                    doc.setLineWidth(0.2);
+                    if (headerH > 0) {
+                        doc.line(leftMargin, headerY + headerH + 1.5, pageWidth - rightMargin, headerY + headerH + 1.5);
+                    }
+                    if (footerH > 0) {
+                        doc.line(leftMargin, footerY - 1.5, pageWidth - rightMargin, footerY - 1.5);
+                    }
+                }
+
+                doc.setFontSize(11);
+                doc.setTextColor(30, 30, 30);
+                const title = 'Transactions List';
+                doc.text(title, leftMargin, topMargin - 6);
+
+                doc.autoTable({
+                    startY: topMargin,
+                    head: [["PO #", "Supplier", "Program Title", "Amount", "Current Status", "Created"]],
+                    body: rows,
+                    theme: 'grid',
+                    margin: { top: topMargin, bottom: bottomMargin, left: leftMargin, right: rightMargin },
+                    tableWidth: 'auto',
+                    styles: { fontSize: 8, cellPadding: { top: 2, right: 2, bottom: 2, left: 2 }, overflow: 'linebreak', valign: 'middle' },
+                    headStyles: { fillColor: [245, 247, 250], textColor: [20, 20, 20], fontStyle: 'bold', overflow: 'linebreak' },
+                    columnStyles: {
+                        0: { cellWidth: 24 },
+                        1: { cellWidth: 28 },
+                        2: { cellWidth: 44 },
+                        3: { cellWidth: 24, halign: 'right' },
+                        4: { cellWidth: 40 },
+                        5: { cellWidth: 26 },
+                    },
+                    didParseCell: function (data) {
+                        if (!data || !data.cell) return;
+                        if (data.section === 'body') {
+                            if (data.column && data.column.index === 0) {
+                                data.cell.styles.overflow = 'hidden';
+                            }
+                            if (data.column && data.column.index === 3) {
+                                data.cell.styles.overflow = 'hidden';
+                                data.cell.styles.fontSize = 7;
+                            }
+                            if (data.column && data.column.index === 5) {
+                                data.cell.styles.overflow = 'hidden';
+                                data.cell.styles.fontSize = 7;
+                            }
+                        }
+                    },
+                    didDrawPage: function () {
+                        drawHeaderFooter();
+                    },
+                });
+
+                const pdfBlob = doc.output('blob');
+                const url = URL.createObjectURL(pdfBlob);
+                window.open(url, '_blank');
+            }
+
+            function exportTransactionsExcel() {
+                if (!window.XLSX) {
+                    alert('Excel library not loaded.');
+                    return;
+                }
+                if (!(window.jQuery && jQuery.fn && jQuery.fn.dataTable && jQuery.fn.dataTable.isDataTable('#transactionsTable'))) {
+                    alert('Transactions table is not ready.');
+                    return;
+                }
+
+                const dt = jQuery('#transactionsTable').DataTable();
+                const nodes = dt.rows({ search: 'applied' }).nodes().toArray();
+
+                function __normText(s) {
+                    return String(s || '')
+                        .replace(/\u00a0/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                }
+
+                function __normAmount(s) {
+                    var out = __normText(s);
+                    out = out
+                        .replace(/\s*,\s*/g, ',')
+                        .replace(/\s*\.\s*/g, '.')
+                        .replace(/(\d)\s+(?=[\d,.])/g, '$1');
+
+                    var numeric = out.replace(/[^0-9.\-]/g, '');
+                    if (numeric === '' || numeric === '-' || numeric === '.' || numeric === '-.') {
+                        return '';
+                    }
+
+                    var num = Number(numeric);
+                    if (!Number.isFinite(num)) {
+                        return numeric;
+                    }
+
+                    var hasDecimal = numeric.indexOf('.') !== -1;
+                    if (hasDecimal) {
+                        var parts = numeric.split('.');
+                        var decLen = parts[1] ? Math.min(parts[1].length, 2) : 0;
+                        return Number(num.toFixed(decLen));
+                    }
+                    return Math.trunc(num);
+                }
+
+                const header = ["PO #", "Supplier", "Program Title", "Amount", "Current Status", "Created"];
+                const data = [header];
+
+                nodes.forEach(function (tr) {
+                    if (!tr || !tr.cells || tr.cells.length < 6) return;
+                    const po = __normText(tr.cells[0].textContent);
+                    const supplier = __normText(tr.cells[1].textContent);
+                    const program = __normText(tr.cells[2].textContent);
+                    const amount = __normAmount(tr.cells[3].textContent);
+                    const status = __normText(tr.cells[4].textContent);
+                    const created = __normText(tr.cells[5].textContent);
+                    if (po === '' && supplier === '' && program === '') return;
+                    data.push([po, supplier, program, amount, status, created]);
+                });
+
+                if (data.length <= 1) {
+                    alert('No rows to export (check filters/search).');
+                    return;
+                }
+
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                ws['!cols'] = [
+                    { wch: 18 },
+                    { wch: 18 },
+                    { wch: 28 },
+                    { wch: 14 },
+                    { wch: 26 },
+                    { wch: 18 },
+                ];
+
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
+
+                const now = new Date();
+                const yyyy = now.getFullYear();
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                XLSX.writeFile(wb, 'transactions_' + yyyy + '-' + mm + '-' + dd + '.xlsx');
+            }
+
+            window.exportTransactionsPdf = exportTransactionsPdf;
+            var pdfBtn = document.getElementById('btnTransactionsPdf');
+            if (pdfBtn) {
+                pdfBtn.addEventListener('click', function () {
+                    exportTransactionsPdf();
+                });
+            }
+
+            window.exportTransactionsExcel = exportTransactionsExcel;
+            var excelBtn = document.getElementById('btnTransactionsExcel');
+            if (excelBtn) {
+                excelBtn.addEventListener('click', function () {
+                    exportTransactionsExcel();
+                });
+            }
+
             // Initialize all tables marked with .datatable
             document.querySelectorAll('table.datatable').forEach(function (tbl) {
                 $(tbl).DataTable({

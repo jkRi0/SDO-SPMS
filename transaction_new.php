@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/audit.php';
 
 require_role(['procurement']);
 
@@ -53,8 +54,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $proc_remarks
             ]);
 
+            $newTxId = (int)$db->lastInsertId();
+
             $db->commit();
             $success = 'Transaction created successfully. PO Number: ' . $po_number;
+
+            try {
+                create_log($db, $_SESSION['user_id'] ?? null, 'transaction_create', 'transaction', $newTxId, json_encode([
+                    'transaction_id' => $newTxId,
+                    'po_number' => (string)$po_number,
+                    'supplier_id' => (int)$supplier_id,
+                    'program_title' => (string)$program_title,
+                    'amount' => (string)$amount,
+                    'proc_status' => (string)($proc_status ?: 'FOR SUPPLY REVIEW'),
+                ]));
+            } catch (Exception $e) {
+            }
         } catch (Exception $e) {
             $db->rollBack();
             $error = 'Error creating transaction.';
