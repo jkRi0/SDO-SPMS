@@ -282,43 +282,51 @@ $transactions = $stmt->fetchAll();
 <?php if ($role === 'procurement'): ?>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.btn-delete-tx').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            const id = this.getAttribute('data-tx-id');
-            if (!id) return;
+    if (window.__STMS_TX_DELETE_BOUND) {
+        return;
+    }
+    window.__STMS_TX_DELETE_BOUND = true;
 
-            const row = this.closest('tr');
+    document.addEventListener('click', function (e) {
+        var btn = e.target && e.target.closest ? e.target.closest('.btn-delete-tx') : null;
+        if (!btn) {
+            return;
+        }
 
-            if (!confirm('Delete this transaction? This cannot be undone.')) {
-                return;
-            }
+        const id = btn.getAttribute('data-tx-id');
+        if (!id) return;
 
-            fetch('api/api_delete_transaction.php', {
-                method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                body: new URLSearchParams({ id: id })
-            })
-                .then(resp => resp.json())
-                .then(data => {
-                    if (data.success) {
-                        if (row) {
-                            row.remove();
-                        }
+        const row = btn.closest('tr');
 
-                        const tbody = document.getElementById('transactionsBody');
-                        if (tbody && tbody.querySelectorAll('tr').length === 0) {
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = '<td class="text-center text-muted">No transactions found.</td><td></td><td></td><td></td><td></td><td></td><td></td>';
-                            tbody.appendChild(tr);
-                        }
-                    } else {
-                        alert(data.message || 'Failed to delete transaction.');
+        if (!confirm('Delete this transaction? This cannot be undone.')) {
+            return;
+        }
+
+        fetch('api/api_delete_transaction.php', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams({ id: id })
+        })
+            .then(resp => resp.json())
+            .then(data => {
+                if (data.success) {
+                    if (row) {
+                        row.remove();
                     }
-                })
-                .catch(() => {
-                    alert('Failed to delete transaction.');
-                });
-        });
+
+                    const tbody = document.getElementById('transactionsBody');
+                    if (tbody && tbody.querySelectorAll('tr').length === 0) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = '<td class="text-center text-muted">No transactions found.</td><td></td><td></td><td></td><td></td><td></td><td></td>';
+                        tbody.appendChild(tr);
+                    }
+                } else {
+                    alert(data.message || 'Failed to delete transaction.');
+                }
+            })
+            .catch(() => {
+                alert('Failed to delete transaction.');
+            });
     });
 });
 </script>

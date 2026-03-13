@@ -1,0 +1,23 @@
+{
+  "name": "STMS - Supplier Transaction Monitoring System",
+  "short_name": "STMS",
+  "start_url": "./dashboard.php",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#3b7ca8",
+  "icons": [
+    {
+      "src": "assets/images/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/images/DEPED LOGO.jpg",
+      "sizes": "any",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
