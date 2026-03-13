@@ -2064,9 +2064,12 @@ include __DIR__ . '/header.php';
 <script>
 // Periodically refresh only the Flow Timeline without reloading the whole page
 document.addEventListener('DOMContentLoaded', function () {
-    const refreshIntervalMs = (window.POLL_INTERVALS && window.POLL_INTERVALS.TRANSACTION_TIMELINE) || 5000;
+    const refreshIntervalMs = window.POLL_INTERVALS.TRANSACTION_TIMELINE;
 
     function refreshTimeline() {
+        if (document.visibilityState !== 'visible') {
+            return;
+        }
         const currentTimeline = document.querySelector('.timeline');
         if (!currentTimeline) return;
 
@@ -2087,6 +2090,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function refreshBasicInfo() {
+        if (document.visibilityState !== 'visible') {
+            return;
+        }
         const current = document.getElementById('basicInfoContainer');
         if (!current) return;
 
@@ -2107,6 +2113,9 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(refreshTimeline, refreshIntervalMs);
 
     function refreshHandoffStatus() {
+        if (document.visibilityState !== 'visible') {
+            return;
+        }
         const current = document.getElementById('handoffStatusContainer');
         if (!current) return;
 

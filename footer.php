@@ -74,7 +74,7 @@
             checkConnectivity();
             window.addEventListener('online', checkConnectivity);
             window.addEventListener('offline', checkConnectivity);
-            setInterval(checkConnectivity, 3000);
+            setInterval(checkConnectivity, window.POLL_INTERVALS.CONNECTIVITY);
 
             async function __readAsDataUrl(url) {
                 try {
@@ -576,7 +576,7 @@
 
                 // Initial load + interval
                 refreshNotifications();
-                setInterval(refreshNotifications, (window.POLL_INTERVALS && window.POLL_INTERVALS.HEADER_NOTIFICATIONS) || 5000);
+                setInterval(refreshNotifications, window.POLL_INTERVALS.HEADER_NOTIFICATIONS);
             }
 
             // Auto-refresh department notifications in header bell
@@ -654,7 +654,7 @@
                 }
 
                 refreshDeptNotifications();
-                setInterval(refreshDeptNotifications, (window.POLL_INTERVALS && window.POLL_INTERVALS.HEADER_DEPT_NOTIFICATIONS) || 5000);
+                setInterval(refreshDeptNotifications, window.POLL_INTERVALS.HEADER_DEPT_NOTIFICATIONS);
             }
 
             // Auto-refresh admin feedback dropdown (admin role only)
@@ -736,7 +736,7 @@
                 }
 
                 refreshAdminFeedback();
-                setInterval(refreshAdminFeedback, (window.POLL_INTERVALS && window.POLL_INTERVALS.HEADER_ADMIN_FEEDBACK) || 5000);
+                setInterval(refreshAdminFeedback, window.POLL_INTERVALS.HEADER_ADMIN_FEEDBACK);
             }
         });
     </script>

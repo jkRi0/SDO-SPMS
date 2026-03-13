@@ -693,7 +693,7 @@ document.addEventListener('DOMContentLoaded', function () {
         setInterval(function () {
             refreshDashboardTransactions();
             refreshDashboardStats();
-        }, (window.POLL_INTERVALS && window.POLL_INTERVALS.DASHBOARD) || 5000);
+        }, window.POLL_INTERVALS.DASHBOARD);
     }
 
     // Admin "Online Users" auto-refresh
@@ -752,7 +752,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         refreshOnlineUsers();
-        setInterval(refreshOnlineUsers, (window.POLL_INTERVALS && window.POLL_INTERVALS.DASHBOARD_ONLINE_USERS) || 5000);
+        setInterval(refreshOnlineUsers, window.POLL_INTERVALS.DASHBOARD_ONLINE_USERS);
     }
 
     // Admin "Login Logs" auto-refresh
@@ -808,7 +808,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         refreshLoginLogs();
-        setInterval(refreshLoginLogs, (window.POLL_INTERVALS && window.POLL_INTERVALS.DASHBOARD_LOGIN_LOGS) || 5000);
+        setInterval(refreshLoginLogs, window.POLL_INTERVALS.DASHBOARD_LOGIN_LOGS);
     }
 });
 </script>
