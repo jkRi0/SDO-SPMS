@@ -74,7 +74,14 @@
             checkConnectivity();
             window.addEventListener('online', checkConnectivity);
             window.addEventListener('offline', checkConnectivity);
-            setInterval(checkConnectivity, window.POLL_INTERVALS.CONNECTIVITY);
+            setInterval(function () {
+                if (window.SMART_POLLING_ENABLED) {
+                    if (document.visibilityState !== 'visible' || !document.hasFocus()) {
+                        return;
+                    }
+                }
+                checkConnectivity();
+            }, window.POLL_INTERVALS.CONNECTIVITY);
 
             async function __readAsDataUrl(url) {
                 try {
@@ -503,7 +510,7 @@
             var notifList = document.getElementById('notifList');
             if (notifBadge && notifList) {
                 function refreshNotifications() {
-                    if (window.SMART_POLLING_ENABLED && document.visibilityState !== 'visible') {
+                    if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
                         return;
                     }
 
@@ -515,7 +522,7 @@
                             var unread = data.unread_count || 0;
                             if (unread > 0) {
                                 notifBadge.style.display = 'inline-block';
-                                notifBadge.textContent = unread > 9 ? '9+' : unread;
+                                notifBadge.textContent = String(unread);
                             } else {
                                 notifBadge.style.display = 'none';
                                 notifBadge.textContent = '';
@@ -584,7 +591,7 @@
             var deptNotifList = document.getElementById('deptNotifList');
             if (deptNotifBadge && deptNotifList) {
                 function refreshDeptNotifications() {
-                    if (window.SMART_POLLING_ENABLED && document.visibilityState !== 'visible') {
+                    if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
                         return;
                     }
 
@@ -596,7 +603,7 @@
                             var unread = data.unread_count || 0;
                             if (unread > 0) {
                                 deptNotifBadge.style.display = 'inline-block';
-                                deptNotifBadge.textContent = unread > 9 ? '9+' : unread;
+                                deptNotifBadge.textContent = String(unread);
                             } else {
                                 deptNotifBadge.style.display = 'none';
                                 deptNotifBadge.textContent = '';
@@ -662,7 +669,7 @@
             var adminFeedbackList = document.getElementById('adminFeedbackList');
             if (adminFeedbackBadge && adminFeedbackList) {
                 function refreshAdminFeedback() {
-                    if (window.SMART_POLLING_ENABLED && document.visibilityState !== 'visible') {
+                    if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
                         return;
                     }
 

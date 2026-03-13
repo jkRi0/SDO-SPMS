@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!tbody) return;
 
     function refreshUsers() {
-        if (document.visibilityState !== 'visible') {
+        if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
             return;
         }
 

@@ -20,12 +20,9 @@ try {
     $stmt->execute([$user['supplier_id']]);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $unread = 0;
-    foreach ($rows as $row) {
-        if (empty($row['is_read'])) {
-            $unread++;
-        }
-    }
+    $stmtUnread = $db->prepare('SELECT COUNT(*) FROM notifications WHERE supplier_id = ? AND is_read = 0');
+    $stmtUnread->execute([$user['supplier_id']]);
+    $unread = (int)$stmtUnread->fetchColumn();
 
     echo json_encode([
         'success' => true,

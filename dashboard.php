@@ -623,7 +623,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!statActive || !statPending || !statApproved) {
                 return;
             }
-            if (document.visibilityState !== 'visible') {
+            if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
                 return;
             }
             if (statsRefreshInFlight) {
@@ -646,7 +646,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function refreshDashboardTransactions() {
-            if (document.visibilityState !== 'visible') {
+            if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
                 return;
             }
 
@@ -701,7 +701,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var onlineUsersTbody = document.getElementById('onlineUsersTbody');
     if (onlineUsersBadge && onlineUsersTbody) {
         function refreshOnlineUsers() {
-            if (document.visibilityState !== 'visible') {
+            if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
                 return;
             }
 
@@ -759,7 +759,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var loginLogsTbody = document.getElementById('loginLogsTbody');
     if (loginLogsTbody) {
         function refreshLoginLogs() {
-            if (document.visibilityState !== 'visible') {
+            if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
                 return;
             }
 

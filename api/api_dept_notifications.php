@@ -27,12 +27,9 @@ try {
 
     $rows = fetch_dept_notifications($db, $role, 10);
 
-    $unread = 0;
-    foreach ($rows as $row) {
-        if (empty($row['is_read'])) {
-            $unread++;
-        }
-    }
+    $stmtUnread = $db->prepare('SELECT COUNT(*) FROM department_notifications WHERE role = ? AND is_read = 0');
+    $stmtUnread->execute([(string)$role]);
+    $unread = (int)$stmtUnread->fetchColumn();
 
     echo json_encode([
         'success' => true,

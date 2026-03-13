@@ -12,6 +12,23 @@ $db = get_db();
 $errors = [];
 $success = '';
 
+$smartPollingEnabled = 1;
+try {
+    $db->exec('CREATE TABLE IF NOT EXISTS user_preferences (
+        user_id INT(11) NOT NULL,
+        smart_polling_enabled TINYINT(1) NOT NULL DEFAULT 1,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
+
+    $prefStmt = $db->prepare('SELECT smart_polling_enabled FROM user_preferences WHERE user_id = ? LIMIT 1');
+    $prefStmt->execute([(int)($user['id'] ?? 0)]);
+    $pref = $prefStmt->fetch();
+    $smartPollingEnabled = ($pref && isset($pref['smart_polling_enabled'])) ? (int)$pref['smart_polling_enabled'] : 1;
+} catch (Exception $e) {
+    $smartPollingEnabled = 1;
+}
+
 $sessions = [];
 try {
     $db->exec('CREATE TABLE IF NOT EXISTS user_sessions (
@@ -33,7 +50,18 @@ try {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string)($_POST['action'] ?? '');
-    if ($action === 'revoke_session') {
+    if ($action === 'set_smart_polling') {
+        $enabled = !empty($_POST['smart_polling_enabled']) ? 1 : 0;
+        try {
+            $stmt = $db->prepare('INSERT INTO user_preferences (user_id, smart_polling_enabled) VALUES (?, ?) ON DUPLICATE KEY UPDATE smart_polling_enabled = VALUES(smart_polling_enabled)');
+            $stmt->execute([(int)($user['id'] ?? 0), $enabled]);
+            $smartPollingEnabled = $enabled;
+            $_SESSION['smart_polling_enabled'] = $enabled;
+            $success = 'Smart Polling preference updated.';
+        } catch (Exception $e) {
+            $errors[] = 'Error updating Smart Polling preference.';
+        }
+    } elseif ($action === 'revoke_session') {
         $sid = (string)($_POST['session_id'] ?? '');
         if ($sid !== '' && !empty($user['id'])) {
             try {
@@ -150,6 +178,22 @@ include __DIR__ . '/header.php';
 
 <div class="container mt-4" style="max-width: 900px;">
     <h3 class="mb-3">Account Settings</h3>
+
+    <div class="card mb-3">
+        <div class="card-body d-flex justify-content-between align-items-start gap-3" style="flex-wrap: wrap;">
+            <div>
+                <div class="fw-semibold">Smart Polling</div>
+                <div class="text-muted small">When enabled, auto-refresh runs only while this tab is visible and this window is focused.</div>
+            </div>
+            <form method="post" class="m-0">
+                <input type="hidden" name="action" value="set_smart_polling">
+                <div class="form-check form-switch m-0">
+                    <input class="form-check-input" type="checkbox" role="switch" id="smartPollingSwitch" name="smart_polling_enabled" value="1" <?php echo $smartPollingEnabled ? 'checked' : ''; ?> onchange="this.form.submit();">
+                    <label class="form-check-label" for="smartPollingSwitch"></label>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <?php if ($success): ?>
         <div class="alert alert-success" role="alert">

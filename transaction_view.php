@@ -2067,7 +2067,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const refreshIntervalMs = window.POLL_INTERVALS.TRANSACTION_TIMELINE;
 
     function refreshTimeline() {
-        if (document.visibilityState !== 'visible') {
+        if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
             return;
         }
         const currentTimeline = document.querySelector('.timeline');
@@ -2090,7 +2090,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function refreshBasicInfo() {
-        if (document.visibilityState !== 'visible') {
+        if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
             return;
         }
         const current = document.getElementById('basicInfoContainer');
@@ -2113,7 +2113,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(refreshTimeline, refreshIntervalMs);
 
     function refreshHandoffStatus() {
-        if (document.visibilityState !== 'visible') {
+        if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
             return;
         }
         const current = document.getElementById('handoffStatusContainer');

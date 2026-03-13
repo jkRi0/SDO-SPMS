@@ -903,6 +903,9 @@ if (session_status() === PHP_SESSION_NONE) {
 
     </style>
     <script src="assets/vendor/chartjs/chart.umd.min.js"></script>
+    <script>
+        window.SMART_POLLING_ENABLED = <?php echo !empty($_SESSION['smart_polling_enabled']) ? 'true' : 'false'; ?>;
+    </script>
     <script src="assets/polling_intervals.js"></script>
 </head>
 <body>
@@ -927,14 +930,13 @@ if (session_status() === PHP_SESSION_NONE) {
                 if (function_exists('get_db') && isset($_SESSION['role']) && $_SESSION['role'] === 'supplier' && !empty($_SESSION['supplier_id'])) {
                     try {
                         $dbHeader = get_db();
+                        $stmtHeaderUnread = $dbHeader->prepare('SELECT COUNT(*) FROM notifications WHERE supplier_id = ? AND is_read = 0');
+                        $stmtHeaderUnread->execute([$_SESSION['supplier_id']]);
+                        $headerUnreadCount = (int)$stmtHeaderUnread->fetchColumn();
+
                         $stmtHeaderNotif = $dbHeader->prepare('SELECT id, title, message, link, is_read, created_at FROM notifications WHERE supplier_id = ? ORDER BY created_at DESC LIMIT 10');
                         $stmtHeaderNotif->execute([$_SESSION['supplier_id']]);
                         $headerNotifications = $stmtHeaderNotif->fetchAll(PDO::FETCH_ASSOC);
-                        foreach ($headerNotifications as $row) {
-                            if (empty($row['is_read'])) {
-                                $headerUnreadCount++;
-                            }
-                        }
                     } catch (Exception $e) {
                         // If notifications table is missing or query fails, silently ignore
                     }
@@ -948,14 +950,14 @@ if (session_status() === PHP_SESSION_NONE) {
                         require_once __DIR__ . '/dept_notifications.php';
                         $dbHeader2 = get_db();
                         dept_notifications_ensure_table($dbHeader2);
+
+                        $stmtDeptUnread = $dbHeader2->prepare('SELECT COUNT(*) FROM department_notifications WHERE role = ? AND is_read = 0');
+                        $stmtDeptUnread->execute([$_SESSION['role']]);
+                        $deptHeaderUnreadCount = (int)$stmtDeptUnread->fetchColumn();
+
                         $stmtDept = $dbHeader2->prepare('SELECT id, title, message, link, is_read, created_at FROM department_notifications WHERE role = ? ORDER BY created_at DESC LIMIT 10');
                         $stmtDept->execute([$_SESSION['role']]);
                         $deptHeaderNotifications = $stmtDept->fetchAll(PDO::FETCH_ASSOC);
-                        foreach ($deptHeaderNotifications as $row) {
-                            if (empty($row['is_read'])) {
-                                $deptHeaderUnreadCount++;
-                            }
-                        }
                     } catch (Exception $e) {
                     }
                 }
@@ -973,11 +975,14 @@ if (session_status() === PHP_SESSION_NONE) {
                             <button class="btn btn-light position-relative" type="button" id="notifMenu" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
                                 <i class="fas fa-bell"></i>
                                 <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: <?php echo ($headerUnreadCount > 0) ? 'inline-block' : 'none'; ?>;">
-                                    <?php echo $headerUnreadCount > 9 ? '9+' : ($headerUnreadCount > 0 ? $headerUnreadCount : ''); ?>
+                                    <?php echo $headerUnreadCount > 0 ? $headerUnreadCount : ''; ?>
                                 </span>
                             </button>
                             <ul id="notifList" class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notifMenu" style="width: 320px; max-height: 320px; overflow-y: auto;">
-                                <li class="px-3 py-2 border-bottom"><strong>Notifications</strong></li>
+                                <li class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                                    <strong>Notifications</strong>
+                                    <a href="notifications_all.php" class="small">See all</a>
+                                </li>
                                 <?php if (!empty($headerNotifications)): ?>
                                     <?php foreach ($headerNotifications as $n): ?>
                                         <li class="px-0 py-0 small">
@@ -1007,11 +1012,14 @@ if (session_status() === PHP_SESSION_NONE) {
                             <button class="btn btn-light position-relative" type="button" id="deptNotifMenu" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
                                 <i class="fas fa-bell"></i>
                                 <span id="deptNotifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: <?php echo ($deptHeaderUnreadCount > 0) ? 'inline-block' : 'none'; ?>;">
-                                    <?php echo $deptHeaderUnreadCount > 9 ? '9+' : ($deptHeaderUnreadCount > 0 ? $deptHeaderUnreadCount : ''); ?>
+                                    <?php echo $deptHeaderUnreadCount > 0 ? $deptHeaderUnreadCount : ''; ?>
                                 </span>
                             </button>
                             <ul id="deptNotifList" class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="deptNotifMenu" style="width: 320px; max-height: 320px; overflow-y: auto;">
-                                <li class="px-3 py-2 border-bottom"><strong>Notifications</strong></li>
+                                <li class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                                    <strong>Notifications</strong>
+                                    <a href="dept_notifications_all.php" class="small">See all</a>
+                                </li>
                                 <?php if (!empty($deptHeaderNotifications)): ?>
                                     <?php foreach ($deptHeaderNotifications as $n): ?>
                                         <li class="px-0 py-0 small">

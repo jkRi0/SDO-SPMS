@@ -13,6 +13,24 @@ function require_login()
 
     try {
         $db = get_db();
+        $db->exec('CREATE TABLE IF NOT EXISTS user_preferences (
+            user_id INT(11) NOT NULL,
+            smart_polling_enabled TINYINT(1) NOT NULL DEFAULT 1,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
+
+        if (!array_key_exists('smart_polling_enabled', $_SESSION)) {
+            try {
+                $prefStmt = $db->prepare('SELECT smart_polling_enabled FROM user_preferences WHERE user_id = ? LIMIT 1');
+                $prefStmt->execute([(int)$_SESSION['user_id']]);
+                $pref = $prefStmt->fetch();
+                $_SESSION['smart_polling_enabled'] = ($pref && isset($pref['smart_polling_enabled'])) ? (int)$pref['smart_polling_enabled'] : 1;
+            } catch (Exception $e) {
+                $_SESSION['smart_polling_enabled'] = 1;
+            }
+        }
+
         $db->exec('CREATE TABLE IF NOT EXISTS user_sessions (
             id INT(11) NOT NULL AUTO_INCREMENT,
             user_id INT(11) NOT NULL,
