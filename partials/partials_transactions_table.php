@@ -237,8 +237,10 @@ $transactions = $stmt->fetchAll();
                     } elseif (strpos($statusUpper, 'REJECT') !== false || strpos($statusUpper, 'CANCEL') !== false || strpos($statusUpper, 'DENIED') !== false) {
                         $statusClass = 'badge-danger';
                     }
+
+                    $filterStage = $stageLabel !== '' ? strtolower($stageLabel) : $globalStage;
                     ?>
-                    <tr data-next-dept="<?php echo htmlspecialchars($nextDept); ?>" data-status-dept="<?php echo htmlspecialchars(strtolower($statusDept)); ?>" data-stage="<?php echo htmlspecialchars($globalStage); ?>">
+                    <tr data-next-dept="<?php echo htmlspecialchars($nextDept); ?>" data-status-dept="<?php echo htmlspecialchars(strtolower($statusDept)); ?>" data-stage="<?php echo htmlspecialchars($filterStage); ?>">
                         <td><?php echo htmlspecialchars($t['po_number']); ?></td>
                         <td><?php echo htmlspecialchars($t['supplier_name']); ?></td>
                         <td><?php echo htmlspecialchars($t['program_title']); ?></td>

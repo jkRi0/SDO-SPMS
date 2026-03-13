@@ -10,10 +10,10 @@ if (session_status() === PHP_SESSION_NONE) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php echo htmlspecialchars(isset($pageTitle) && trim((string)$pageTitle) !== '' ? (string)$pageTitle : 'STMS - Supplier Transaction Monitoring System'); ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    <link href="assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/vendor/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="assets/vendor/datatables/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="assets/vendor/datatables/responsive.bootstrap5.min.css">
     <style>
         :root {
             --primary-blue: #3b7ca8;
@@ -257,6 +257,57 @@ if (session_status() === PHP_SESSION_NONE) {
         /* Unread notification highlight */
         .notif-unread {
             background-color: #eef3ff;
+        }
+
+        .conn-indicators {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-right: 10px;
+            padding: 2px 6px;
+            border-radius: 999px;
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .conn-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #9ca3af;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+        }
+
+        .conn-badge {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
+            background: #9ca3af;
+            color: #ffffff;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+            user-select: none;
+        }
+
+        .conn-dot--ok {
+            background: #10b981;
+        }
+
+        .conn-dot--bad {
+            background: #ef4444;
+        }
+
+        .conn-badge--ok {
+            background: #10b981;
+        }
+
+        .conn-badge--bad {
+            background: #ef4444;
         }
 
         .section-header {
@@ -851,7 +902,7 @@ if (session_status() === PHP_SESSION_NONE) {
         }
 
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="assets/vendor/chartjs/chart.umd.min.js"></script>
     <script src="assets/polling_intervals.js"></script>
 </head>
 <body>
@@ -911,6 +962,11 @@ if (session_status() === PHP_SESSION_NONE) {
                 ?>
 
                 <div class="nav-user-info">
+
+                    <div class="conn-indicators" aria-label="Connectivity">
+                        <span id="connLocalDot" class="conn-badge" title="Local server">L</span>
+                        <span id="connInternetDot" class="conn-badge" title="Global internet">G</span>
+                    </div>
 
                     <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'supplier'): ?>
                         <div class="dropdown me-3">

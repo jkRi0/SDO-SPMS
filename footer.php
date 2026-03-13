@@ -1,23 +1,81 @@
     </div> <!-- /.container -->
 
-    <!-- Bootstrap JS (with Popper) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-            crossorigin="anonymous"></script>
-    <!-- jQuery (required by DataTables) -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="assets/vendor/jquery/jquery-3.7.1.min.js"></script>
+    <script src="assets/vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="assets/vendor/datatables/dataTables.bootstrap5.min.js"></script>
+    <script src="assets/vendor/datatables/dataTables.responsive.min.js"></script>
+    <script src="assets/vendor/datatables/responsive.bootstrap5.min.js"></script>
+    <script src="assets/vendor/jspdf/jspdf.umd.min.js"></script>
+    <script src="assets/vendor/jspdf-autotable/jspdf.plugin.autotable.min.js"></script>
+    <script src="assets/vendor/xlsx/xlsx.full.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            function setConnDot(el, state) {
+                if (!el) return;
+                el.classList.remove('conn-dot--ok');
+                el.classList.remove('conn-dot--bad');
+                el.classList.remove('conn-badge--ok');
+                el.classList.remove('conn-badge--bad');
+                if (state === true) {
+                    el.classList.add('conn-dot--ok');
+                    el.classList.add('conn-badge--ok');
+                } else if (state === false) {
+                    el.classList.add('conn-dot--bad');
+                    el.classList.add('conn-badge--bad');
+                }
+            }
+
+            function fetchWithTimeout(url, ms, opts) {
+                opts = opts || {};
+                if (!('AbortController' in window)) {
+                    return fetch(url, opts);
+                }
+                const controller = new AbortController();
+                const t = setTimeout(function () {
+                    try { controller.abort(); } catch (e) {}
+                }, ms);
+                const merged = Object.assign({}, opts, { signal: controller.signal });
+                return fetch(url, merged).finally(function () {
+                    clearTimeout(t);
+                });
+            }
+
+            var connLocalDot = document.getElementById('connLocalDot');
+            var connInternetDot = document.getElementById('connInternetDot');
+
+            function checkConnectivity() {
+                if (connLocalDot) {
+                    fetchWithTimeout('api/api_ping.php', 3000, { cache: 'no-store' })
+                        .then(function (res) {
+                            setConnDot(connLocalDot, !!(res && res.ok));
+                        })
+                        .catch(function () {
+                            setConnDot(connLocalDot, false);
+                        });
+                }
+
+                if (connInternetDot) {
+                    if (navigator.onLine === false) {
+                        setConnDot(connInternetDot, false);
+                        return;
+                    }
+                    fetchWithTimeout('https://www.gstatic.com/generate_204', 3000, { mode: 'no-cors', cache: 'no-store' })
+                        .then(function () {
+                            setConnDot(connInternetDot, true);
+                        })
+                        .catch(function () {
+                            setConnDot(connInternetDot, false);
+                        });
+                }
+            }
+
+            checkConnectivity();
+            window.addEventListener('online', checkConnectivity);
+            window.addEventListener('offline', checkConnectivity);
+            setInterval(checkConnectivity, 3000);
+
             async function __readAsDataUrl(url) {
                 try {
                     const res = await fetch(url, { cache: 'no-store' });
@@ -373,6 +431,9 @@
                         var dept = select ? String(select.value || '') : '';
                         var stage = stageSelect ? String(stageSelect.value || '') : '';
 
+                        dept = dept.toLowerCase().trim();
+                        stage = stage.toLowerCase().trim();
+
                         var rowNode = settings.aoData && settings.aoData[dataIndex] ? settings.aoData[dataIndex].nTr : null;
                         if (!rowNode || !rowNode.dataset) {
                             return true;
@@ -380,14 +441,15 @@
 
                         var okDept = true;
                         if (dept !== '') {
-                            var nextDept = String(rowNode.dataset.nextDept || '');
-                            var statusDept = String(rowNode.dataset.statusDept || '');
+                            var nextDept = String(rowNode.dataset.nextDept || '').toLowerCase().trim();
+                            var statusDept = String(rowNode.dataset.statusDept || '').toLowerCase().trim();
                             okDept = (nextDept === dept || statusDept === dept);
                         }
 
                         var okStage = true;
                         if (stage !== '') {
-                            okStage = String(rowNode.dataset.stage || '') === stage;
+                            var rowStage = String(rowNode.dataset.stage || '').toLowerCase().trim();
+                            okStage = rowStage === stage;
                         }
 
                         return okDept && okStage;
@@ -441,7 +503,7 @@
             var notifList = document.getElementById('notifList');
             if (notifBadge && notifList) {
                 function refreshNotifications() {
-                    if (document.visibilityState !== 'visible') {
+                    if (window.SMART_POLLING_ENABLED && document.visibilityState !== 'visible') {
                         return;
                     }
 
@@ -522,7 +584,7 @@
             var deptNotifList = document.getElementById('deptNotifList');
             if (deptNotifBadge && deptNotifList) {
                 function refreshDeptNotifications() {
-                    if (document.visibilityState !== 'visible') {
+                    if (window.SMART_POLLING_ENABLED && document.visibilityState !== 'visible') {
                         return;
                     }
 
@@ -600,7 +662,7 @@
             var adminFeedbackList = document.getElementById('adminFeedbackList');
             if (adminFeedbackBadge && adminFeedbackList) {
                 function refreshAdminFeedback() {
-                    if (document.visibilityState !== 'visible') {
+                    if (window.SMART_POLLING_ENABLED && document.visibilityState !== 'visible') {
                         return;
                     }
 

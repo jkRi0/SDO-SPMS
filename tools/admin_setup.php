@@ -54,7 +54,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Admin Setup - STMS</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <?php $localBootstrapCss = __DIR__ . '/../assets/vendor/bootstrap/bootstrap.min.css'; ?>
+    <?php if (is_file($localBootstrapCss)): ?>
+        <link href="../assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <?php else: ?>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <?php endif; ?>
 </head>
 <body style="background:#f5f7fa; display:flex; align-items:center; justify-content:center; min-height:100vh;">
     <div class="card" style="width:520px; border-radius:12px;">

@@ -185,7 +185,9 @@ foreach ($transactions as $t) {
         $statusClass = 'badge-danger';
     }
 
-    echo '<tr data-next-dept="' . htmlspecialchars($nextDept) . '" data-status-dept="' . htmlspecialchars(strtolower($statusDept)) . '" data-stage="' . htmlspecialchars($globalStage) . '">';
+    $filterStage = $stageLabel !== '' ? strtolower($stageLabel) : $globalStage;
+
+    echo '<tr data-next-dept="' . htmlspecialchars($nextDept) . '" data-status-dept="' . htmlspecialchars(strtolower($statusDept)) . '" data-stage="' . htmlspecialchars($filterStage) . '">';
     echo '<td>' . htmlspecialchars($t['po_number']) . '</td>';
     echo '<td>' . htmlspecialchars($t['supplier_name']) . '</td>';
     echo '<td>' . htmlspecialchars($t['program_title']) . '</td>';
