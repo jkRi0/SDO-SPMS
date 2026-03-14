@@ -46,7 +46,7 @@ $updatesByStage = [
     'cashier' => [],
 ];
 
-$handoffGraceSeconds = 60; //adjust the time for grace period, time unit: seconds
+$handoffGraceSeconds = 60;
 $handoffOpen = null;
 $handoffHistory = [];
 $handoffExtras = [
@@ -57,6 +57,23 @@ $handoffExtras = [
     'accounting_post' => 0,
     'cashier' => 0,
 ];
+
+try {
+    $db->exec('CREATE TABLE IF NOT EXISTS app_settings (
+        setting_key VARCHAR(128) NOT NULL,
+        setting_value VARCHAR(255) NOT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (setting_key)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
+
+    $stmtGrace = $db->prepare('SELECT setting_value FROM app_settings WHERE setting_key = ?');
+    $stmtGrace->execute(['handoff_grace_seconds']);
+    $graceVal = $stmtGrace->fetchColumn();
+    if ($graceVal !== false && $graceVal !== null && $graceVal !== '') {
+        $handoffGraceSeconds = max(0, (int)$graceVal);
+    }
+} catch (Exception $e) {
+}
 
 try {
     $db->exec('CREATE TABLE IF NOT EXISTS transaction_handoffs (
@@ -307,6 +324,22 @@ if (!function_exists('render_handoff_between')) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($role === 'admin' && isset($_POST['action']) && (string)($_POST['action'] ?? '') === 'set_handoff_grace') {
+        $newGrace = isset($_POST['handoff_grace_seconds']) ? (int)$_POST['handoff_grace_seconds'] : 0;
+        if ($newGrace < 0) {
+            $newGrace = 0;
+        }
+        try {
+            $stmtSet = $db->prepare('INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?)
+                                     ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
+            $stmtSet->execute(['handoff_grace_seconds', (string)$newGrace]);
+        } catch (Exception $e) {
+        }
+
+        header('Location: transaction_view.php?id=' . (int)$id . '&grace_updated=1');
+        exit;
+    }
+
     // Special action: cashier clicking "Notify Supplier" (no transaction field updates)
     if ($role === 'cashier' && isset($_POST['notify_supplier']) && $_POST['notify_supplier'] === '1') {
         try {
@@ -1182,6 +1215,24 @@ include __DIR__ . '/header.php';
 
                     $canEditUpdatesUi = ($role !== 'admin' && $roleDeptUi !== '' && $roleDeptUi === $ownerDeptUi);
                     ?>
+
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                        <div class="text-muted small">
+                            Grace period: <strong><?php echo (int)$handoffGraceSeconds; ?></strong> seconds
+                            (<?php echo (int)ceil(((int)$handoffGraceSeconds) / 60); ?> min)
+                            <?php if (isset($_GET['grace_updated']) && (string)($_GET['grace_updated'] ?? '') === '1'): ?>
+                                <span class="ms-2 text-success fw-semibold">Updated</span>
+                            <?php endif; ?>
+                        </div>
+
+                        <?php if ($role === 'admin'): ?>
+                            <form method="post" class="m-0 d-flex align-items-center gap-2">
+                                <input type="hidden" name="action" value="set_handoff_grace">
+                                <input type="number" class="form-control form-control-sm" name="handoff_grace_seconds" min="0" step="1" value="<?php echo (int)$handoffGraceSeconds; ?>" style="width: 140px;" aria-label="Handoff grace seconds">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
 
                     <div id="handoffStatusContainer" class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3" data-forwarded-ts="<?php echo $handoffForwardedTs ? (int)$handoffForwardedTs : ''; ?>" data-grace-ends-ts="<?php echo $handoffGraceEndsTs ? (int)$handoffGraceEndsTs : ''; ?>" data-server-now-ts="<?php echo !empty($handoffOpen['server_now_ts']) ? (int)$handoffOpen['server_now_ts'] : (int)time(); ?>" data-client-sync-ts="">
                         <div class="text-muted small">

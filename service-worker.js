@@ -22,7 +22,7 @@ const PRECACHE_URLS = [
   './assets/vendor/fontawesome/css/all.min.css',
   './assets/vendor/jquery/jquery-3.7.1.min.js',
   './assets/polling_intervals.js',
-  './assets/images/DEPED LOGO.jpg',
+  './assets/images/sdo-logo.png',
   './assets/images/header.jpg',
   './assets/images/footer.jpg',
   './assets/images/pwa-icon.svg'

@@ -14,9 +14,9 @@
       "purpose": "any"
     },
     {
-      "src": "assets/images/DEPED LOGO.jpg",
+      "src": "assets/images/sdo-logo.png",
       "sizes": "any",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     }
   ]

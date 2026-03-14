@@ -34,7 +34,10 @@ include __DIR__ . '/header.php';
 ?>
 
 <div class="page-header">
-    <h2 class="page-title">Notifications</h2>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h2 class="page-title mb-0">Notifications</h2>
+        <a class="btn btn-outline-secondary btn-sm" href="dashboard.php">Back</a>
+    </div>
     <p class="page-subtitle">All notifications</p>
 </div>
 

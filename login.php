@@ -95,6 +95,7 @@ if (session_status() === PHP_SESSION_NONE) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Login - Supplier Transaction Monitoring System</title>
+    <link rel="icon" type="image/png" href="assets/images/sdo-logo.png">
     <link href="assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/vendor/fontawesome/css/all.min.css">
     <style>
@@ -319,7 +320,7 @@ if (session_status() === PHP_SESSION_NONE) {
             <!-- LEFT SIDE - BRANDING -->
             <div class="login-branding">
                 <div class="logo-wrapper">
-                    <img src="assets/images/DEPED LOGO.jpg" alt="DepEd Logo">
+                    <img src="assets/images/sdo-logo.png" alt="SDO Logo">
                 </div>
                 <div class="deped-name">DEPED DIVISION OFFICE</div>
                 <h2 class="system-title">Supplier Transaction Monitoring System</h2>
@@ -379,7 +380,7 @@ if (session_status() === PHP_SESSION_NONE) {
             <!-- LEFT SIDE - BRANDING -->
             <div class="login-branding">
                 <div class="logo-wrapper">
-                    <img src="assets/images/DEPED LOGO.jpg" alt="DepEd Logo">
+                    <img src="assets/images/sdo-logo.png" alt="SDO Logo">
                 </div>
                 <div class="deped-name">DEPED DIVISION OFFICE</div>
                 <h2 class="system-title">Supplier Transaction Monitoring System</h2>

@@ -11,6 +11,7 @@ if (session_status() === PHP_SESSION_NONE) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#3b7ca8">
     <title><?php echo htmlspecialchars(isset($pageTitle) && trim((string)$pageTitle) !== '' ? (string)$pageTitle : 'STMS - Supplier Transaction Monitoring System'); ?></title>
+    <link rel="icon" type="image/png" href="assets/images/sdo-logo.png">
     <link rel="manifest" href="manifest.json">
     <link href="assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/vendor/fontawesome/css/all.min.css">
@@ -935,7 +936,7 @@ if (session_status() === PHP_SESSION_NONE) {
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container-fluid px-4">
             <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
-                <img src="assets/images/DEPED LOGO.jpg" alt="DepEd logo" class="site-logo" />
+                <img src="assets/images/sdo-logo.png" alt="SDO logo" class="site-logo" />
                 <div class="brand-text">
                     <span class="main-title">DepEd Division Office</span>
                     <small>Supplier Transaction Monitoring System</small>

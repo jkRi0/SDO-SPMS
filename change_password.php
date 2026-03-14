@@ -177,13 +177,16 @@ include __DIR__ . '/header.php';
 ?>
 
 <div class="container mt-4" style="max-width: 900px;">
-    <h3 class="mb-3">Account Settings</h3>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h3 class="mb-0">Account Settings</h3>
+        <a class="btn btn-outline-secondary btn-sm" href="dashboard.php">Back</a>
+    </div>
 
     <div class="card mb-3">
         <div class="card-body d-flex justify-content-between align-items-start gap-3" style="flex-wrap: wrap;">
             <div>
                 <div class="fw-semibold">Smart Polling</div>
-                <div class="text-muted small">When enabled, auto-refresh runs only while this tab is visible and this window is focused.</div>
+                <div class="text-muted small">When enabled, auto-refresh (semi-realtime) runs only while this tab is visible and this window is focused. Pros: reduces CPU/bandwidth usage and avoids background refresh. Cons: when you switch tabs/minimize, updates pause and may only appear when you return.</div>
             </div>
             <form method="post" class="m-0">
                 <input type="hidden" name="action" value="set_smart_polling">
