@@ -436,6 +436,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
     $roleDeptEdit = $deptForRoleEdit[$role] ?? '';
 
+    $workflowOrder = [
+        'procurement' => 0,
+        'supply' => 1,
+        'accounting_pre' => 2,
+        'budget' => 3,
+        'accounting_post' => 4,
+        'cashier' => 5,
+    ];
+
     $ownerDeptEdit = 'procurement';
     if (!empty($handoffOpen) && !empty($handoffOpen['from_dept'])) {
         // While a handoff is pending, the sender still owns the transaction (receiver must click Receive first).
@@ -448,9 +457,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         reset($handoffHistory);
     }
 
-    $canEditUpdates = ($role !== 'supplier' && $role !== 'admin' && $roleDeptEdit !== '' && $roleDeptEdit === $ownerDeptEdit);
+    $roleRank = $workflowOrder[$roleDeptEdit] ?? null;
+    $ownerRank = $workflowOrder[$ownerDeptEdit] ?? null;
+    $canEditUpdates = (
+        $role !== 'supplier'
+        && $role !== 'admin'
+        && $roleDeptEdit !== ''
+        && $roleRank !== null
+        && $ownerRank !== null
+        && $roleRank <= $ownerRank
+    );
     if (!$canEditUpdates && !isset($_POST['handoff_action'])) {
-        $error = 'You cannot edit this transaction until it is forwarded to your department and received.';
+        $error = 'You cannot edit this transaction until it reaches your department.';
     }
 
     if (isset($_POST['handoff_action']) && $role !== 'supplier' && $role !== 'admin') {
@@ -826,7 +844,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($fields) {
             if (!$canEditUpdates) {
-                $error = 'You cannot edit this transaction until it is forwarded to your department and received.';
+                $error = 'You cannot edit this transaction until it reaches your department.';
             } else {
                 $params[] = $id;
                 $sql = 'UPDATE transactions SET ' . implode(', ', $fields) . ' WHERE id = ?';
@@ -1300,7 +1318,23 @@ include __DIR__ . '/header.php';
                         reset($handoffHistory);
                     }
 
-                    $canEditUpdatesUi = ($role !== 'admin' && $roleDeptUi !== '' && $roleDeptUi === $ownerDeptUi);
+                    $workflowOrderUi = [
+                        'procurement' => 0,
+                        'supply' => 1,
+                        'accounting_pre' => 2,
+                        'budget' => 3,
+                        'accounting_post' => 4,
+                        'cashier' => 5,
+                    ];
+                    $roleRankUi = $workflowOrderUi[$roleDeptUi] ?? null;
+                    $ownerRankUi = $workflowOrderUi[$ownerDeptUi] ?? null;
+                    $canEditUpdatesUi = (
+                        $role !== 'admin'
+                        && $roleDeptUi !== ''
+                        && $roleRankUi !== null
+                        && $ownerRankUi !== null
+                        && $roleRankUi <= $ownerRankUi
+                    );
                     ?>
 
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
@@ -1625,9 +1659,10 @@ include __DIR__ . '/header.php';
                 <div class="timeline-scroll" style="max-height: 70vh; overflow-y: auto; padding-right: 8px;">
                 <div class="timeline">
                     <!-- Procurement -->
-                    <div class="timeline-item <?php echo !empty($transaction['proc_status']) ? 'completed' : 'pending'; ?>">
+                    <?php $procCompleted = !empty($updatesByStage['procurement']); ?>
+                    <div class="timeline-item <?php echo $procCompleted ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
-                            <i class="fas fa-<?php echo !empty($transaction['proc_status']) ? 'check-circle' : 'circle'; ?>"></i>
+                            <i class="fas fa-<?php echo $procCompleted ? 'check-circle' : 'circle'; ?>"></i>
                         </div>
                         <div class="timeline-content">
                             <?php
@@ -1652,11 +1687,38 @@ include __DIR__ . '/header.php';
                             <?php if (!empty($updatesByStage['procurement'])): ?>
                                 <div class="timeline-history mt-2 p-2 border rounded bg-white">
                                     <div class="small text-muted mb-1">Update history</div>
+                                    <?php
+                                    $procForwardTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'forwarded_at');
+                                    $procForwardPrinted = false;
+                                    ?>
                                     <?php $countProc = count($updatesByStage['procurement']); ?>
                                     <?php foreach ($updatesByStage['procurement'] as $idx => $u): ?>
                                         <?php
                                         $isLatest = ($idx === $countProc - 1);
                                         $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+
+                                        $showForwardHere = false;
+                                        $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
+                                        $nextUpdateTs = false;
+                                        if (($idx + 1) < $countProc) {
+                                            $next = $updatesByStage['procurement'][$idx + 1] ?? null;
+                                            if (!empty($next['created_at'])) {
+                                                $nextUpdateTs = strtotime((string)$next['created_at']);
+                                            }
+                                        }
+                                        if (!$procForwardPrinted && $procForwardTs !== null && $updateTs !== false) {
+                                            $fwd = (int)$procForwardTs;
+                                            if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
+                                                $showForwardHere = true;
+                                                $procForwardPrinted = true;
+                                            } elseif ($idx === 0 && $updateTs > $fwd) {
+                                                $showForwardHere = true;
+                                                $procForwardPrinted = true;
+                                            } elseif ($isLatest && !$procForwardPrinted) {
+                                                $showForwardHere = true;
+                                                $procForwardPrinted = true;
+                                            }
+                                        }
                                         ?>
                                         <div class="<?php echo $rowClass; ?>">
                                             <?php if ($isLatest): ?>
@@ -1673,22 +1735,30 @@ include __DIR__ . '/header.php';
                                                         <?php endif; ?>
                                                     </div>
                                                     <div class="text-end text-muted">
-                                                        <?php $procForwardTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'forwarded_at'); ?>
-                                                        <?php if ($procForwardTs !== null): ?>
+                                                        <?php if ($showForwardHere && $procForwardTs !== null): ?>
                                                             <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$procForwardTs)); ?></div>
                                                         <?php endif; ?>
                                                     </div>
                                                 </div>
                                             <?php else: ?>
-                                                <div class="text-muted">
-                                                    <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                                <div class="d-flex justify-content-between align-items-start gap-3">
+                                                    <div>
+                                                        <div class="text-muted">
+                                                            <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                                        </div>
+                                                        <?php if ($u['status'] !== ''): ?>
+                                                            <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                                        <?php endif; ?>
+                                                        <?php if ($u['remarks'] !== ''): ?>
+                                                            <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <div class="text-end text-muted">
+                                                        <?php if ($showForwardHere && $procForwardTs !== null): ?>
+                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$procForwardTs)); ?></div>
+                                                        <?php endif; ?>
+                                                    </div>
                                                 </div>
-                                                <?php if ($u['status'] !== ''): ?>
-                                                    <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
-                                                <?php endif; ?>
-                                                <?php if ($u['remarks'] !== ''): ?>
-                                                    <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
-                                                <?php endif; ?>
                                             <?php endif; ?>
                                         </div>
                                     <?php endforeach; ?>
@@ -1716,9 +1786,10 @@ include __DIR__ . '/header.php';
                     <?php endif; ?>
 
                     <!-- Supply Unit -->
-                    <div class="timeline-item <?php echo !empty($transaction['supply_status']) ? 'completed' : 'pending'; ?>">
+                    <?php $supplyCompleted = (!empty($updatesByStage['supply']) || get_handoff_timestamp_first($handoffHistory, 'procurement', 'supply', 'received_at') !== null); ?>
+                    <div class="timeline-item <?php echo $supplyCompleted ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
-                            <i class="fas fa-<?php echo !empty($transaction['supply_status']) ? 'check-circle' : 'circle'; ?>"></i>
+                            <i class="fas fa-<?php echo $supplyCompleted ? 'check-circle' : 'circle'; ?>"></i>
                         </div>
                         <div class="timeline-content">
                             <?php
@@ -1744,6 +1815,8 @@ include __DIR__ . '/header.php';
                                     <?php
                                     $supplyReceivedTs = get_handoff_timestamp_first($handoffHistory, 'procurement', 'supply', 'received_at');
                                     $supplyReceivedPrinted = false;
+                                    $supplyForwardTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting_pre', 'forwarded_at');
+                                    $supplyForwardPrinted = false;
                                     ?>
                                     <?php $countSupply = count($updatesByStage['supply']); ?>
                                     <?php foreach ($updatesByStage['supply'] as $idx => $u): ?>
@@ -1753,10 +1826,32 @@ include __DIR__ . '/header.php';
                                         $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
 
                                         $showReceivedHere = false;
+                                        $showForwardHere = false;
                                         $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
+                                        $nextUpdateTs = false;
+                                        if (($idx + 1) < $countSupply) {
+                                            $next = $updatesByStage['supply'][$idx + 1] ?? null;
+                                            if (!empty($next['created_at'])) {
+                                                $nextUpdateTs = strtotime((string)$next['created_at']);
+                                            }
+                                        }
                                         if (!$supplyReceivedPrinted && $supplyReceivedTs !== null && $updateTs !== false && $updateTs >= (int)$supplyReceivedTs) {
                                             $showReceivedHere = true;
                                             $supplyReceivedPrinted = true;
+                                        }
+
+                                        if (!$supplyForwardPrinted && $supplyForwardTs !== null && $updateTs !== false) {
+                                            $fwd = (int)$supplyForwardTs;
+                                            if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
+                                                $showForwardHere = true;
+                                                $supplyForwardPrinted = true;
+                                            } elseif ($idx === 0 && $updateTs > $fwd) {
+                                                $showForwardHere = true;
+                                                $supplyForwardPrinted = true;
+                                            } elseif ($isLatest && !$supplyForwardPrinted) {
+                                                $showForwardHere = true;
+                                                $supplyForwardPrinted = true;
+                                            }
                                         }
 
                                         ?>
@@ -1779,8 +1874,7 @@ include __DIR__ . '/header.php';
                                                         <?php if ($showReceivedHere && $supplyReceivedTs !== null): ?>
                                                             <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$supplyReceivedTs)); ?></div>
                                                         <?php endif; ?>
-                                                        <?php $supplyForwardTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting_pre', 'forwarded_at'); ?>
-                                                        <?php if ($supplyForwardTs !== null): ?>
+                                                        <?php if ($showForwardHere && $supplyForwardTs !== null): ?>
                                                             <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$supplyForwardTs)); ?></div>
                                                         <?php endif; ?>
                                                     </div>
@@ -1801,6 +1895,9 @@ include __DIR__ . '/header.php';
                                                     <div class="text-end text-muted">
                                                         <?php if ($showReceivedHere && $supplyReceivedTs !== null): ?>
                                                             <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$supplyReceivedTs)); ?></div>
+                                                        <?php endif; ?>
+                                                        <?php if ($showForwardHere && $supplyForwardTs !== null): ?>
+                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$supplyForwardTs)); ?></div>
                                                         <?php endif; ?>
                                                     </div>
                                                 </div>
@@ -1831,9 +1928,10 @@ include __DIR__ . '/header.php';
                     <?php endif; ?>
 
                     <!-- Accounting -->
-                    <div class="timeline-item <?php echo !empty($updatesByStage['accounting_pre']) ? 'completed' : 'pending'; ?>">
+                    <?php $acctPreCompleted = (!empty($updatesByStage['accounting_pre']) || get_handoff_timestamp_first($handoffHistory, 'supply', 'accounting_pre', 'received_at') !== null); ?>
+                    <div class="timeline-item <?php echo $acctPreCompleted ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
-                            <i class="fas fa-<?php echo !empty($updatesByStage['accounting_pre']) ? 'check-circle' : 'circle'; ?>"></i>
+                            <i class="fas fa-<?php echo $acctPreCompleted ? 'check-circle' : 'circle'; ?>"></i>
                         </div>
                         <div class="timeline-content">
                             <?php
@@ -1859,6 +1957,8 @@ include __DIR__ . '/header.php';
                                     <?php
                                     $acctPreReceivedTs = get_handoff_timestamp_first($handoffHistory, 'supply', 'accounting_pre', 'received_at');
                                     $acctPreReceivedPrinted = false;
+                                    $acctPreForwardTs = get_handoff_timestamp($handoffHistory, 'accounting_pre', 'budget', 'forwarded_at');
+                                    $acctPreForwardPrinted = false;
                                     ?>
                                     <?php $countAcctPre = count($updatesByStage['accounting_pre']); ?>
                                     <?php foreach ($updatesByStage['accounting_pre'] as $idx => $u): ?>
@@ -1868,10 +1968,32 @@ include __DIR__ . '/header.php';
                                         $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
 
                                         $showReceivedHere = false;
+                                        $showForwardHere = false;
                                         $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
+                                        $nextUpdateTs = false;
+                                        if (($idx + 1) < $countAcctPre) {
+                                            $next = $updatesByStage['accounting_pre'][$idx + 1] ?? null;
+                                            if (!empty($next['created_at'])) {
+                                                $nextUpdateTs = strtotime((string)$next['created_at']);
+                                            }
+                                        }
                                         if (!$acctPreReceivedPrinted && $acctPreReceivedTs !== null && $updateTs !== false && $updateTs >= (int)$acctPreReceivedTs) {
                                             $showReceivedHere = true;
                                             $acctPreReceivedPrinted = true;
+                                        }
+
+                                        if (!$acctPreForwardPrinted && $acctPreForwardTs !== null && $updateTs !== false) {
+                                            $fwd = (int)$acctPreForwardTs;
+                                            if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
+                                                $showForwardHere = true;
+                                                $acctPreForwardPrinted = true;
+                                            } elseif ($idx === 0 && $updateTs > $fwd) {
+                                                $showForwardHere = true;
+                                                $acctPreForwardPrinted = true;
+                                            } elseif ($isLatest && !$acctPreForwardPrinted) {
+                                                $showForwardHere = true;
+                                                $acctPreForwardPrinted = true;
+                                            }
                                         }
 
                                         ?>
@@ -1894,8 +2016,7 @@ include __DIR__ . '/header.php';
                                                         <?php if ($showReceivedHere && $acctPreReceivedTs !== null): ?>
                                                             <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPreReceivedTs)); ?></div>
                                                         <?php endif; ?>
-                                                        <?php $acctPreForwardTs = get_handoff_timestamp($handoffHistory, 'accounting_pre', 'budget', 'forwarded_at'); ?>
-                                                        <?php if ($acctPreForwardTs !== null): ?>
+                                                        <?php if ($showForwardHere && $acctPreForwardTs !== null): ?>
                                                             <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPreForwardTs)); ?></div>
                                                         <?php endif; ?>
                                                     </div>
@@ -1916,6 +2037,9 @@ include __DIR__ . '/header.php';
                                                     <div class="text-end text-muted">
                                                         <?php if ($showReceivedHere && $acctPreReceivedTs !== null): ?>
                                                             <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPreReceivedTs)); ?></div>
+                                                        <?php endif; ?>
+                                                        <?php if ($showForwardHere && $acctPreForwardTs !== null): ?>
+                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPreForwardTs)); ?></div>
                                                         <?php endif; ?>
                                                     </div>
                                                 </div>
@@ -1946,9 +2070,10 @@ include __DIR__ . '/header.php';
                     <?php endif; ?>
 
                     <!-- Budget Unit -->
-                    <div class="timeline-item <?php echo !empty($transaction['budget_status']) ? 'completed' : 'pending'; ?>">
+                    <?php $budgetCompleted = (!empty($updatesByStage['budget']) || get_handoff_timestamp_first($handoffHistory, 'accounting_pre', 'budget', 'received_at') !== null); ?>
+                    <div class="timeline-item <?php echo $budgetCompleted ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
-                            <i class="fas fa-<?php echo !empty($transaction['budget_status']) ? 'check-circle' : 'circle'; ?>"></i>
+                            <i class="fas fa-<?php echo $budgetCompleted ? 'check-circle' : 'circle'; ?>"></i>
                         </div>
                         <div class="timeline-content">
                             <?php
@@ -1977,6 +2102,8 @@ include __DIR__ . '/header.php';
                                     <?php
                                     $budgetReceivedTs = get_handoff_timestamp_first($handoffHistory, 'accounting_pre', 'budget', 'received_at');
                                     $budgetReceivedPrinted = false;
+                                    $budgetForwardTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting_post', 'forwarded_at');
+                                    $budgetForwardPrinted = false;
                                     ?>
                                     <?php $countBudget = count($updatesByStage['budget']); ?>
                                     <?php foreach ($updatesByStage['budget'] as $idx => $u): ?>
@@ -1986,10 +2113,32 @@ include __DIR__ . '/header.php';
                                         $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
 
                                         $showReceivedHere = false;
+                                        $showForwardHere = false;
                                         $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
+                                        $nextUpdateTs = false;
+                                        if (($idx + 1) < $countBudget) {
+                                            $next = $updatesByStage['budget'][$idx + 1] ?? null;
+                                            if (!empty($next['created_at'])) {
+                                                $nextUpdateTs = strtotime((string)$next['created_at']);
+                                            }
+                                        }
                                         if (!$budgetReceivedPrinted && $budgetReceivedTs !== null && $updateTs !== false && $updateTs >= (int)$budgetReceivedTs) {
                                             $showReceivedHere = true;
                                             $budgetReceivedPrinted = true;
+                                        }
+
+                                        if (!$budgetForwardPrinted && $budgetForwardTs !== null && $updateTs !== false) {
+                                            $fwd = (int)$budgetForwardTs;
+                                            if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
+                                                $showForwardHere = true;
+                                                $budgetForwardPrinted = true;
+                                            } elseif ($idx === 0 && $updateTs > $fwd) {
+                                                $showForwardHere = true;
+                                                $budgetForwardPrinted = true;
+                                            } elseif ($isLatest && !$budgetForwardPrinted) {
+                                                $showForwardHere = true;
+                                                $budgetForwardPrinted = true;
+                                            }
                                         }
 
                                         ?>
@@ -2012,8 +2161,7 @@ include __DIR__ . '/header.php';
                                                         <?php if ($showReceivedHere && $budgetReceivedTs !== null): ?>
                                                             <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$budgetReceivedTs)); ?></div>
                                                         <?php endif; ?>
-                                                        <?php $budgetForwardTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting_post', 'forwarded_at'); ?>
-                                                        <?php if ($budgetForwardTs !== null): ?>
+                                                        <?php if ($showForwardHere && $budgetForwardTs !== null): ?>
                                                             <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$budgetForwardTs)); ?></div>
                                                         <?php endif; ?>
                                                     </div>
@@ -2034,6 +2182,9 @@ include __DIR__ . '/header.php';
                                                     <div class="text-end text-muted">
                                                         <?php if ($showReceivedHere && $budgetReceivedTs !== null): ?>
                                                             <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$budgetReceivedTs)); ?></div>
+                                                        <?php endif; ?>
+                                                        <?php if ($showForwardHere && $budgetForwardTs !== null): ?>
+                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$budgetForwardTs)); ?></div>
                                                         <?php endif; ?>
                                                     </div>
                                                 </div>
@@ -2064,9 +2215,10 @@ include __DIR__ . '/header.php';
                     <?php endif; ?>
 
                     <!-- Accounting -->
-                    <div class="timeline-item <?php echo !empty($updatesByStage['accounting_post']) ? 'completed' : 'pending'; ?>">
+                    <?php $acctPostCompleted = (!empty($updatesByStage['accounting_post']) || get_handoff_timestamp_first($handoffHistory, 'budget', 'accounting_post', 'received_at') !== null); ?>
+                    <div class="timeline-item <?php echo $acctPostCompleted ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
-                            <i class="fas fa-<?php echo !empty($updatesByStage['accounting_post']) ? 'check-circle' : 'circle'; ?>"></i>
+                            <i class="fas fa-<?php echo $acctPostCompleted ? 'check-circle' : 'circle'; ?>"></i>
                         </div>
                         <div class="timeline-content">
                             <?php
@@ -2092,6 +2244,8 @@ include __DIR__ . '/header.php';
                                     <?php
                                     $acctPostReceivedTs = get_handoff_timestamp_first($handoffHistory, 'budget', 'accounting_post', 'received_at');
                                     $acctPostReceivedPrinted = false;
+                                    $acctPostForwardTs = get_handoff_timestamp($handoffHistory, 'accounting_post', 'cashier', 'forwarded_at');
+                                    $acctPostForwardPrinted = false;
                                     ?>
                                     <?php $countAcctPost = count($updatesByStage['accounting_post']); ?>
                                     <?php foreach ($updatesByStage['accounting_post'] as $idx => $u): ?>
@@ -2101,10 +2255,32 @@ include __DIR__ . '/header.php';
                                         $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
 
                                         $showReceivedHere = false;
+                                        $showForwardHere = false;
                                         $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
+                                        $nextUpdateTs = false;
+                                        if (($idx + 1) < $countAcctPost) {
+                                            $next = $updatesByStage['accounting_post'][$idx + 1] ?? null;
+                                            if (!empty($next['created_at'])) {
+                                                $nextUpdateTs = strtotime((string)$next['created_at']);
+                                            }
+                                        }
                                         if (!$acctPostReceivedPrinted && $acctPostReceivedTs !== null && $updateTs !== false && $updateTs >= (int)$acctPostReceivedTs) {
                                             $showReceivedHere = true;
                                             $acctPostReceivedPrinted = true;
+                                        }
+
+                                        if (!$acctPostForwardPrinted && $acctPostForwardTs !== null && $updateTs !== false) {
+                                            $fwd = (int)$acctPostForwardTs;
+                                            if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
+                                                $showForwardHere = true;
+                                                $acctPostForwardPrinted = true;
+                                            } elseif ($idx === 0 && $updateTs > $fwd) {
+                                                $showForwardHere = true;
+                                                $acctPostForwardPrinted = true;
+                                            } elseif ($isLatest && !$acctPostForwardPrinted) {
+                                                $showForwardHere = true;
+                                                $acctPostForwardPrinted = true;
+                                            }
                                         }
 
                                         ?>
@@ -2127,8 +2303,7 @@ include __DIR__ . '/header.php';
                                                         <?php if ($showReceivedHere && $acctPostReceivedTs !== null): ?>
                                                             <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPostReceivedTs)); ?></div>
                                                         <?php endif; ?>
-                                                        <?php $acctPostForwardTs = get_handoff_timestamp($handoffHistory, 'accounting_post', 'cashier', 'forwarded_at'); ?>
-                                                        <?php if ($acctPostForwardTs !== null): ?>
+                                                        <?php if ($showForwardHere && $acctPostForwardTs !== null): ?>
                                                             <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPostForwardTs)); ?></div>
                                                         <?php endif; ?>
                                                     </div>
@@ -2149,6 +2324,9 @@ include __DIR__ . '/header.php';
                                                     <div class="text-end text-muted">
                                                         <?php if ($showReceivedHere && $acctPostReceivedTs !== null): ?>
                                                             <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPostReceivedTs)); ?></div>
+                                                        <?php endif; ?>
+                                                        <?php if ($showForwardHere && $acctPostForwardTs !== null): ?>
+                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPostForwardTs)); ?></div>
                                                         <?php endif; ?>
                                                     </div>
                                                 </div>
@@ -2179,9 +2357,10 @@ include __DIR__ . '/header.php';
                     <?php endif; ?>
 
                     <!-- Cashier -->
-                    <div class="timeline-item <?php echo !empty($transaction['cashier_status']) ? 'completed' : 'pending'; ?>">
+                    <?php $cashierCompleted = (!empty($updatesByStage['cashier']) || get_handoff_timestamp_first($handoffHistory, 'accounting_post', 'cashier', 'received_at') !== null); ?>
+                    <div class="timeline-item <?php echo $cashierCompleted ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
-                            <i class="fas fa-<?php echo !empty($transaction['cashier_status']) ? 'check-circle' : 'circle'; ?>"></i>
+                            <i class="fas fa-<?php echo $cashierCompleted ? 'check-circle' : 'circle'; ?>"></i>
                         </div>
                         <div class="timeline-content">
                             <?php
