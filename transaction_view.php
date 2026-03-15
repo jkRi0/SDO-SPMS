@@ -1258,7 +1258,6 @@ include __DIR__ . '/header.php';
 
                     $canForward = ($roleDeptUi !== '' && $roleDeptUi === $fromDeptUi && $nextDeptUi !== '' && $isFromDeptCompletedUi);
                     $canReceive = false;
-                    $receiveCountdown = '';
                     $handoffForwardedTs = null;
                     $handoffGraceEndsTs = null;
                     $handoffFromDept = '';
@@ -1276,6 +1275,35 @@ include __DIR__ . '/header.php';
                         }
                     }
 
+                    $handoffRemainingSeconds = '';
+                    if ($handoffForwardedTs && $handoffGraceEndsTs) {
+                        $serverNowForAttr = (int)($handoffOpen['server_now_ts'] ?? time());
+                        $handoffRemainingSeconds = (string)max(0, (int)$handoffGraceEndsTs - $serverNowForAttr);
+                    }
+
+                    $handoffOverdueSeconds = '';
+                    if ($handoffForwardedTs && $handoffGraceEndsTs) {
+                        $serverNowForOverdueAttr = (int)($handoffOpen['server_now_ts'] ?? time());
+                        $handoffOverdueSeconds = (string)max(0, $serverNowForOverdueAttr - (int)$handoffGraceEndsTs);
+                    }
+
+                    $receiveCountdown = '';
+                    if ($handoffRemainingSeconds !== '') {
+                        $remainingInt = (int)$handoffRemainingSeconds;
+                        if ($remainingInt > 0) {
+                            $hh = intdiv($remainingInt, 3600);
+                            $mm = intdiv($remainingInt % 3600, 60);
+                            $ss = $remainingInt % 60;
+                            $receiveCountdown = 'Grace ends in ' . sprintf('%02d:%02d:%02d', $hh, $mm, $ss);
+                        } else {
+                            $overdueInt = (int)($handoffOverdueSeconds !== '' ? $handoffOverdueSeconds : '0');
+                            $hh = intdiv($overdueInt, 3600);
+                            $mm = intdiv($overdueInt % 3600, 60);
+                            $ss = $overdueInt % 60;
+                            $receiveCountdown = 'Grace period exceeded by ' . sprintf('%02d:%02d:%02d', $hh, $mm, $ss);
+                        }
+                    }
+
                     if ($roleDeptUi !== '' && $handoffOpen && !empty($handoffOpen['to_dept'])) {
                         $canReceive = ((string)$handoffOpen['to_dept'] === $roleDeptUi);
                     }
@@ -1283,14 +1311,6 @@ include __DIR__ . '/header.php';
                     if ($roleDeptUi !== '' && $handoffOpen && $handoffForwardedTs && $handoffFromDept !== '' && $handoffToDept !== '') {
                         $showHandoffBanner = ($roleDeptUi === $handoffFromDept || $roleDeptUi === $handoffToDept);
                         if ($showHandoffBanner) {
-                            $serverNowForRender = (int)($handoffOpen['server_now_ts'] ?? time());
-                            $remaining = ($handoffGraceSeconds - ($serverNowForRender - $handoffForwardedTs));
-                            if ($remaining > 0) {
-                                $receiveCountdown = 'Grace ends in ' . gmdate('i:s', (int)$remaining);
-                            } else {
-                                $receiveCountdown = 'Grace period exceeded';
-                            }
-
                             if ($roleDeptUi === $handoffToDept) {
                                 $handoffBannerText = 'Pending handoff from ' . strtoupper($handoffFromDept) . ' to ' . strtoupper($handoffToDept) . '.';
                             } else {
@@ -1355,7 +1375,7 @@ include __DIR__ . '/header.php';
                         <?php endif; ?>
                     </div>
 
-                    <div id="handoffStatusContainer" class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3" data-forwarded-ts="<?php echo $handoffForwardedTs ? (int)$handoffForwardedTs : ''; ?>" data-grace-ends-ts="<?php echo $handoffGraceEndsTs ? (int)$handoffGraceEndsTs : ''; ?>" data-server-now-ts="<?php echo !empty($handoffOpen['server_now_ts']) ? (int)$handoffOpen['server_now_ts'] : (int)time(); ?>" data-client-sync-ts="">
+                    <div id="handoffStatusContainer" class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3" data-forwarded-ts="<?php echo $handoffForwardedTs ? (int)$handoffForwardedTs : ''; ?>" data-grace-ends-ts="<?php echo $handoffGraceEndsTs ? (int)$handoffGraceEndsTs : ''; ?>" data-server-now-ts="<?php echo !empty($handoffOpen['server_now_ts']) ? (int)$handoffOpen['server_now_ts'] : (int)time(); ?>" data-remaining-seconds="<?php echo htmlspecialchars($handoffRemainingSeconds); ?>" data-overdue-seconds="<?php echo htmlspecialchars($handoffOverdueSeconds); ?>" data-client-sync-ts="">
                         <div class="text-muted small">
                             <?php if ($showHandoffBanner && $handoffBannerText !== ''): ?>
                                 <?php echo htmlspecialchars($handoffBannerText); ?>
@@ -1365,7 +1385,7 @@ include __DIR__ . '/header.php';
                             <?php if ($handoffReceivedFlash !== ''): ?>
                                 <span class="ms-2 text-success fw-semibold"><?php echo htmlspecialchars($handoffReceivedFlash); ?></span>
                             <?php endif; ?>
-                            <?php if ($receiveCountdown !== ''): ?>
+                            <?php if ($handoffOpen && $handoffForwardedTs && $receiveCountdown !== ''): ?>
                                 <span class="ms-2 text-danger" data-handoff-countdown><?php echo htmlspecialchars($receiveCountdown); ?></span>
                             <?php endif; ?>
                         </div>
@@ -2590,6 +2610,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     current.setAttribute('data-forwarded-ts', next.getAttribute('data-forwarded-ts') || '');
                     current.setAttribute('data-grace-ends-ts', next.getAttribute('data-grace-ends-ts') || '');
                     current.setAttribute('data-server-now-ts', next.getAttribute('data-server-now-ts') || '');
+                    current.setAttribute('data-remaining-seconds', next.getAttribute('data-remaining-seconds') || '');
+                    current.setAttribute('data-overdue-seconds', next.getAttribute('data-overdue-seconds') || '');
                     current.setAttribute('data-client-sync-ts', String(Math.floor(Date.now() / 1000)));
                     tickHandoffCountdown();
                 }
@@ -2606,33 +2628,32 @@ document.addEventListener('DOMContentLoaded', function () {
             container.classList.remove('handoff-overdue');
             return;
         }
-        const graceEnds = parseInt(container.getAttribute('data-grace-ends-ts') || '', 10);
-        if (!graceEnds) {
+        const baseRemaining = parseInt(container.getAttribute('data-remaining-seconds') || '', 10);
+        const baseOverdue = parseInt(container.getAttribute('data-overdue-seconds') || '0', 10);
+        const clientSync = parseInt(container.getAttribute('data-client-sync-ts') || '', 10);
+        const nowClient = Math.floor(Date.now() / 1000);
+
+        if (isNaN(baseRemaining) || baseRemaining < 0) {
             container.classList.remove('handoff-overdue');
             return;
         }
-        const forwardedTs = parseInt(container.getAttribute('data-forwarded-ts') || '', 10);
-        const serverNow = parseInt(container.getAttribute('data-server-now-ts') || '', 10);
-        const clientSync = parseInt(container.getAttribute('data-client-sync-ts') || '', 10);
-        const nowClient = Math.floor(Date.now() / 1000);
-        const elapsedSinceSync = (serverNow && clientSync) ? Math.max(0, nowClient - clientSync) : 0;
-        var nowEstimatedServer = serverNow ? (serverNow + elapsedSinceSync) : nowClient;
-        if (forwardedTs && nowEstimatedServer < forwardedTs) {
-            nowEstimatedServer = forwardedTs;
-        }
-        const remainingRaw = graceEnds - nowEstimatedServer;
-        const remaining = Math.max(0, Math.min(600, remainingRaw));
-        if (remainingRaw >= 0) {
-            const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
+
+        const elapsed = clientSync ? Math.max(0, nowClient - clientSync) : 0;
+        const remainingRaw = baseRemaining - elapsed;
+        const remaining = Math.max(0, remainingRaw);
+
+        if (remainingRaw > 0) {
+            const hh = String(Math.floor(remaining / 3600)).padStart(2, '0');
+            const mm = String(Math.floor((remaining % 3600) / 60)).padStart(2, '0');
             const ss = String(remaining % 60).padStart(2, '0');
-            el.textContent = 'Grace ends in ' + mm + ':' + ss;
+            el.textContent = 'Grace ends in ' + hh + ':' + mm + ':' + ss;
             container.classList.remove('handoff-overdue');
         } else {
-            const overdue = Math.abs(remainingRaw);
-            const hh = Math.floor(overdue / 3600);
-            const mm = String(Math.floor((overdue % 3600) / 60)).padStart(2, '0');
-            const ss = String(overdue % 60).padStart(2, '0');
-            el.textContent = 'Overdue by ' + (hh > 0 ? String(hh).padStart(2, '0') + ':' : '') + mm + ':' + ss;
+            const overdueRaw = (isNaN(baseOverdue) ? 0 : Math.max(0, baseOverdue)) + elapsed;
+            const hh = String(Math.floor(overdueRaw / 3600)).padStart(2, '0');
+            const mm = String(Math.floor((overdueRaw % 3600) / 60)).padStart(2, '0');
+            const ss = String(overdueRaw % 60).padStart(2, '0');
+            el.textContent = 'Grace period exceeded by ' + hh + ':' + mm + ':' + ss;
             container.classList.add('handoff-overdue');
         }
     }
