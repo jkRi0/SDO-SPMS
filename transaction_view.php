@@ -1885,7 +1885,7 @@ include __DIR__ . '/header.php';
                                                         <?php if ($u['status'] !== ''): ?>
                                                             <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
                                                         <?php endif; ?>
-                                                        <?php if ($u['remarks'] !== ''): ?>n
+                                                        <?php if ($u['remarks'] !== ''): ?>
                                                             <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
                                                         <?php endif; ?>
                                                     </div>
