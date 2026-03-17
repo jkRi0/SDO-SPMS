@@ -1679,7 +1679,7 @@ include __DIR__ . '/header.php';
                 <div class="timeline-scroll" style="max-height: 70vh; overflow-y: auto; padding-right: 8px;">
                 <div class="timeline">
                     <!-- Procurement -->
-                    <?php $procCompleted = !empty($updatesByStage['procurement']); ?>
+                    <?php $procCompleted = (!empty($transaction['created_at']) || !empty($updatesByStage['procurement'])); ?>
                     <div class="timeline-item <?php echo $procCompleted ? 'completed' : 'pending'; ?>">
                         <div class="timeline-marker">
                             <i class="fas fa-<?php echo $procCompleted ? 'check-circle' : 'circle'; ?>"></i>
