@@ -19,7 +19,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 if (!function_exists('send_supplier_email')) {
-    function send_supplier_email($toEmail, $subject, $htmlBody)
+    function send_supplier_email($toEmail, $subject, $htmlBody, $ccEmails = null)
     {
         if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
             return false;
@@ -45,6 +45,28 @@ if (!function_exists('send_supplier_email')) {
             // Recipients
             $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
             $mail->addAddress($toEmail);
+
+            $ccList = [];
+            if (is_string($ccEmails)) {
+                $parts = preg_split('/[\s,;]+/', $ccEmails, -1, PREG_SPLIT_NO_EMPTY);
+                if (is_array($parts)) {
+                    $ccList = $parts;
+                }
+            } elseif (is_array($ccEmails)) {
+                $ccList = $ccEmails;
+            }
+            if (!empty($ccList)) {
+                foreach ($ccList as $cc) {
+                    $cc = trim((string)$cc);
+                    if ($cc === '') {
+                        continue;
+                    }
+                    if (!filter_var($cc, FILTER_VALIDATE_EMAIL)) {
+                        return false;
+                    }
+                    $mail->addCC($cc);
+                }
+            }
 
             // Content
             $mail->isHTML(true);

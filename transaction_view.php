@@ -416,8 +416,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $title = 'Payment status update';
             $defaultMessage = 'Your PO ' . ($transaction['po_number'] ?? '') . ' is now marked as COMPLETED. Please check the portal for details.';
             $message = trim((string)($_POST['notify_message'] ?? ''));
+            $ccRaw = trim((string)($_POST['notify_cc'] ?? ''));
+            $ccEmails = [];
+            if ($ccRaw !== '') {
+                $parts = preg_split('/[\s,;]+/', $ccRaw, -1, PREG_SPLIT_NO_EMPTY);
+                if (is_array($parts)) {
+                    foreach ($parts as $p) {
+                        $p = strtolower(trim((string)$p));
+                        if ($p === '') {
+                            continue;
+                        }
+                        if (!filter_var($p, FILTER_VALIDATE_EMAIL)) {
+                            $error = 'Invalid CC email address: ' . $p;
+                            break;
+                        }
+                        $ccEmails[] = $p;
+                    }
+                }
+            }
             if ($message === '') {
                 $message = $defaultMessage;
+            }
+            if ($error !== '') {
+                throw new Exception('notify_cc_invalid');
             }
             $link = 'transaction_view.php?id=' . $transaction['id'];
             $notifyStmt->execute([
@@ -438,7 +459,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $emailSubject = $title;
                 $emailBody = '<p>' . htmlspecialchars($message) . '</p>' .
                     '<p><a href="' . htmlspecialchars(BASE_URL . $link) . '">View details in the STMS portal</a></p>';
-                send_supplier_email($toEmail, $emailSubject, $emailBody);
+                $ccParam = !empty($ccEmails) ? $ccEmails : null;
+                send_supplier_email($toEmail, $emailSubject, $emailBody, $ccParam);
             }
         } catch (Exception $e) {
             // If notification insert fails, do not break the main page
@@ -1050,20 +1072,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Temporarily allow cashier to always proceed (no status/DV verification)
 $canProceedLandbank = ($role === 'cashier');
 
-$ownerDeptTab = 'procurement';
-if (!empty($handoffOpen) && !empty($handoffOpen['from_dept'])) {
-    $ownerDeptTab = (string)$handoffOpen['from_dept'];
-} elseif (!empty($handoffHistory)) {
-    $lastH = end($handoffHistory);
-    if (!empty($lastH['received_at']) && !empty($lastH['to_dept'])) {
-        $ownerDeptTab = (string)$lastH['to_dept'];
-    }
-    reset($handoffHistory);
-}
-
 $poNumTab = trim((string)($transaction['po_number'] ?? ''));
 $txLabelTab = $poNumTab !== '' ? ('PO ' . $poNumTab) : ('Transaction #' . (int)$id);
-$pageTitle = dept_ui_label($ownerDeptTab) . ' - ' . $txLabelTab . ' - STMS';
+$viewerDeptTab = strtoupper(trim((string)$role));
+if ($viewerDeptTab === '') {
+    $viewerDeptTab = 'STMS';
+}
+$pageTitle = $viewerDeptTab . ' - ' . $txLabelTab . ' - STMS';
 
 include __DIR__ . '/header.php';
 ?>
@@ -1701,6 +1716,11 @@ include __DIR__ . '/header.php';
                         <div class="mb-2">
                             <label class="form-label small mb-1">Message</label>
                             <textarea class="form-control" name="notify_message" id="notifyMessageTextarea" rows="3"><?php echo htmlspecialchars($notifyDefaultMsgUi); ?></textarea>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small mb-1">CC</label>
+                            <input type="text" class="form-control" name="notify_cc" placeholder="example1@email.com, example2@email.com">
                         </div>
 
                         <button type="submit" class="btn btn-outline-primary w-100">
