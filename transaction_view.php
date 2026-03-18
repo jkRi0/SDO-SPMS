@@ -292,6 +292,40 @@ if (!function_exists('get_handoff_timestamp_first')) {
     }
 }
 
+if (!function_exists('is_dept_forwardable')) {
+    function is_dept_forwardable(array $transaction, string $dept): bool
+    {
+        $forwardableFieldsByDept = [
+            'procurement' => ['proc_status', 'proc_remarks'],
+            'supply' => ['supply_status', 'supply_remarks'],
+            'accounting_pre' => ['acct_pre_status', 'acct_pre_remarks'],
+            'budget' => ['budget_status', 'budget_remarks'],
+            'accounting_post' => ['acct_post_status', 'acct_post_remarks'],
+            'cashier' => ['cashier_status', 'cashier_remarks'],
+        ];
+
+        $fields = $forwardableFieldsByDept[$dept] ?? [];
+        foreach ($fields as $f) {
+            $val = trim((string)($transaction[$f] ?? ''));
+            if ($val !== '') {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+if (!function_exists('dept_ui_label')) {
+    function dept_ui_label(string $dept): string
+    {
+        $d = strtolower(trim($dept));
+        if ($d === 'accounting_pre' || $d === 'accounting_post') {
+            return 'ACCOUNTING';
+        }
+        return strtoupper($dept);
+    }
+}
+
 if (!function_exists('render_handoff_between')) {
     function render_handoff_between(string $fromDept, string $toDept, array $handoffHistory, int $handoffGraceSeconds): void
     {
@@ -304,8 +338,8 @@ if (!function_exists('render_handoff_between')) {
         if (empty($filtered)) {
             return;
         }
-        $fromLabel = strtoupper($fromDept);
-        $toLabel = strtoupper($toDept);
+        $fromLabel = dept_ui_label($fromDept);
+        $toLabel = dept_ui_label($toDept);
         $countH = count($filtered);
         ?>
         <div class="timeline-item completed handoff-between">
@@ -533,28 +567,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
         $roleDept = $deptForRole[$role] ?? '';
 
-        $isDeptCompleted = function (string $dept) use ($transaction): bool {
-            if ($dept === 'procurement') {
-                return strtoupper(trim((string)($transaction['proc_status'] ?? ''))) === 'COMPLETED';
-            }
-            if ($dept === 'supply') {
-                return strtoupper(trim((string)($transaction['supply_status'] ?? ''))) === 'COMPLETED';
-            }
-            if ($dept === 'accounting_pre') {
-                return strtoupper(trim((string)($transaction['acct_pre_status'] ?? ''))) === 'COMPLETED';
-            }
-            if ($dept === 'budget') {
-                return strtoupper(trim((string)($transaction['budget_status'] ?? ''))) === 'COMPLETED';
-            }
-            if ($dept === 'accounting_post') {
-                return strtoupper(trim((string)($transaction['acct_post_status'] ?? ''))) === 'COMPLETED';
-            }
-            if ($dept === 'cashier') {
-                return strtoupper(trim((string)($transaction['cashier_status'] ?? ''))) === 'COMPLETED';
-            }
-            return false;
-        };
-
         try {
             $db->exec('CREATE TABLE IF NOT EXISTS transaction_handoffs (
                 id INT(11) NOT NULL AUTO_INCREMENT,
@@ -573,7 +585,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
 
             if ($action === 'forward') {
-                if ($roleDept !== '' && $fromDept !== '' && $nextDept !== '' && $roleDept === $fromDept && $isDeptCompleted($fromDept)) {
+                if ($roleDept !== '' && $fromDept !== '' && $nextDept !== '' && $roleDept === $fromDept && is_dept_forwardable($transaction, $fromDept)) {
                     $stmtOpen = $db->prepare('SELECT id FROM transaction_handoffs WHERE transaction_id = ? AND received_at IS NULL LIMIT 1');
                     $stmtOpen->execute([$id]);
                     $open = $stmtOpen->fetch(PDO::FETCH_ASSOC);
@@ -696,7 +708,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Sales Invoice must be numbers only.';
             } else {
                 $normalizedSupplyStatus = strtoupper(trim((string)$supplyStatus));
+                if ($normalizedSupplyStatus === 'PARTIAL DELIVERY') {
+                    $supplyStatus = 'PARTIAL DELIVERY';
+                }
                 if ($normalizedSupplyStatus === 'PARTIAL DELIVER') {
+                    $supplyStatus = 'PARTIAL DELIVERY';
+                    $normalizedSupplyStatus = 'PARTIAL DELIVERY';
+                }
+
+                if ($normalizedSupplyStatus === 'PARTIAL DELIVERY') {
                     if ($supplyPartialDeliveryDate === '') {
                         $supplyPartialDeliveryDate = date('Y-m-d');
                     } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $supplyPartialDeliveryDate)) {
@@ -724,7 +744,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $params[] = $supplySalesInvoice;
                     $params[] = $supplyRemarks;
 
-                    if ($normalizedSupplyStatus === 'PARTIAL DELIVER') {
+                    if ($normalizedSupplyStatus === 'PARTIAL DELIVERY') {
                         $fields[] = 'supply_partial_delivery_date = ?';
                         $params[] = $supplyPartialDeliveryDate;
                     }
@@ -739,24 +759,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         } elseif ($role === 'accounting') {
-            // Single Accounting form: status (For Voucher checkbox), remarks, DV amount
-            $acctStatus      = isset($_POST['acct_status']) ? trim($_POST['acct_status']) : '';
+            // Single Accounting form
+            // Pre stage: FOR ORS checkbox
+            // Post stage: FOR VOUCHER checkbox
+            // DV Amount: only for PRE stage
+            $acctStatus      = '';
             $acctRemarksBase = trim($_POST['acct_remarks'] ?? '');
             $acctDvAmount    = trim($_POST['acct_dv_amount'] ?? '');
-
-            // Combine remarks + DV amount for storage / history
-            $combinedRemarks = $acctRemarksBase;
-            if ($acctDvAmount !== '') {
-                if ($combinedRemarks !== '') {
-                    $combinedRemarks .= "\n";
-                }
-                $combinedRemarks .= 'DV Amount: ' . $acctDvAmount;
-            }
+            $acctForOrs      = isset($_POST['acct_for_ors']) ? 1 : 0;
+            $acctForVoucher  = isset($_POST['acct_for_voucher']) ? 1 : 0;
 
             // Decide automatically: before Budget is done = pre-budget; after Budget is done = post-budget
             $budgetDone = !empty($transaction['budget_status'])
                 || !empty($transaction['budget_dv_number'])
                 || !empty($transaction['budget_dv_date']);
+
+            if (!$budgetDone) {
+                $acctStatus = $acctForOrs ? 'FOR ORS' : '';
+            } else {
+                $acctStatus = $acctForVoucher ? 'FOR VOUCHER' : '';
+            }
+
+            // Avoid wiping an existing accounting status if no checkbox is selected
+            if (trim((string)$acctStatus) === '') {
+                $acctStatus = !$budgetDone
+                    ? (string)($transaction['acct_pre_status'] ?? '')
+                    : (string)($transaction['acct_post_status'] ?? '');
+            }
+
+            // DV amount is only required in PRE stage when submitting a meaningful update
+            $isMeaningfulAcctUpdate = (trim((string)$acctStatus) !== '' || trim((string)$acctRemarksBase) !== '');
+            if (!$budgetDone && $isMeaningfulAcctUpdate) {
+                if ($acctDvAmount === '') {
+                    $error = 'DV Amount is required.';
+                } elseif (!is_numeric($acctDvAmount)) {
+                    $error = 'DV Amount must be a valid number.';
+                }
+            }
+
+            // Combine remarks + DV amount for storage / history (DV amount only for PRE stage)
+            $combinedRemarks = $acctRemarksBase;
+            if (!$budgetDone && $acctDvAmount !== '') {
+                if ($combinedRemarks !== '') {
+                    $combinedRemarks .= "\n";
+                }
+                $combinedRemarks .= 'DV Amount: ' . $acctDvAmount;
+            }
 
             if (!$budgetDone) {
                 // Pre-budget accounting update
@@ -1015,7 +1063,7 @@ if (!empty($handoffOpen) && !empty($handoffOpen['from_dept'])) {
 
 $poNumTab = trim((string)($transaction['po_number'] ?? ''));
 $txLabelTab = $poNumTab !== '' ? ('PO ' . $poNumTab) : ('Transaction #' . (int)$id);
-$pageTitle = strtoupper($ownerDeptTab) . ' - ' . $txLabelTab . ' - STMS';
+$pageTitle = dept_ui_label($ownerDeptTab) . ' - ' . $txLabelTab . ' - STMS';
 
 include __DIR__ . '/header.php';
 ?>
@@ -1241,22 +1289,9 @@ include __DIR__ . '/header.php';
                         $nextDeptUi = 'supply';
                     }
 
-                    $isFromDeptCompletedUi = false;
-                    if ($fromDeptUi === 'procurement') {
-                        $isFromDeptCompletedUi = strtoupper(trim((string)($transaction['proc_status'] ?? ''))) === 'COMPLETED';
-                    } elseif ($fromDeptUi === 'supply') {
-                        $isFromDeptCompletedUi = strtoupper(trim((string)($transaction['supply_status'] ?? ''))) === 'COMPLETED';
-                    } elseif ($fromDeptUi === 'accounting_pre') {
-                        $isFromDeptCompletedUi = strtoupper(trim((string)($transaction['acct_pre_status'] ?? ''))) === 'COMPLETED';
-                    } elseif ($fromDeptUi === 'budget') {
-                        $isFromDeptCompletedUi = strtoupper(trim((string)($transaction['budget_status'] ?? ''))) === 'COMPLETED';
-                    } elseif ($fromDeptUi === 'accounting_post') {
-                        $isFromDeptCompletedUi = strtoupper(trim((string)($transaction['acct_post_status'] ?? ''))) === 'COMPLETED';
-                    } elseif ($fromDeptUi === 'cashier') {
-                        $isFromDeptCompletedUi = strtoupper(trim((string)($transaction['cashier_status'] ?? ''))) === 'COMPLETED';
-                    }
+                    $isFromDeptForwardableUi = ($fromDeptUi !== '' && is_dept_forwardable($transaction, $fromDeptUi));
 
-                    $canForward = ($roleDeptUi !== '' && $roleDeptUi === $fromDeptUi && $nextDeptUi !== '' && $isFromDeptCompletedUi);
+                    $canForward = ($roleDeptUi !== '' && $roleDeptUi === $fromDeptUi && $nextDeptUi !== '' && $isFromDeptForwardableUi);
                     $canReceive = false;
                     $handoffForwardedTs = null;
                     $handoffGraceEndsTs = null;
@@ -1311,10 +1346,12 @@ include __DIR__ . '/header.php';
                     if ($roleDeptUi !== '' && $handoffOpen && $handoffForwardedTs && $handoffFromDept !== '' && $handoffToDept !== '') {
                         $showHandoffBanner = ($roleDeptUi === $handoffFromDept || $roleDeptUi === $handoffToDept);
                         if ($showHandoffBanner) {
+                            $handoffFromLabel = dept_ui_label($handoffFromDept);
+                            $handoffToLabel = dept_ui_label($handoffToDept);
                             if ($roleDeptUi === $handoffToDept) {
-                                $handoffBannerText = 'Pending handoff from ' . strtoupper($handoffFromDept) . ' to ' . strtoupper($handoffToDept) . '.';
+                                $handoffBannerText = 'Pending handoff from ' . $handoffFromLabel . ' to ' . $handoffToLabel . '.';
                             } else {
-                                $handoffBannerText = 'Waiting for ' . strtoupper($handoffToDept) . ' to receive (forwarded by ' . strtoupper($handoffFromDept) . ')';
+                                $handoffBannerText = 'Waiting for ' . $handoffToLabel . ' to receive (forwarded by ' . $handoffFromLabel . ')';
                             }
                         }
                     }
@@ -1323,7 +1360,7 @@ include __DIR__ . '/header.php';
                         $flashFrom = (string)($_GET['handoff_from'] ?? '');
                         $flashTo = (string)($_GET['handoff_to'] ?? '');
                         if ($roleDeptUi !== '' && $flashFrom !== '' && $flashTo !== '' && ($roleDeptUi === $flashFrom || $roleDeptUi === $flashTo)) {
-                            $handoffReceivedFlash = 'Handoff received: ' . strtoupper($flashFrom) . ' → ' . strtoupper($flashTo) . '.';
+                            $handoffReceivedFlash = 'Handoff received: ' . dept_ui_label($flashFrom) . ' → ' . dept_ui_label($flashTo) . '.';
                         }
                     }
 
@@ -1357,23 +1394,16 @@ include __DIR__ . '/header.php';
                     );
                     ?>
 
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-                        <div class="text-muted small">
-                            Grace period: <strong><?php echo (int)$handoffGraceSeconds; ?></strong> seconds
-                            (<?php echo (int)ceil(((int)$handoffGraceSeconds) / 60); ?> min)
-                            <?php if (isset($_GET['grace_updated']) && (string)($_GET['grace_updated'] ?? '') === '1'): ?>
-                                <span class="ms-2 text-success fw-semibold">Updated</span>
-                            <?php endif; ?>
-                        </div>
-
-                        <?php if ($role === 'admin'): ?>
+                    <?php if ($role === 'admin'): ?>
+                        <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mb-2">
                             <form method="post" class="m-0 d-flex align-items-center gap-2">
                                 <input type="hidden" name="action" value="set_handoff_grace">
+                                <span class="text-muted small">Grace Period for forwarding and receiving. (seconds)</span>
                                 <input type="number" class="form-control form-control-sm" name="handoff_grace_seconds" min="0" step="1" value="<?php echo (int)$handoffGraceSeconds; ?>" style="width: 140px;" aria-label="Handoff grace seconds">
                                 <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
                             </form>
-                        <?php endif; ?>
-                    </div>
+                        </div>
+                    <?php endif; ?>
 
                     <div id="handoffStatusContainer" class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3" data-forwarded-ts="<?php echo $handoffForwardedTs ? (int)$handoffForwardedTs : ''; ?>" data-grace-ends-ts="<?php echo $handoffGraceEndsTs ? (int)$handoffGraceEndsTs : ''; ?>" data-server-now-ts="<?php echo !empty($handoffOpen['server_now_ts']) ? (int)$handoffOpen['server_now_ts'] : (int)time(); ?>" data-remaining-seconds="<?php echo htmlspecialchars($handoffRemainingSeconds); ?>" data-overdue-seconds="<?php echo htmlspecialchars($handoffOverdueSeconds); ?>" data-client-sync-ts="">
                         <div class="text-muted small">
@@ -1385,7 +1415,7 @@ include __DIR__ . '/header.php';
                             <?php if ($handoffReceivedFlash !== ''): ?>
                                 <span class="ms-2 text-success fw-semibold"><?php echo htmlspecialchars($handoffReceivedFlash); ?></span>
                             <?php endif; ?>
-                            <?php if ($handoffOpen && $handoffForwardedTs && $receiveCountdown !== ''): ?>
+                            <?php if ($roleDeptUi !== '' && ($roleDeptUi === $handoffFromDept || $roleDeptUi === $handoffToDept) && $handoffOpen && $handoffForwardedTs && $receiveCountdown !== ''): ?>
                                 <span class="ms-2 text-danger" data-handoff-countdown><?php echo htmlspecialchars($receiveCountdown); ?></span>
                             <?php endif; ?>
                         </div>
@@ -1453,14 +1483,20 @@ include __DIR__ . '/header.php';
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Supply Status</label>
-                                <select name="supply_status" id="supplyStatusSelect" class="form-control">
+                                <select name="supply_status" class="form-control" id="supplyStatusSelect">
                                     <?php
                                     $currentSupplyStatus = $transaction['supply_status'] ?? '';
+                                    $normalizedCurrentSupplyStatus = strtoupper(trim((string)$currentSupplyStatus));
                                     // Empty placeholder
                                     echo '<option value="">-- Select status --</option>';
-                                    $supplyOptions = ['PARTIAL DELIVER', 'COMPLETED'];
+                                    $supplyOptions = ['PARTIAL DELIVERY', 'COMPLETED'];
                                     foreach ($supplyOptions as $opt) {
-                                        $selected = ($currentSupplyStatus === $opt) ? 'selected' : '';
+                                        $selected = '';
+                                        if ($opt === 'PARTIAL DELIVERY') {
+                                            $selected = ($normalizedCurrentSupplyStatus === 'PARTIAL DELIVER' || $normalizedCurrentSupplyStatus === 'PARTIAL DELIVERY') ? 'selected' : '';
+                                        } else {
+                                            $selected = ($normalizedCurrentSupplyStatus === strtoupper($opt)) ? 'selected' : '';
+                                        }
                                         echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
                                     }
                                     ?>
@@ -1496,7 +1532,7 @@ include __DIR__ . '/header.php';
 
                                     function updateVisibility() {
                                         var val = String(select.value || '').toUpperCase();
-                                        partialGroup.style.display = (val === 'PARTIAL DELIVER') ? '' : 'none';
+                                        partialGroup.style.display = (val === 'PARTIAL DELIVER' || val === 'PARTIAL DELIVERY') ? '' : 'none';
                                         deliveryGroup.style.display = (val === 'COMPLETED') ? '' : 'none';
                                     }
 
@@ -1510,29 +1546,35 @@ include __DIR__ . '/header.php';
                                 <div class="mb-2">
                                     <label class="form-label mb-1">Status</label>
                                     <?php
+                                    $budgetDoneUiAcct = !empty($transaction['budget_status']) || !empty($transaction['budget_dv_number']) || !empty($transaction['budget_dv_date']);
                                     $currentAcctStatus = ($transaction['acct_post_status'] ?: $transaction['acct_pre_status']) ?? '';
+                                    $currentAcctStatusNorm = strtoupper(trim((string)$currentAcctStatus));
                                     ?>
-                                    <select name="acct_status" class="form-control">
-                                        <?php
-                                        echo '<option value="">-- Select status --</option>';
-                                        $acctOptions = ['FOR ORS', 'FOR VOUCHER', 'COMPLETED'];
-                                        foreach ($acctOptions as $opt) {
-                                            $selected = (strtoupper(trim($currentAcctStatus)) === strtoupper(trim($opt))) ? 'selected' : '';
-                                            echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
-                                        }
-                                        ?>
-                                    </select>
+
+                                    <?php if (!$budgetDoneUiAcct): ?>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="acct_for_ors" id="acctForOrs" value="1" <?php echo ($currentAcctStatusNorm === 'FOR ORS') ? 'checked' : ''; ?>>
+                                            <label class="form-check-label" for="acctForOrs">FOR ORS</label>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="acct_for_voucher" id="acctForVoucher" value="1" <?php echo ($currentAcctStatusNorm === 'FOR VOUCHER') ? 'checked' : ''; ?>>
+                                            <label class="form-check-label" for="acctForVoucher">FOR VOUCHER</label>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="mb-2">
                                     <label class="form-label mb-1">Remarks</label>
                                     <textarea name="acct_remarks" class="form-control" rows="2"
                                               placeholder="Enter accounting remarks"></textarea>
                                 </div>
-                                <div class="mb-0">
-                                    <label class="form-label mb-1">DV Amount</label>
-                                    <input type="number" step="0.01" min="0" name="acct_dv_amount" class="form-control"
-                                           placeholder="Enter DV amount (net)">
-                                </div>
+                                <?php if (!$budgetDoneUiAcct): ?>
+                                    <div class="mb-0">
+                                        <label class="form-label mb-1">DV Amount</label>
+                                        <input type="number" step="0.01" min="0" name="acct_dv_amount" class="form-control" required
+                                               placeholder="Enter DV amount (net)">
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         <?php elseif ($role === 'budget'): ?>
                             <div class="row">
@@ -2112,9 +2154,6 @@ include __DIR__ . '/header.php';
                                 <span>Budget Unit</span>
                                 <span class="small text-muted"><?php echo $elapsedBudget ? htmlspecialchars($elapsedBudget) : ''; ?></span>
                             </h6>
-                            <?php if ($transaction['budget_dv_number']): ?>
-                                <p class="timeline-meta"><i class="fas fa-file-invoice me-1"></i>DV #: <?php echo htmlspecialchars($transaction['budget_dv_number']); ?></p>
-                            <?php endif; ?>
 
                             <?php if (!empty($updatesByStage['budget'])): ?>
                                 <div class="timeline-history mt-2 p-2 border rounded bg-white">

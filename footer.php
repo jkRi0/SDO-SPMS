@@ -251,7 +251,7 @@
 
                 doc.setFontSize(11);
                 doc.setTextColor(30, 30, 30);
-                const title = 'Transactions List';
+                const title = '';
                 doc.text(title, leftMargin, topMargin - 6);
 
                 doc.autoTable({
