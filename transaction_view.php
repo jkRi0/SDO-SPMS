@@ -196,7 +196,7 @@ $stageDates = [
     $transaction['proc_date'] ?? null,
     $transaction['supply_date'] ?? null,
     $transaction['acct_pre_date'] ?? null,
-    $transaction['budget_dv_date'] ?? null,
+    $transaction['budget_ors_date'] ?? null,
     $transaction['acct_post_date'] ?? null,
     $transaction['cashier_payment_date'] ?? null,
 ];
@@ -482,7 +482,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Enforce that only the current owning department can update (and only after receive if it was handed off).
-    $budgetDoneForEdit = !empty($transaction['budget_status']) || !empty($transaction['budget_dv_number']) || !empty($transaction['budget_dv_date']);
+    $budgetDoneForEdit = !empty($transaction['budget_status']) || !empty($transaction['budget_ors_number']) || !empty($transaction['budget_ors_date']);
     $deptForRoleEdit = [
         'procurement' => 'procurement',
         'supply' => 'supply',
@@ -563,12 +563,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (!empty($transaction['acct_post_status'])) {
             $fromDept = 'accounting_post';
             $nextDept = empty($transaction['cashier_status']) ? 'cashier' : '';
-        } elseif (!empty($transaction['budget_status']) || !empty($transaction['budget_dv_number']) || !empty($transaction['budget_dv_date'])) {
+        } elseif (!empty($transaction['budget_status']) || !empty($transaction['budget_ors_number']) || !empty($transaction['budget_ors_date'])) {
             $fromDept = 'budget';
             $nextDept = empty($transaction['acct_post_status']) ? 'accounting_post' : '';
         } elseif (!empty($transaction['acct_pre_status'])) {
             $fromDept = 'accounting_pre';
-            $nextDept = empty($transaction['budget_status']) && empty($transaction['budget_dv_number']) && empty($transaction['budget_dv_date']) ? 'budget' : '';
+            $nextDept = empty($transaction['budget_status']) && empty($transaction['budget_ors_number']) && empty($transaction['budget_ors_date']) ? 'budget' : '';
         } elseif (!empty($transaction['supply_status']) || !empty($transaction['supply_date'])) {
             $fromDept = 'supply';
             $nextDept = empty($transaction['acct_pre_status']) ? 'accounting_pre' : '';
@@ -583,7 +583,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $deptForRole = [
             'procurement' => 'procurement',
             'supply' => 'supply',
-            'accounting' => (!empty($transaction['budget_status']) || !empty($transaction['budget_dv_number']) || !empty($transaction['budget_dv_date'])) ? 'accounting_post' : 'accounting_pre',
+            'accounting' => (!empty($transaction['budget_status']) || !empty($transaction['budget_ors_number']) || !empty($transaction['budget_ors_date'])) ? 'accounting_post' : 'accounting_pre',
             'budget' => 'budget',
             'cashier' => 'cashier',
         ];
@@ -631,7 +631,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $poNum = $transaction['po_number'] ?? '';
                             $link = 'transaction_view.php?id=' . (int)$id;
                             $pendingTitle = 'Handoff Forwarded';
-                            $pendingMsg = strtoupper($fromDept) . ' forwarded PO ' . $poNum . ' to ' . strtoupper($nextDept) . '. Please receive it.';
+                            $pendingMsg = dept_ui_label($fromDept) . ' forwarded PO ' . $poNum . ' to ' . dept_ui_label($nextDept) . '. Please receive it.';
                             $notifyRole = $nextDept === 'accounting_pre' || $nextDept === 'accounting_post' ? 'accounting' : $nextDept;
                             create_dept_notification_once($db, $notifyRole, $id, $pendingTitle, $pendingMsg, $link);
                         } catch (Exception $e) {
@@ -784,20 +784,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Single Accounting form
             // Pre stage: FOR ORS checkbox
             // Post stage: FOR VOUCHER checkbox
-            // DV Amount: only for PRE stage
+            // DV Amount: only for POST stage
             $acctStatus      = '';
             $acctRemarksBase = trim($_POST['acct_remarks'] ?? '');
             $acctDvAmount    = trim($_POST['acct_dv_amount'] ?? '');
-            $acctForOrs      = isset($_POST['acct_for_ors']) ? 1 : 0;
+            $acctDvNumber    = trim($_POST['acct_dv_number'] ?? '');
+            $acctDvDate      = trim($_POST['acct_dv_date'] ?? '');
+            $acctPreChoice   = trim((string)($_POST['acct_pre_status'] ?? ''));
             $acctForVoucher  = isset($_POST['acct_for_voucher']) ? 1 : 0;
 
             // Decide automatically: before Budget is done = pre-budget; after Budget is done = post-budget
             $budgetDone = !empty($transaction['budget_status'])
-                || !empty($transaction['budget_dv_number'])
-                || !empty($transaction['budget_dv_date']);
+                || !empty($transaction['budget_ors_number'])
+                || !empty($transaction['budget_ors_date']);
 
             if (!$budgetDone) {
-                $acctStatus = $acctForOrs ? 'FOR ORS' : '';
+                $acctPreChoiceNorm = strtoupper(trim($acctPreChoice));
+                if ($acctPreChoiceNorm === 'FOR ORS') {
+                    $acctStatus = 'FOR ORS';
+                } elseif ($acctPreChoiceNorm === 'INCOMPLETE') {
+                    $acctStatus = 'INCOMPLETE';
+                } else {
+                    $acctStatus = '';
+                }
             } else {
                 $acctStatus = $acctForVoucher ? 'FOR VOUCHER' : '';
             }
@@ -809,24 +818,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     : (string)($transaction['acct_post_status'] ?? '');
             }
 
-            // DV amount is only required in PRE stage when submitting a meaningful update
+            // DV amount + DV number/date are only required in POST stage when submitting a meaningful update
             $isMeaningfulAcctUpdate = (trim((string)$acctStatus) !== '' || trim((string)$acctRemarksBase) !== '');
-            if (!$budgetDone && $isMeaningfulAcctUpdate) {
+            if ($budgetDone && $isMeaningfulAcctUpdate) {
                 if ($acctDvAmount === '') {
                     $error = 'DV Amount is required.';
                 } elseif (!is_numeric($acctDvAmount)) {
                     $error = 'DV Amount must be a valid number.';
+                } elseif ($acctDvNumber === '') {
+                    $error = 'DV Number is required.';
+                } elseif (!preg_match('/^\d+$/', $acctDvNumber)) {
+                    $error = 'DV Number must be numbers only.';
+                } elseif ($acctDvDate === '') {
+                    $error = 'DV Date is required.';
+                } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $acctDvDate)) {
+                    $error = 'DV Date is invalid.';
                 }
             }
 
-            // Combine remarks + DV amount for storage / history (DV amount only for PRE stage)
             $combinedRemarks = $acctRemarksBase;
-            if (!$budgetDone && $acctDvAmount !== '') {
-                if ($combinedRemarks !== '') {
-                    $combinedRemarks .= "\n";
-                }
-                $combinedRemarks .= 'DV Amount: ' . $acctDvAmount;
-            }
 
             if (!$budgetDone) {
                 // Pre-budget accounting update
@@ -842,30 +852,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Post-budget accounting update
                 $fields[] = 'acct_post_status = ?';
                 $fields[] = 'acct_post_remarks = ?';
+                $fields[] = 'acct_post_dv_number = ?';
+                $fields[] = 'acct_post_dv_date = ?';
+                $fields[] = 'acct_post_dv_amount = ?';
                 $fields[] = 'acct_post_date = CURDATE()';
                 $params[] = $acctStatus;
                 $params[] = $combinedRemarks;
+                $params[] = $acctDvNumber !== '' ? $acctDvNumber : null;
+                $params[] = $acctDvDate !== '' ? $acctDvDate : null;
+                $params[] = $acctDvAmount !== '' ? $acctDvAmount : null;
                 $logStage = 'accounting_post';
                 $logStatus = $acctStatus;
                 $logRemarks = $combinedRemarks;
             }
         } elseif ($role === 'budget') {
-            $budgetDvNumber = trim($_POST['budget_dv_number'] ?? '');
-            $budgetDvDate = trim($_POST['budget_dv_date'] ?? '');
+            $budgetOrsNumber = trim($_POST['budget_ors_number'] ?? '');
+            $budgetOrsDate = trim($_POST['budget_ors_date'] ?? '');
             $budgetStatus = trim($_POST['budget_status'] ?? '');
             $budgetDemandability = trim($_POST['budget_demandability'] ?? '');
             $budgetRemarks = trim($_POST['budget_remarks'] ?? '');
 
-            if ($budgetDvNumber !== '' && !preg_match('/^\d+$/', $budgetDvNumber)) {
-                $error = 'DV Number must be numbers only.';
+            if ($budgetOrsNumber !== '' && !preg_match('/^\d+$/', $budgetOrsNumber)) {
+                $error = 'ORS Number must be numbers only.';
             } else {
-                $fields[] = 'budget_dv_number = ?';
-                $fields[] = 'budget_dv_date = ?';
+                $fields[] = 'budget_ors_number = ?';
+                $fields[] = 'budget_ors_date = ?';
                 $fields[] = 'budget_status = ?';
                 $fields[] = 'budget_demandability = ?';
                 $fields[] = 'budget_remarks = ?';
-                $params[] = $budgetDvNumber;
-                $params[] = $budgetDvDate;
+                $params[] = $budgetOrsNumber;
+                $params[] = $budgetOrsDate;
                 $params[] = $budgetStatus;
                 $params[] = $budgetDemandability;
                 $params[] = $budgetRemarks;
@@ -947,8 +963,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $details['dv_amount'] = (string)($acctDvAmount ?? '');
                 }
                 if ($role === 'budget') {
-                    $details['dv_number'] = (string)($budgetDvNumber ?? '');
-                    $details['dv_date'] = (string)($budgetDvDate ?? '');
+                    $details['ors_number'] = (string)($budgetOrsNumber ?? '');
+                    $details['ors_date'] = (string)($budgetOrsDate ?? '');
                     $details['demandability'] = (string)($budgetDemandability ?? '');
                 }
                 if ($role === 'cashier') {
@@ -1064,7 +1080,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } catch (Exception $e) {
-        $error = 'Error updating transaction.';
+        $error = 'Error updating transaction: ' . $e->getMessage();
+        try {
+            error_log('Transaction update error (id=' . (int)$id . ', role=' . (string)($role ?? '') . '): ' . $e->getMessage());
+        } catch (Exception $ignored) {
+        }
     }
 }
 
@@ -1108,132 +1128,128 @@ include __DIR__ . '/header.php';
         <div class="card mb-3">
             <div class="card-body">
                 <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Basic Information</h6>
-                <div id="basicInfoContainer" class="info-grid">
-                    <div class="info-item info-item-full">
-                        <div class="info-icon"><i class="fas fa-file-alt"></i></div>
-                        <div class="info-content">
-                            <p class="info-label">Program Title</p>
-                            <p class="info-value"><?php echo htmlspecialchars($transaction['program_title']); ?></p>
-                        </div>
-                    </div>
+                <div id="basicInfoContainer">
+                    <?php
+                    $programTitle = trim((string)($transaction['program_title'] ?? ''));
+                    $expectedText = trim((string)($transaction['expected_date'] ?? ''));
+                    $poType = trim((string)($transaction['po_type'] ?? ''));
 
-                    <div class="info-item">
-                        <div class="info-icon"><i class="fas fa-clock"></i></div>
-                        <div class="info-content">
-                            <p class="info-label">Date Created</p>
-                            <p class="info-value"><?php echo date('m/d/Y H:i:s', strtotime($transaction['created_at'])); ?></p>
-                        </div>
-                    </div>
+                    $hasCoverage = (!empty($transaction['coverage_start']) || !empty($transaction['coverage_end']));
 
-                    <div class="info-item">
-                        <div class="info-icon"><i class="fas fa-calendar"></i></div>
-                        <div class="info-content">
-                            <p class="info-label">Date Coverage</p>
-                            <p class="info-value"><?php echo $coverageDisplay; ?></p>
-                        </div>
-                    </div>
+                    $hasSupplyGroup = (
+                        !empty($transaction['supply_delivery_receipt'])
+                        || !empty($transaction['supply_sales_invoice'])
+                        || !empty($transaction['supply_partial_delivery_date'])
+                        || !empty($transaction['supply_delivery_date'])
+                    );
 
-                    <div class="info-item">
-                        <div class="info-icon"><i class="fas fa-calendar-alt"></i></div>
-                        <div class="info-content">
-                            <p class="info-label">Expected Date</p>
-                            <p class="info-value">
-                                <?php
-                                $expectedText = $transaction['expected_date'] ?? '';
-                                echo $expectedText !== '' ? htmlspecialchars($expectedText) : '—';
-                                ?>
-                            </p>
-                        </div>
-                    </div>
+                    $hasDvGroup = (
+                        !empty($transaction['acct_post_dv_amount'])
+                        || !empty($transaction['acct_post_dv_number'])
+                        || !empty($transaction['acct_post_dv_date'])
+                    );
 
-                    <div class="info-item">
-                        <div class="info-icon"><i class="fas fa-money-bill-wave"></i></div>
-                        <div class="info-content">
-                            <p class="info-label">PO (Gross Amount)</p>
-                            <p class="info-value">₱ <?php echo number_format($transaction['amount'], 2); ?></p>
-                        </div>
-                    </div>
+                    $hasOrsGroup = (
+                        !empty($transaction['budget_ors_number'])
+                        || !empty($transaction['budget_ors_date'])
+                        || !empty($transaction['budget_demandability'])
+                    );
 
-                    <div class="info-item">
-                        <div class="info-icon"><i class="fas fa-tags"></i></div>
-                        <div class="info-content">
-                            <p class="info-label">Transaction Type</p>
-                            <p class="info-value">
-                                <?php
-                                $poType = trim((string)($transaction['po_type'] ?? ''));
-                                echo $poType !== '' ? htmlspecialchars($poType) : '—';
-                                ?>
-                            </p>
-                        </div>
-                    </div>
+                    $hasCashierGroup = (
+                        !empty($transaction['cashier_or_number'])
+                        || !empty($transaction['cashier_or_date'])
+                        || !empty($transaction['cashier_landbank_ref'])
+                        || !empty($transaction['cashier_payment_date'])
+                    );
+                    ?>
 
-                    <?php if (!empty($transaction['budget_dv_number'])): ?>
-                        <div class="info-item">
-                            <div class="info-icon"><i class="fas fa-receipt"></i></div>
-                            <div class="info-content">
-                                <p class="info-label">DV Number</p>
-                                <p class="info-value"><?php echo htmlspecialchars($transaction['budget_dv_number']); ?></p>
-                            </div>
+                    <?php if ($programTitle !== ''): ?>
+                        <div class="border rounded p-3 mb-2 bg-white">
+                            <div><strong>Program Title:</strong> <?php echo htmlspecialchars($programTitle); ?></div>
                         </div>
                     <?php endif; ?>
 
-                    <?php if (!empty($transaction['budget_dv_date'])): ?>
-                        <div class="info-item">
-                            <div class="info-icon"><i class="fas fa-calendar-check"></i></div>
-                            <div class="info-content">
-                                <p class="info-label">DV Date</p>
-                                <p class="info-value"><?php echo htmlspecialchars($transaction['budget_dv_date']); ?></p>
-                            </div>
+                    <div class="border rounded p-3 mb-2 bg-white">
+                        <div><strong>Date Created:</strong> <?php echo date('m/d/Y H:i:s', strtotime($transaction['created_at'])); ?></div>
+                        <?php if ($hasCoverage): ?>
+                            <div class="mt-1"><strong>Date Coverage:</strong> <?php echo htmlspecialchars($coverageDisplay); ?></div>
+                        <?php endif; ?>
+                        <?php if ($expectedText !== ''): ?>
+                            <div class="mt-1"><strong>Expected Date:</strong> <?php echo htmlspecialchars($expectedText); ?></div>
+                        <?php endif; ?>
+                        <div class="mt-1"><strong>PO (Gross Amount):</strong> ₱ <?php echo number_format((float)$transaction['amount'], 2); ?></div>
+                        <?php if ($poType !== ''): ?>
+                            <div class="mt-1"><strong>Transaction Type:</strong> <?php echo htmlspecialchars($poType); ?></div>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if ($hasSupplyGroup): ?>
+                        <div class="border rounded p-3 mb-2 bg-white">
+                            <?php if (!empty($transaction['supply_delivery_receipt'])): ?>
+                                <div><strong>Delivery Receipt:</strong> <?php echo htmlspecialchars($transaction['supply_delivery_receipt']); ?></div>
+                            <?php endif; ?>
+                            <?php if (!empty($transaction['supply_sales_invoice'])): ?>
+                                <div class="mt-1"><strong>Sales Invoice:</strong> <?php echo htmlspecialchars($transaction['supply_sales_invoice']); ?></div>
+                            <?php endif; ?>
+                            <?php if (!empty($transaction['supply_partial_delivery_date'])): ?>
+                                <div class="mt-1"><strong>Partial Delivery Date:</strong> <?php echo htmlspecialchars($transaction['supply_partial_delivery_date']); ?></div>
+                            <?php endif; ?>
+                            <?php if (!empty($transaction['supply_delivery_date'])): ?>
+                                <div class="mt-1"><strong>Delivery Date:</strong> <?php echo htmlspecialchars($transaction['supply_delivery_date']); ?></div>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
 
-                    <?php if (!empty($transaction['budget_demandability'])): ?>
-                        <div class="info-item">
-                            <div class="info-icon"><i class="fas fa-balance-scale"></i></div>
-                            <div class="info-content">
-                                <p class="info-label">Demandability</p>
-                                <p class="info-value"><?php echo htmlspecialchars($transaction['budget_demandability']); ?></p>
-                            </div>
+                    <?php if ($hasDvGroup): ?>
+                        <div class="border rounded p-3 mb-2 bg-white">
+                            <?php if (!empty($transaction['acct_post_dv_amount'])): ?>
+                                <div><strong>DV Amount:</strong> ₱ <?php echo number_format((float)$transaction['acct_post_dv_amount'], 2); ?></div>
+                            <?php endif; ?>
+                            <?php if (!empty($transaction['acct_post_dv_number'])): ?>
+                                <div class="mt-1"><strong>DV Number:</strong> <?php echo htmlspecialchars($transaction['acct_post_dv_number']); ?></div>
+                            <?php endif; ?>
+                            <?php if (!empty($transaction['acct_post_dv_date'])): ?>
+                                <div class="mt-1"><strong>DV Date:</strong> <?php echo htmlspecialchars($transaction['acct_post_dv_date']); ?></div>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
 
-                    <?php if (!empty($transaction['supply_delivery_receipt'])): ?>
-                        <div class="info-item">
-                            <div class="info-icon"><i class="fas fa-truck"></i></div>
-                            <div class="info-content">
-                                <p class="info-label">Delivery Receipt</p>
-                                <p class="info-value"><?php echo htmlspecialchars($transaction['supply_delivery_receipt']); ?></p>
-                            </div>
+                    <?php if ($hasOrsGroup): ?>
+                        <div class="border rounded p-3 mb-2 bg-white">
+                            <?php if (!empty($transaction['budget_ors_number'])): ?>
+                                <div><strong>ORS Number:</strong> <?php echo htmlspecialchars($transaction['budget_ors_number']); ?></div>
+                            <?php endif; ?>
+                            <?php if (!empty($transaction['budget_ors_date'])): ?>
+                                <div class="mt-1"><strong>ORS Date:</strong> <?php echo htmlspecialchars($transaction['budget_ors_date']); ?></div>
+                            <?php endif; ?>
+                            <?php if (!empty($transaction['budget_demandability'])): ?>
+                                <div class="mt-1"><strong>Demandability:</strong> <?php echo htmlspecialchars($transaction['budget_demandability']); ?></div>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
 
-                    <?php if (!empty($transaction['supply_partial_delivery_date'])): ?>
-                        <div class="info-item">
-                            <div class="info-icon"><i class="fas fa-calendar-day"></i></div>
-                            <div class="info-content">
-                                <p class="info-label">Partial Delivery Date</p>
-                                <p class="info-value"><?php echo htmlspecialchars($transaction['supply_partial_delivery_date']); ?></p>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if (!empty($transaction['supply_delivery_date'])): ?>
-                        <div class="info-item">
-                            <div class="info-icon"><i class="fas fa-calendar-check"></i></div>
-                            <div class="info-content">
-                                <p class="info-label">Delivery Date</p>
-                                <p class="info-value"><?php echo htmlspecialchars($transaction['supply_delivery_date']); ?></p>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if (!empty($transaction['supply_sales_invoice'])): ?>
-                        <div class="info-item">
-                            <div class="info-icon"><i class="fas fa-file-invoice"></i></div>
-                            <div class="info-content">
-                                <p class="info-label">Sales Invoice</p>
-                                <p class="info-value"><?php echo htmlspecialchars($transaction['supply_sales_invoice']); ?></p>
-                            </div>
+                    <?php if ($hasCashierGroup): ?>
+                        <div class="border rounded p-3 mb-0 bg-white">
+                            <?php if (!empty($transaction['cashier_or_number'])): ?>
+                                <div><strong>ACIC Number:</strong> <?php echo htmlspecialchars($transaction['cashier_or_number']); ?></div>
+                            <?php endif; ?>
+                            <?php if (!empty($transaction['cashier_or_date'])): ?>
+                                <div class="mt-1"><strong>ACIC Date:</strong> <?php echo htmlspecialchars($transaction['cashier_or_date']); ?></div>
+                            <?php endif; ?>
+                            <?php if (!empty($transaction['cashier_landbank_ref'])): ?>
+                                <div class="mt-1"><strong>Amount:</strong> ₱ <?php
+                                    $cashierAmountDisplay = trim((string)$transaction['cashier_landbank_ref']);
+                                    $cashierAmountClean = str_replace(',', '', $cashierAmountDisplay);
+                                    if ($cashierAmountClean !== '' && is_numeric($cashierAmountClean)) {
+                                        echo htmlspecialchars(number_format((float)$cashierAmountClean, 2));
+                                    } else {
+                                        echo htmlspecialchars($cashierAmountDisplay);
+                                    }
+                                ?></div>
+                            <?php endif; ?>
+                            <?php if (!empty($transaction['cashier_payment_date'])): ?>
+                                <div class="mt-1"><strong>Payment Date:</strong> <?php echo htmlspecialchars($transaction['cashier_payment_date']); ?></div>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -1247,7 +1263,7 @@ include __DIR__ . '/header.php';
                     <p class="text-muted mb-0">Suppliers can only view the status of their transactions.</p>
                 <?php else: ?>
                     <?php
-                    $budgetDoneForHandoff = !empty($transaction['budget_status']) || !empty($transaction['budget_dv_number']) || !empty($transaction['budget_dv_date']);
+                    $budgetDoneForHandoff = !empty($transaction['budget_status']) || !empty($transaction['budget_ors_number']) || !empty($transaction['budget_ors_date']);
                     $deptForRoleUi = [
                         'procurement' => 'procurement',
                         'supply' => 'supply',
@@ -1561,15 +1577,20 @@ include __DIR__ . '/header.php';
                                 <div class="mb-2">
                                     <label class="form-label mb-1">Status</label>
                                     <?php
-                                    $budgetDoneUiAcct = !empty($transaction['budget_status']) || !empty($transaction['budget_dv_number']) || !empty($transaction['budget_dv_date']);
+                                    $budgetDoneUiAcct = !empty($transaction['budget_status']) || !empty($transaction['budget_ors_number']) || !empty($transaction['budget_ors_date']);
                                     $currentAcctStatus = ($transaction['acct_post_status'] ?: $transaction['acct_pre_status']) ?? '';
                                     $currentAcctStatusNorm = strtoupper(trim((string)$currentAcctStatus));
                                     ?>
 
                                     <?php if (!$budgetDoneUiAcct): ?>
                                         <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="acct_for_ors" id="acctForOrs" value="1" <?php echo ($currentAcctStatusNorm === 'FOR ORS') ? 'checked' : ''; ?>>
-                                            <label class="form-check-label" for="acctForOrs">FOR ORS</label>
+                                            <input class="form-check-input" type="radio" name="acct_pre_status" id="acctPreForOrs" value="FOR ORS" <?php echo ($currentAcctStatusNorm === 'FOR ORS') ? 'checked' : ''; ?>>
+                                            <label class="form-check-label" for="acctPreForOrs">FOR ORS</label>
+                                        </div>
+
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="radio" name="acct_pre_status" id="acctPreIncomplete" value="INCOMPLETE" <?php echo ($currentAcctStatusNorm === 'INCOMPLETE') ? 'checked' : ''; ?>>
+                                            <label class="form-check-label" for="acctPreIncomplete">INCOMPLETE</label>
                                         </div>
                                     <?php else: ?>
                                         <div class="form-check mb-2">
@@ -1583,7 +1604,19 @@ include __DIR__ . '/header.php';
                                     <textarea name="acct_remarks" class="form-control" rows="2"
                                               placeholder="Enter accounting remarks"></textarea>
                                 </div>
-                                <?php if (!$budgetDoneUiAcct): ?>
+                                <?php if ($budgetDoneUiAcct): ?>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-2">
+                                            <label class="form-label mb-1">DV Number</label>
+                                            <input type="text" name="acct_dv_number" class="form-control"
+                                                   inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
+                                                   placeholder="Enter DV number">
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label class="form-label mb-1">DV Date</label>
+                                            <input type="date" name="acct_dv_date" class="form-control">
+                                        </div>
+                                    </div>
                                     <div class="mb-0">
                                         <label class="form-label mb-1">DV Amount</label>
                                         <input type="number" step="0.01" min="0" name="acct_dv_amount" class="form-control" required
@@ -1594,15 +1627,15 @@ include __DIR__ . '/header.php';
                         <?php elseif ($role === 'budget'): ?>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">DV Number</label>
-                                    <input type="text" name="budget_dv_number" class="form-control"
+                                    <label class="form-label">ORS Number</label>
+                                    <input type="text" name="budget_ors_number" class="form-control"
                                            inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
-                                           value="<?php echo htmlspecialchars($transaction['budget_dv_number'] ?? ''); ?>">
+                                           value="<?php echo htmlspecialchars($transaction['budget_ors_number'] ?? ''); ?>">
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">DV Date</label>
-                                    <input type="date" name="budget_dv_date" class="form-control"
-                                           value="<?php echo htmlspecialchars($transaction['budget_dv_date'] ?? ''); ?>">
+                                    <label class="form-label">ORS Date</label>
+                                    <input type="date" name="budget_ors_date" class="form-control"
+                                           value="<?php echo htmlspecialchars($transaction['budget_ors_date'] ?? ''); ?>">
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -1678,7 +1711,16 @@ include __DIR__ . '/header.php';
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Amount</label>
                                     <input type="text" name="cashier_landbank_ref" class="form-control"
-                                           value="<?php echo htmlspecialchars($transaction['cashier_landbank_ref'] ?? ''); ?>">
+                                           value="<?php
+                                           $cashierAmountUi = trim((string)($transaction['cashier_landbank_ref'] ?? ''));
+                                           if ($cashierAmountUi === '') {
+                                               $cashierAmountUi = trim((string)($transaction['acct_post_dv_amount'] ?? ''));
+                                               if ($cashierAmountUi === '') {
+                                                   $cashierAmountUi = trim((string)($transaction['amount'] ?? ''));
+                                               }
+                                           }
+                                           echo htmlspecialchars($cashierAmountUi);
+                                           ?>">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Payment Date</label>

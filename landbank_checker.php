@@ -65,18 +65,18 @@ if (empty($transaction['budget_status'])) {
     echo "<p style='color: green;'>✓ " . $transaction['budget_status'] . "</p>";
 }
 
-echo "<h4>4a. Budget DV Number</h4>";
-if (empty($transaction['budget_dv_number'])) {
+echo "<h4>4a. Budget ORS Number</h4>";
+if (empty($transaction['budget_ors_number'])) {
     echo "<p style='color: red;'>❌ NOT SET</p>";
 } else {
-    echo "<p style='color: green;'>✓ " . $transaction['budget_dv_number'] . "</p>";
+    echo "<p style='color: green;'>✓ " . $transaction['budget_ors_number'] . "</p>";
 }
 
-echo "<h4>4b. Budget DV Date</h4>";
-if (empty($transaction['budget_dv_date'])) {
+echo "<h4>4b. Budget ORS Date</h4>";
+if (empty($transaction['budget_ors_date'])) {
     echo "<p style='color: red;'>❌ NOT SET</p>";
 } else {
-    echo "<p style='color: green;'>✓ " . $transaction['budget_dv_date'] . "</p>";
+    echo "<p style='color: green;'>✓ " . $transaction['budget_ors_date'] . "</p>";
 }
 
 // Check 5: Final Accounting Status
@@ -89,6 +89,27 @@ if (empty($transaction['acct_post_status'])) {
     echo "<p style='color: green;'>✓ " . $transaction['acct_post_status'] . "</p>";
 }
 
+echo "<h4>5a. DV Number (post-accounting)</h4>";
+if (empty($transaction['acct_post_dv_number'])) {
+    echo "<p style='color: red;'>❌ NOT SET</p>";
+} else {
+    echo "<p style='color: green;'>✓ " . $transaction['acct_post_dv_number'] . "</p>";
+}
+
+echo "<h4>5b. DV Date (post-accounting)</h4>";
+if (empty($transaction['acct_post_dv_date'])) {
+    echo "<p style='color: red;'>❌ NOT SET</p>";
+} else {
+    echo "<p style='color: green;'>✓ " . $transaction['acct_post_dv_date'] . "</p>";
+}
+
+echo "<h4>5c. DV Amount (post-accounting)</h4>";
+if (empty($transaction['acct_post_dv_amount'])) {
+    echo "<p style='color: red;'>❌ NOT SET</p>";
+} else {
+    echo "<p style='color: green;'>✓ " . $transaction['acct_post_dv_amount'] . "</p>";
+}
+
 echo "<hr>";
 echo "<h3>Summary</h3>";
 
@@ -98,8 +119,9 @@ $canProceed =
     !empty($transaction['supply_status']) && !in_array($transaction['supply_status'], ['FOR CORRECTION', 'PENDING'], true) &&
     !empty($transaction['acct_pre_status']) && !in_array($transaction['acct_pre_status'], ['FOR CORRECTION', 'PENDING'], true) &&
     !empty($transaction['budget_status']) && !in_array($transaction['budget_status'], ['FOR CORRECTION', 'PENDING'], true) &&
-    !empty($transaction['budget_dv_number']) && !empty($transaction['budget_dv_date']) &&
-    !empty($transaction['acct_post_status']) && !in_array($transaction['acct_post_status'], ['FOR CORRECTION', 'PENDING'], true);
+    !empty($transaction['budget_ors_number']) && !empty($transaction['budget_ors_date']) &&
+    !empty($transaction['acct_post_status']) && !in_array($transaction['acct_post_status'], ['FOR CORRECTION', 'PENDING'], true) &&
+    !empty($transaction['acct_post_dv_number']) && !empty($transaction['acct_post_dv_date']) && !empty($transaction['acct_post_dv_amount']);
 
 if ($canProceed) {
     echo "<p style='color: green; font-size: 18px;'><strong>✓ READY TO PROCEED TO LANDBANK!</strong></p>";

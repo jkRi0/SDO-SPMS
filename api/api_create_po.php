@@ -31,11 +31,11 @@ try {
         exit;
     }
 
-    // Validate PO number is digits only
-    if (!preg_match('/^\d+$/', $po_number)) {
+    // Validate PO number: allow letters, digits, and - _ /
+    if (!preg_match('/^[A-Za-z0-9\/_-]+$/', $po_number)) {
         echo json_encode([
             'success' => false,
-            'message' => 'PO number must contain numbers only'
+            'message' => 'PO number may contain letters, numbers, and the symbols - _ / only'
         ]);
         exit;
     }

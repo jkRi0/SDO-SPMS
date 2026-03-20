@@ -1129,7 +1129,7 @@ if (session_status() === PHP_SESSION_NONE) {
                     <!-- PO Number -->
                     <div class="mb-3">
                         <label class="form-label" style="font-weight: 600; color: #333; font-size: 0.9rem;">PO Number <span style="color: #dc2626;">*</span></label>
-                        <input type="text" name="po_number" class="form-control" required inputmode="numeric" pattern="\d*" oninput="this.value = this.value.replace(/\D/g, '')"
+                        <input type="text" name="po_number" class="form-control" required inputmode="text" pattern="[A-Za-z0-9\/_-]+" oninput="this.value = this.value.replace(/[^A-Za-z0-9\/_-]/g, '')"
                                placeholder="Enter PO number"
                                style="border-radius: 6px; border: 1px solid #ddd; padding: 0.5rem 0.6rem; font-size: 0.9rem;">
                     </div>
