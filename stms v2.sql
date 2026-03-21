@@ -50,18 +50,18 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `action`, `target_type`, `target_i
 (6, 13, 'transaction_handoff_receive', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"procurement\",\"to_dept\":\"supply\",\"delay_seconds\":0,\"exceeded_grace\":0}', '2026-03-18 02:17:04'),
 (7, 13, 'transaction_update', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"stage\":\"supply\",\"status\":\"COMPLETED\",\"remarks\":\"delivered\",\"delivery_receipt\":\"12314\",\"sales_invoice\":\"98787\"}', '2026-03-18 02:18:14'),
 (8, 13, 'transaction_update', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"stage\":\"supply\",\"status\":\"COMPLETED\",\"remarks\":\"delivered\",\"delivery_receipt\":\"12314\",\"sales_invoice\":\"98787\"}', '2026-03-18 02:18:14'),
-(9, 13, 'transaction_handoff_forward', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"supply\",\"to_dept\":\"accounting_pre\"}', '2026-03-18 02:18:38'),
-(10, 14, 'transaction_handoff_receive', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"supply\",\"to_dept\":\"accounting_pre\",\"delay_seconds\":0,\"exceeded_grace\":0}', '2026-03-18 02:19:06'),
-(11, 14, 'transaction_update', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"stage\":\"accounting_pre\",\"status\":\"FOR ORS\",\"remarks\":\"complete attachment\",\"dv_amount\":\"\"}', '2026-03-18 02:20:19'),
-(12, 14, 'transaction_handoff_forward', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"accounting_pre\",\"to_dept\":\"budget\"}', '2026-03-18 02:20:29'),
-(13, 15, 'transaction_handoff_receive', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"accounting_pre\",\"to_dept\":\"budget\",\"delay_seconds\":0,\"exceeded_grace\":0}', '2026-03-18 02:20:51'),
-(14, 14, 'transaction_update', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"stage\":\"accounting_pre\",\"status\":\"FOR ORS\",\"remarks\":\"incomplete\",\"dv_amount\":\"\"}', '2026-03-18 02:26:14'),
+(9, 13, 'transaction_handoff_forward', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"supply\",\"to_dept\":\"accounting\"}', '2026-03-18 02:18:38'),
+(10, 14, 'transaction_handoff_receive', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"supply\",\"to_dept\":\"accounting\",\"delay_seconds\":0,\"exceeded_grace\":0}', '2026-03-18 02:19:06'),
+(11, 14, 'transaction_update', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"stage\":\"accounting\",\"status\":\"FOR ORS\",\"remarks\":\"complete attachment\",\"dv_amount\":\"\"}', '2026-03-18 02:20:19'),
+(12, 14, 'transaction_handoff_forward', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"accounting\",\"to_dept\":\"budget\"}', '2026-03-18 02:20:29'),
+(13, 15, 'transaction_handoff_receive', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"accounting\",\"to_dept\":\"budget\",\"delay_seconds\":0,\"exceeded_grace\":0}', '2026-03-18 02:20:51'),
+(14, 14, 'transaction_update', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"stage\":\"accounting\",\"status\":\"FOR ORS\",\"remarks\":\"incomplete\",\"dv_amount\":\"\"}', '2026-03-18 02:26:14'),
 (15, 15, 'transaction_update', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"stage\":\"budget\",\"status\":\"FOR PAYMENT\",\"remarks\":\"obligated\",\"dv_number\":\"876\",\"dv_date\":\"2026-03-27\",\"demandability\":\"Not Yet Due and Demandable\"}', '2026-03-18 02:31:34'),
-(16, 15, 'transaction_handoff_forward', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"budget\",\"to_dept\":\"accounting_post\"}', '2026-03-18 02:31:54'),
-(17, 14, 'transaction_handoff_receive', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"budget\",\"to_dept\":\"accounting_post\",\"delay_seconds\":0,\"exceeded_grace\":0}', '2026-03-18 02:32:14'),
-(18, 14, 'transaction_update', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"stage\":\"accounting_post\",\"status\":\"FOR VOUCHER\",\"remarks\":\"for payment\",\"dv_amount\":\"\"}', '2026-03-18 02:32:49'),
-(19, 14, 'transaction_handoff_forward', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"accounting_post\",\"to_dept\":\"cashier\"}', '2026-03-18 02:32:55'),
-(20, 16, 'transaction_handoff_receive', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"accounting_post\",\"to_dept\":\"cashier\",\"delay_seconds\":0,\"exceeded_grace\":0}', '2026-03-18 02:39:01'),
+(16, 15, 'transaction_handoff_forward', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"budget\",\"to_dept\":\"accounting\"}', '2026-03-18 02:31:54'),
+(17, 14, 'transaction_handoff_receive', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"budget\",\"to_dept\":\"accounting\",\"delay_seconds\":0,\"exceeded_grace\":0}', '2026-03-18 02:32:14'),
+(18, 14, 'transaction_update', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"stage\":\"accounting\",\"status\":\"FOR VOUCHER\",\"remarks\":\"for payment\",\"dv_amount\":\"\"}', '2026-03-18 02:32:49'),
+(19, 14, 'transaction_handoff_forward', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"accounting\",\"to_dept\":\"cashier\"}', '2026-03-18 02:32:55'),
+(20, 16, 'transaction_handoff_receive', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"accounting\",\"to_dept\":\"cashier\",\"delay_seconds\":0,\"exceeded_grace\":0}', '2026-03-18 02:39:01'),
 (21, 16, 'transaction_update', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"stage\":\"cashier\",\"status\":\"For ACIC\",\"remarks\":\"Amount: 940288.99\",\"or_number\":\"345654\",\"or_date\":\"2026-04-02\",\"payment_date\":\"2026-04-02\",\"landbank_ref\":\"940288.99\"}', '2026-03-18 02:41:16'),
 (22, 16, 'transaction_notify_supplier', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"supplier_id\":8,\"message\":\"Your PO 2025030039 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-18 02:42:56'),
 (23, 10, 'login', 'user', 10, 'Successful login', '2026-03-18 02:46:10'),
@@ -117,16 +117,16 @@ INSERT INTO `department_notifications` (`id`, `role`, `transaction_id`, `title`,
 (3, 'procurement', 51, 'Handoff Received', 'Transaction was successfully received for PO 2025030039.', 'transaction_view.php?id=51', 0, '2026-03-18 10:17:04'),
 (4, 'accounting', 51, 'Pending Transaction', 'Upcoming PO 2025030039', 'transaction_view.php?id=51', 0, '2026-03-18 10:18:14'),
 (5, 'accounting', 51, 'Supply Completed', 'Supply marked PO 2025030039 as Completed.', 'transaction_view.php?id=51', 0, '2026-03-18 10:18:14'),
-(6, 'accounting', 51, 'Handoff Forwarded', 'SUPPLY forwarded PO 2025030039 to ACCOUNTING_PRE. Please receive it.', 'transaction_view.php?id=51', 0, '2026-03-18 10:18:38'),
+(6, 'accounting', 51, 'Handoff Forwarded', 'SUPPLY forwarded PO 2025030039 to ACCOUNTING. Please receive it.', 'transaction_view.php?id=51', 0, '2026-03-18 10:18:38'),
 (7, 'supply', 51, 'Handoff Received', 'Transaction was successfully received for PO 2025030039.', 'transaction_view.php?id=51', 0, '2026-03-18 10:19:06'),
 (8, 'budget', 51, 'Pending Transaction', 'Upcoming PO 2025030039', 'transaction_view.php?id=51', 0, '2026-03-18 10:20:19'),
-(9, 'budget', 51, 'Handoff Forwarded', 'ACCOUNTING_PRE forwarded PO 2025030039 to BUDGET. Please receive it.', 'transaction_view.php?id=51', 0, '2026-03-18 10:20:29'),
+(9, 'budget', 51, 'Handoff Forwarded', 'ACCOUNTING forwarded PO 2025030039 to BUDGET. Please receive it.', 'transaction_view.php?id=51', 0, '2026-03-18 10:20:29'),
 (10, 'accounting', 51, 'Handoff Received', 'Transaction was successfully received for PO 2025030039.', 'transaction_view.php?id=51', 0, '2026-03-18 10:20:51'),
 (11, 'accounting', 51, 'Pending Transaction', 'Upcoming PO 2025030039', 'transaction_view.php?id=51', 0, '2026-03-18 10:31:34'),
-(12, 'accounting', 51, 'Handoff Forwarded', 'BUDGET forwarded PO 2025030039 to ACCOUNTING_POST. Please receive it.', 'transaction_view.php?id=51', 0, '2026-03-18 10:31:54'),
+(12, 'accounting', 51, 'Handoff Forwarded', 'BUDGET forwarded PO 2025030039 to ACCOUNTING. Please receive it.', 'transaction_view.php?id=51', 0, '2026-03-18 10:31:54'),
 (13, 'budget', 51, 'Handoff Received', 'Transaction was successfully received for PO 2025030039.', 'transaction_view.php?id=51', 0, '2026-03-18 10:32:14'),
 (14, 'cashier', 51, 'Pending Transaction', 'Upcoming PO 2025030039', 'transaction_view.php?id=51', 0, '2026-03-18 10:32:49'),
-(15, 'cashier', 51, 'Handoff Forwarded', 'ACCOUNTING_POST forwarded PO 2025030039 to CASHIER. Please receive it.', 'transaction_view.php?id=51', 0, '2026-03-18 10:32:55'),
+(15, 'cashier', 51, 'Handoff Forwarded', 'ACCOUNTING forwarded PO 2025030039 to CASHIER. Please receive it.', 'transaction_view.php?id=51', 0, '2026-03-18 10:32:55'),
 (16, 'accounting', 51, 'Handoff Received', 'Transaction was successfully received for PO 2025030039.', 'transaction_view.php?id=51', 0, '2026-03-18 10:39:01');
 
 -- --------------------------------------------------------
@@ -241,20 +241,17 @@ CREATE TABLE `transactions` (
   `supply_sales_invoice` varchar(100) DEFAULT NULL,
   `supply_remarks` text DEFAULT NULL,
   `supply_date` date DEFAULT NULL,
-  `acct_pre_status` varchar(100) DEFAULT NULL,
-  `acct_pre_remarks` text DEFAULT NULL,
-  `acct_pre_date` date DEFAULT NULL,
+  `acct_status` varchar(100) DEFAULT NULL,
+  `acct_remarks` text DEFAULT NULL,
+  `acct_dv_number` varchar(100) DEFAULT NULL,
+  `acct_dv_date` date DEFAULT NULL,
+  `acct_dv_amount` decimal(15,2) DEFAULT NULL,
+  `acct_date` date DEFAULT NULL,
   `budget_ors_number` varchar(100) DEFAULT NULL,
   `budget_ors_date` date DEFAULT NULL,
   `budget_status` varchar(100) DEFAULT NULL,
   `budget_demandability` varchar(100) DEFAULT NULL,
   `budget_remarks` text DEFAULT NULL,
-  `acct_post_status` varchar(100) DEFAULT NULL,
-  `acct_post_remarks` text DEFAULT NULL,
-  `acct_post_dv_number` varchar(100) DEFAULT NULL,
-  `acct_post_dv_date` date DEFAULT NULL,
-  `acct_post_dv_amount` decimal(15,2) DEFAULT NULL,
-  `acct_post_date` date DEFAULT NULL,
   `cashier_status` varchar(100) DEFAULT NULL,
   `cashier_remarks` text DEFAULT NULL,
   `cashier_or_number` varchar(100) DEFAULT NULL,
@@ -269,8 +266,8 @@ CREATE TABLE `transactions` (
 -- Dumping data for table `transactions`
 --
 
-INSERT INTO `transactions` (`id`, `supplier_id`, `po_number`, `program_title`, `po_type`, `proponent`, `coverage_start`, `coverage_end`, `expected_date`, `amount`, `created_at`, `proc_status`, `proc_remarks`, `proc_date`, `supply_status`, `supply_delivery_receipt`, `supply_sales_invoice`, `supply_remarks`, `supply_date`, `acct_pre_status`, `acct_pre_remarks`, `acct_pre_date`, `budget_ors_number`, `budget_ors_date`, `budget_status`, `budget_demandability`, `budget_remarks`, `acct_post_status`, `acct_post_remarks`, `acct_post_dv_number`, `acct_post_dv_date`, `acct_post_dv_amount`, `acct_post_date`, `cashier_status`, `cashier_remarks`, `cashier_or_number`, `cashier_or_date`, `cashier_landbank_ref`, `cashier_payment_date`, `supply_partial_delivery_date`, `supply_delivery_date`) VALUES
-(51, 8, '2025030039', 'procurement of supplies', 'Supplies', 'cid', '2026-03-20', '2026-03-31', NULL, 940288.99, '2026-03-18 02:14:59', 'FOR SUPPLY REVIEW', 'for IAR', '2026-03-18', 'COMPLETED', '12314', '98787', 'delivered', '2026-03-18', 'FOR ORS', 'incomplete', '2026-03-18', '876', '2026-03-27', 'FOR PAYMENT', 'Not Yet Due and Demandable', 'obligated', 'FOR VOUCHER', 'for payment', NULL, NULL, NULL, '2026-03-18', 'For ACIC', '', '345654', '2026-04-02', '940288.99', '2026-04-02', NULL, '2026-04-01');
+INSERT INTO `transactions` (`id`, `supplier_id`, `po_number`, `program_title`, `po_type`, `proponent`, `coverage_start`, `coverage_end`, `expected_date`, `amount`, `created_at`, `proc_status`, `proc_remarks`, `proc_date`, `supply_status`, `supply_delivery_receipt`, `supply_sales_invoice`, `supply_remarks`, `supply_date`, `acct_status`, `acct_remarks`, `acct_dv_number`, `acct_dv_date`, `acct_dv_amount`, `acct_date`, `budget_ors_number`, `budget_ors_date`, `budget_status`, `budget_demandability`, `budget_remarks`, `cashier_status`, `cashier_remarks`, `cashier_or_number`, `cashier_or_date`, `cashier_landbank_ref`, `cashier_payment_date`, `supply_partial_delivery_date`, `supply_delivery_date`) VALUES
+(51, 8, '2025030039', 'procurement of supplies', 'Supplies', 'cid', '2026-03-20', '2026-03-31', NULL, 940288.99, '2026-03-18 02:14:59', 'FOR SUPPLY REVIEW', 'for IAR', '2026-03-18', 'COMPLETED', '12314', '98787', 'delivered', '2026-03-18', 'FOR VOUCHER', 'for payment', NULL, NULL, NULL, '2026-03-18', '876', '2026-03-27', 'FOR PAYMENT', 'Not Yet Due and Demandable', 'obligated', 'For ACIC', '', '345654', '2026-04-02', '940288.99', '2026-04-02', NULL, '2026-04-01');
 
 -- --------------------------------------------------------
 
@@ -297,10 +294,10 @@ CREATE TABLE `transaction_handoffs` (
 
 INSERT INTO `transaction_handoffs` (`id`, `transaction_id`, `from_dept`, `to_dept`, `forwarded_at`, `received_at`, `delay_seconds`, `exceeded_grace`, `created_by_user_id`, `received_by_user_id`) VALUES
 (1, 51, 'procurement', 'supply', '2026-03-18 10:16:10', '2026-03-18 10:17:04', 0, 0, 12, 13),
-(2, 51, 'supply', 'accounting_pre', '2026-03-18 10:18:38', '2026-03-18 10:19:06', 0, 0, 13, 14),
-(3, 51, 'accounting_pre', 'budget', '2026-03-18 10:20:29', '2026-03-18 10:20:51', 0, 0, 14, 15),
-(4, 51, 'budget', 'accounting_post', '2026-03-18 10:31:54', '2026-03-18 10:32:14', 0, 0, 15, 14),
-(5, 51, 'accounting_post', 'cashier', '2026-03-18 10:32:55', '2026-03-18 10:39:01', 0, 0, 14, 16);
+(2, 51, 'supply', 'accounting', '2026-03-18 10:18:38', '2026-03-18 10:19:06', 0, 0, 13, 14),
+(3, 51, 'accounting', 'budget', '2026-03-18 10:20:29', '2026-03-18 10:20:51', 0, 0, 14, 15),
+(4, 51, 'budget', 'accounting', '2026-03-18 10:31:54', '2026-03-18 10:32:14', 0, 0, 15, 14),
+(5, 51, 'accounting', 'cashier', '2026-03-18 10:32:55', '2026-03-18 10:39:01', 0, 0, 14, 16);
 
 -- --------------------------------------------------------
 
@@ -325,10 +322,10 @@ INSERT INTO `transaction_updates` (`id`, `transaction_id`, `stage`, `status`, `r
 (1, 51, 'procurement', 'FOR SUPPLY REVIEW', 'for IAR', '2026-03-18 02:15:46'),
 (2, 51, 'supply', 'COMPLETED', 'delivered', '2026-03-18 02:18:14'),
 (3, 51, 'supply', 'COMPLETED', 'delivered', '2026-03-18 02:18:14'),
-(4, 51, 'accounting_pre', 'FOR ORS', 'complete attachment', '2026-03-18 02:20:19'),
-(5, 51, 'accounting_pre', 'FOR ORS', 'incomplete', '2026-03-18 02:26:14'),
+(4, 51, 'accounting', 'FOR ORS', 'complete attachment', '2026-03-18 02:20:19'),
+(5, 51, 'accounting', 'FOR ORS', 'incomplete', '2026-03-18 02:26:14'),
 (6, 51, 'budget', 'FOR PAYMENT', 'obligated', '2026-03-18 02:31:34'),
-(7, 51, 'accounting_post', 'FOR VOUCHER', 'for payment', '2026-03-18 02:32:49'),
+(7, 51, 'accounting', 'FOR VOUCHER', 'for payment', '2026-03-18 02:32:49'),
 (8, 51, 'cashier', 'For ACIC', 'Amount: 940288.99', '2026-03-18 02:41:16');
 
 -- --------------------------------------------------------

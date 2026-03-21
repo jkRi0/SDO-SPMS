@@ -58,13 +58,13 @@ include __DIR__ . '/header.php';
     $activePOs = 0;
     $pendingReview = 0;
     $approved = 0;
-    $stmtStats = $db->query('SELECT proc_status, proc_date, supply_status, acct_pre_status, budget_status, acct_post_status, cashier_status FROM transactions');
+    $stmtStats = $db->query('SELECT proc_status, proc_date, supply_status, acct_status, budget_status, cashier_status FROM transactions');
     $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
     foreach ($rowsStats as $t) {
         $stage = '';
         if (!empty($t['cashier_status'])) {
             $stage = 'Approved';
-        } elseif (!empty($t['supply_status']) || !empty($t['acct_pre_status']) || !empty($t['budget_status']) || !empty($t['acct_post_status'])) {
+        } elseif (!empty($t['supply_status']) || !empty($t['acct_status']) || !empty($t['budget_status'])) {
             $stage = 'Pending';
         } elseif (!empty($t['proc_status']) && empty($t['supply_status'])) {
             $stage = 'Active';
@@ -358,15 +358,15 @@ include __DIR__ . '/header.php';
     $has = function ($v): bool {
         return trim((string)($v ?? '')) !== '';
     };
-    $stmtStats = $db->query("SELECT supply_status, acct_pre_status, budget_status, acct_post_status, cashier_status FROM transactions WHERE (NULLIF(TRIM(supply_status), '') IS NOT NULL)");
+    $stmtStats = $db->query("SELECT supply_status, acct_status, budget_status, cashier_status FROM transactions WHERE (NULLIF(TRIM(supply_status), '') IS NOT NULL)");
     $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
     foreach ($rowsStats as $t) {
         $stage = '';
         if ($has($t['cashier_status'])) {
             $stage = 'Approved';
-        } elseif (($has($t['acct_pre_status']) && !$has($t['budget_status'])) || ($has($t['acct_post_status']) && !$has($t['cashier_status']))) {
+        } elseif ($has($t['acct_status']) || $has($t['budget_status'])) {
             $stage = 'Pending';
-        } elseif (($has($t['supply_status']) && !$has($t['acct_pre_status'])) || ($has($t['budget_status']) && !$has($t['acct_post_status']))) {
+        } elseif ($has($t['supply_status']) && !$has($t['acct_status'])) {
             $stage = 'Active';
         }
 
@@ -411,7 +411,7 @@ include __DIR__ . '/header.php';
     $has = function ($v): bool {
         return trim((string)($v ?? '')) !== '';
     };
-    $stmtStats = $db->query("SELECT acct_pre_status, budget_status, cashier_status FROM transactions WHERE (NULLIF(TRIM(acct_pre_status), '') IS NOT NULL)");
+    $stmtStats = $db->query("SELECT acct_status, budget_status, cashier_status FROM transactions WHERE (NULLIF(TRIM(acct_status), '') IS NOT NULL)");
     $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
     foreach ($rowsStats as $t) {
         $stage = '';
@@ -419,7 +419,7 @@ include __DIR__ . '/header.php';
             $stage = 'Approved';
         } elseif ($has($t['budget_status']) && !$has($t['cashier_status'])) {
             $stage = 'Pending';
-        } elseif ($has($t['acct_pre_status']) && !$has($t['budget_status'])) {
+        } elseif ($has($t['acct_status']) && !$has($t['budget_status'])) {
             $stage = 'Active';
         }
 
@@ -464,7 +464,7 @@ include __DIR__ . '/header.php';
     $has = function ($v): bool {
         return trim((string)($v ?? '')) !== '';
     };
-    $stmtStats = $db->query("SELECT acct_post_status, cashier_status FROM transactions WHERE (NULLIF(TRIM(acct_post_status), '') IS NOT NULL)");
+    $stmtStats = $db->query("SELECT acct_status, cashier_status FROM transactions WHERE (NULLIF(TRIM(acct_status), '') IS NOT NULL)");
     $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
     foreach ($rowsStats as $t) {
         $stage = '';
@@ -473,7 +473,7 @@ include __DIR__ . '/header.php';
             $stage = 'Approved';
         } elseif ($has($t['cashier_status'])) {
             $stage = 'Pending';
-        } elseif ($has($t['acct_post_status']) && !$has($t['cashier_status'])) {
+        } elseif ($has($t['acct_status']) && !$has($t['cashier_status'])) {
             $stage = 'Active';
         }
 

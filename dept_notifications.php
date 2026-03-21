@@ -23,32 +23,8 @@ function dept_notifications_ensure_table(PDO $db)
 
 function create_dept_notification_once(PDO $db, $role, $transaction_id, $title, $message, $link = null, $dedupeWindowSeconds = 120)
 {
-    if (empty($role)) {
-        return false;
-    }
-
-    $dedupeWindowSeconds = (int)$dedupeWindowSeconds;
-    if ($dedupeWindowSeconds <= 0) {
-        $dedupeWindowSeconds = 120;
-    }
-
-    try {
-        $checkStmt = $db->prepare('SELECT id FROM department_notifications WHERE role = ? AND transaction_id <=> ? AND title = ? AND message = ? AND created_at >= (NOW() - INTERVAL ? SECOND) LIMIT 1');
-        $checkStmt->execute([
-            (string)$role,
-            $transaction_id !== null ? (int)$transaction_id : null,
-            (string)$title,
-            (string)$message,
-            $dedupeWindowSeconds,
-        ]);
-        $exists = $checkStmt->fetch(PDO::FETCH_ASSOC);
-        if ($exists) {
-            return true;
-        }
-    } catch (Exception $e) {
-    }
-
-    return create_dept_notification($db, $role, $transaction_id, $title, $message, $link);
+    // DISABLED - No longer creates new department notifications
+    return true;
 }
 
 function dept_notifications_table_exists(PDO $db)
@@ -65,23 +41,8 @@ function dept_notifications_table_exists(PDO $db)
 
 function create_dept_notification(PDO $db, $role, $transaction_id, $title, $message, $link = null)
 {
-    if (empty($role)) {
-        return false;
-    }
-
-    try {
-        $stmt = $db->prepare('INSERT INTO department_notifications (role, transaction_id, title, message, link, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
-        $stmt->execute([
-            $role,
-            $transaction_id !== null ? (int)$transaction_id : null,
-            (string)$title,
-            (string)$message,
-            $link,
-        ]);
-        return true;
-    } catch (Exception $e) {
-        return false;
-    }
+    // DISABLED - No longer creates new department notifications
+    return true;
 }
 
 function fetch_dept_notifications(PDO $db, $role, $limit = 10)

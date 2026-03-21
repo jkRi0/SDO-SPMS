@@ -14,20 +14,33 @@ if ($role === 'supplier' && $supplierId) {
 }
 
 // Example: show only items relevant to each unit (can be refined later)
-if ($role === 'supply') {
-    // Supply sees items only once Procurement has actually saved an update
-    // (proc_date is set when Procurement submits its form)
-    $where[] = 'proc_date IS NOT NULL';
+try {
+    $db->exec('CREATE TABLE IF NOT EXISTS transaction_handoffs (
+        id INT(11) NOT NULL AUTO_INCREMENT,
+        transaction_id INT(11) NOT NULL,
+        from_dept VARCHAR(32) NOT NULL,
+        to_dept VARCHAR(32) NOT NULL,
+        forwarded_at DATETIME NOT NULL,
+        received_at DATETIME NULL DEFAULT NULL,
+        delay_seconds INT(11) NULL DEFAULT NULL,
+        exceeded_grace TINYINT(1) NOT NULL DEFAULT 0,
+        created_by_user_id INT(11) DEFAULT NULL,
+        received_by_user_id INT(11) DEFAULT NULL,
+        PRIMARY KEY (id),
+        KEY idx_tx_open (transaction_id, received_at),
+        KEY idx_tx_time (transaction_id, forwarded_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
+} catch (Exception $e) {
 }
-if ($role === 'accounting') {
-    // Accounting should only see items after Supply has reviewed them
-    $where[] = 'supply_status IS NOT NULL';
-}
-if ($role === 'budget') {
-    $where[] = 'acct_pre_status IS NOT NULL';
-}
-if ($role === 'cashier') {
-    $where[] = 'acct_post_status IS NOT NULL';
+
+if (in_array($role, ['supply', 'accounting', 'budget', 'cashier'], true)) {
+    $where[] = 'EXISTS (
+        SELECT 1
+        FROM transaction_handoffs h
+        WHERE h.transaction_id = t.id AND h.to_dept = ?
+        LIMIT 1
+    )';
+    $params[] = $role;
 }
 
 $sql = 'SELECT t.*, s.name AS supplier_name
@@ -122,37 +135,33 @@ $transactions = $stmt->fetchAll();
                         $status = $t['cashier_status'];
                         $statusDept = 'Cashier';
                         $nextDept = '';
-                    } elseif ($has($t['acct_post_status'])) {
-                        $status = $t['acct_post_status'];
+                    } elseif ($has($t['acct_status'])) {
+                        $status = $t['acct_status'];
                         $statusDept = 'Accounting';
-                        $nextDept = 'cashier';
+                        $nextDept = '';
                     } elseif ($has($t['budget_status'])) {
                         $status = $t['budget_status'];
                         $statusDept = 'Budget';
-                        $nextDept = 'accounting';
-                    } elseif ($has($t['acct_pre_status'])) {
-                        $status = $t['acct_pre_status'];
-                        $statusDept = 'Accounting';
-                        $nextDept = 'budget';
+                        $nextDept = '';
                     } elseif ($has($t['supply_status'])) {
                         $status = $t['supply_status'];
                         $statusDept = 'Supply';
-                        $nextDept = 'accounting';
+                        $nextDept = '';
                     } elseif ($has($t['proc_status'])) {
                         $status = $t['proc_status'];
                         $statusDept = 'Procurement';
-                        $nextDept = 'supply';
+                        $nextDept = '';
                     } elseif (!empty($t['proc_date'])) {
-                        $nextDept = 'supply';
+                        $nextDept = '';
                     } else {
-                        $nextDept = 'procurement';
+                        $nextDept = '';
                     }
 
                     $statusLabel = $statusDept ? ($statusDept . ' - ' . $status) : $status;
 
                     if ($has($t['cashier_status'])) {
                         $globalStage = 'approved';
-                    } elseif ($has($t['supply_status']) || $has($t['acct_pre_status']) || $has($t['budget_status']) || $has($t['acct_post_status'])) {
+                    } elseif ($has($t['supply_status']) || $has($t['acct_status']) || $has($t['budget_status'])) {
                         $globalStage = 'pending';
                     } else {
                         $globalStage = 'active';
@@ -164,7 +173,7 @@ $transactions = $stmt->fetchAll();
                         if ($has($t['cashier_status'])) {
                             $stageLabel = 'Approved';
                             $stageClass = 'bg-success';
-                        } elseif ($has($t['supply_status']) || $has($t['acct_pre_status']) || $has($t['budget_status']) || $has($t['acct_post_status'])) {
+                        } elseif ($has($t['supply_status']) || $has($t['acct_status']) || $has($t['budget_status'])) {
                             $stageLabel = 'Pending';
                             $stageClass = 'bg-warning text-dark';
                         } elseif ($has($t['proc_status']) && !$has($t['supply_status'])) {
@@ -186,10 +195,10 @@ $transactions = $stmt->fetchAll();
                         if ($has($t['cashier_status'])) {
                             $stageLabel = 'Approved';
                             $stageClass = 'bg-success';
-                        } elseif (($has($t['acct_pre_status']) && !$has($t['budget_status'])) || ($has($t['acct_post_status']) && !$has($t['cashier_status']))) {
+                        } elseif ($has($t['acct_status']) && !$has($t['cashier_status'])) {
                             $stageLabel = 'Pending';
                             $stageClass = 'bg-warning text-dark';
-                        } elseif (($has($t['supply_status']) && !$has($t['acct_pre_status'])) || ($has($t['budget_status']) && !$has($t['acct_post_status']))) {
+                        } elseif (($has($t['supply_status']) && !$has($t['acct_status'])) || ($has($t['budget_status']) && !$has($t['cashier_status']))) {
                             $stageLabel = 'Active';
                             $stageClass = 'bg-primary';
                         }
@@ -200,7 +209,7 @@ $transactions = $stmt->fetchAll();
                         } elseif ($has($t['budget_status']) && !$has($t['cashier_status'])) {
                             $stageLabel = 'Pending';
                             $stageClass = 'bg-warning text-dark';
-                        } elseif ($has($t['acct_pre_status']) && !$has($t['budget_status'])) {
+                        } elseif ($has($t['acct_status']) && !$has($t['budget_status'])) {
                             $stageLabel = 'Active';
                             $stageClass = 'bg-primary';
                         }
@@ -212,7 +221,7 @@ $transactions = $stmt->fetchAll();
                         } elseif ($has($t['cashier_status'])) {
                             $stageLabel = 'Pending';
                             $stageClass = 'bg-warning text-dark';
-                        } elseif ($has($t['acct_post_status']) && !$has($t['cashier_status'])) {
+                        } elseif ($has($t['acct_status']) && !$has($t['cashier_status'])) {
                             $stageLabel = 'Active';
                             $stageClass = 'bg-primary';
                         }

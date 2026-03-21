@@ -45,14 +45,14 @@ if (empty($transaction['supply_status'])) {
     echo "<p style='color: green;'>✓ " . $transaction['supply_status'] . "</p>";
 }
 
-// Check 3: Initial Accounting Status
-echo "<h4>3. Accounting Status (initial review)</h4>";
-if (empty($transaction['acct_pre_status'])) {
+// Check 3: Accounting Status
+echo "<h4>3. Accounting Status</h4>";
+if (empty($transaction['acct_status'])) {
     echo "<p style='color: red;'>❌ NOT SET</p>";
-} elseif (in_array($transaction['acct_pre_status'], ['PENDING', 'FOR CORRECTION'])) {
-    echo "<p style='color: orange;'>⊘ " . $transaction['acct_pre_status'] . " (must be completed)</p>";
+} elseif (in_array($transaction['acct_status'], ['PENDING', 'FOR CORRECTION'])) {
+    echo "<p style='color: orange;'>⊘ " . $transaction['acct_status'] . " (must be completed)</p>";
 } else {
-    echo "<p style='color: green;'>✓ " . $transaction['acct_pre_status'] . "</p>";
+    echo "<p style='color: green;'>✓ " . $transaction['acct_status'] . "</p>";
 }
 
 // Check 4: Budget Status & DV Details
@@ -79,35 +79,27 @@ if (empty($transaction['budget_ors_date'])) {
     echo "<p style='color: green;'>✓ " . $transaction['budget_ors_date'] . "</p>";
 }
 
-// Check 5: Final Accounting Status
-echo "<h4>5. Accounting Status (final)</h4>";
-if (empty($transaction['acct_post_status'])) {
+// Check 5: DV Details
+echo "<h4>5. Accounting DV Details</h4>";
+echo "<h4>5a. DV Number</h4>";
+if (empty($transaction['acct_dv_number'])) {
     echo "<p style='color: red;'>❌ NOT SET</p>";
-} elseif (in_array($transaction['acct_post_status'], ['PENDING', 'FOR CORRECTION'])) {
-    echo "<p style='color: orange;'>⊘ " . $transaction['acct_post_status'] . " (must be completed)</p>";
 } else {
-    echo "<p style='color: green;'>✓ " . $transaction['acct_post_status'] . "</p>";
+    echo "<p style='color: green;'>✓ " . $transaction['acct_dv_number'] . "</p>";
 }
 
-echo "<h4>5a. DV Number (post-accounting)</h4>";
-if (empty($transaction['acct_post_dv_number'])) {
+echo "<h4>5b. DV Date</h4>";
+if (empty($transaction['acct_dv_date'])) {
     echo "<p style='color: red;'>❌ NOT SET</p>";
 } else {
-    echo "<p style='color: green;'>✓ " . $transaction['acct_post_dv_number'] . "</p>";
+    echo "<p style='color: green;'>✓ " . $transaction['acct_dv_date'] . "</p>";
 }
 
-echo "<h4>5b. DV Date (post-accounting)</h4>";
-if (empty($transaction['acct_post_dv_date'])) {
+echo "<h4>5c. DV Amount</h4>";
+if (empty($transaction['acct_dv_amount'])) {
     echo "<p style='color: red;'>❌ NOT SET</p>";
 } else {
-    echo "<p style='color: green;'>✓ " . $transaction['acct_post_dv_date'] . "</p>";
-}
-
-echo "<h4>5c. DV Amount (post-accounting)</h4>";
-if (empty($transaction['acct_post_dv_amount'])) {
-    echo "<p style='color: red;'>❌ NOT SET</p>";
-} else {
-    echo "<p style='color: green;'>✓ " . $transaction['acct_post_dv_amount'] . "</p>";
+    echo "<p style='color: green;'>✓ " . $transaction['acct_dv_amount'] . "</p>";
 }
 
 echo "<hr>";
@@ -117,11 +109,10 @@ echo "<h3>Summary</h3>";
 $canProceed = 
     !empty($transaction['proc_status']) && !in_array($transaction['proc_status'], ['FOR CORRECTION', 'PENDING'], true) &&
     !empty($transaction['supply_status']) && !in_array($transaction['supply_status'], ['FOR CORRECTION', 'PENDING'], true) &&
-    !empty($transaction['acct_pre_status']) && !in_array($transaction['acct_pre_status'], ['FOR CORRECTION', 'PENDING'], true) &&
+    !empty($transaction['acct_status']) && !in_array($transaction['acct_status'], ['FOR CORRECTION', 'PENDING'], true) &&
     !empty($transaction['budget_status']) && !in_array($transaction['budget_status'], ['FOR CORRECTION', 'PENDING'], true) &&
     !empty($transaction['budget_ors_number']) && !empty($transaction['budget_ors_date']) &&
-    !empty($transaction['acct_post_status']) && !in_array($transaction['acct_post_status'], ['FOR CORRECTION', 'PENDING'], true) &&
-    !empty($transaction['acct_post_dv_number']) && !empty($transaction['acct_post_dv_date']) && !empty($transaction['acct_post_dv_amount']);
+    !empty($transaction['acct_dv_number']) && !empty($transaction['acct_dv_date']) && !empty($transaction['acct_dv_amount']);
 
 if ($canProceed) {
     echo "<p style='color: green; font-size: 18px;'><strong>✓ READY TO PROCEED TO LANDBANK!</strong></p>";

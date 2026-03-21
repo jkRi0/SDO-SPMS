@@ -42,7 +42,7 @@ try {
     
     // Check stats
     $activePOs = (int)$db->query('SELECT COUNT(*) AS c FROM transactions WHERE proc_status IS NOT NULL AND supply_status IS NULL')->fetch()['c'];
-    $pendingReview = (int)$db->query('SELECT COUNT(*) AS c FROM transactions WHERE (supply_status IS NOT NULL OR acct_pre_status IS NOT NULL OR budget_status IS NOT NULL OR acct_post_status IS NOT NULL) AND cashier_status IS NULL')->fetch()['c'];
+    $pendingReview = (int)$db->query('SELECT COUNT(*) AS c FROM transactions WHERE (supply_status IS NOT NULL OR acct_status IS NOT NULL OR budget_status IS NOT NULL) AND cashier_status IS NULL')->fetch()['c'];
     $approved = (int)$db->query('SELECT COUNT(*) AS c FROM transactions WHERE cashier_status IS NOT NULL')->fetch()['c'];
     
     echo "<p>✓ Dashboard Stats Calculated:</p>";

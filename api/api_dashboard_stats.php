@@ -24,7 +24,7 @@ try {
         $stmt = $db->query(
             'SELECT '
             . 'SUM(CASE WHEN ' . $nz('cashier_status') . ' THEN 1 ELSE 0 END) AS approved, '
-            . 'SUM(CASE WHEN NOT ' . $nz('cashier_status') . ' AND (' . $nz('supply_status') . ' OR ' . $nz('acct_pre_status') . ' OR ' . $nz('budget_status') . ' OR ' . $nz('acct_post_status') . ') THEN 1 ELSE 0 END) AS pending, '
+            . 'SUM(CASE WHEN NOT ' . $nz('cashier_status') . ' AND (' . $nz('supply_status') . ' OR ' . $nz('acct_status') . ' OR ' . $nz('budget_status') . ') THEN 1 ELSE 0 END) AS pending, '
             . 'SUM(CASE WHEN NOT ' . $nz('cashier_status') . ' AND ' . $nz('proc_status') . ' AND NOT ' . $nz('supply_status') . ' THEN 1 ELSE 0 END) AS active '
             . 'FROM transactions'
         );
@@ -49,8 +49,8 @@ try {
         $stmt = $db->query(
             'SELECT '
             . 'SUM(CASE WHEN ' . $nz('cashier_status') . ' THEN 1 ELSE 0 END) AS approved, '
-            . 'SUM(CASE WHEN NOT ' . $nz('cashier_status') . ' AND ((' . $nz('acct_pre_status') . ' AND NOT ' . $nz('budget_status') . ') OR (' . $nz('acct_post_status') . ' AND NOT ' . $nz('cashier_status') . ')) THEN 1 ELSE 0 END) AS pending, '
-            . 'SUM(CASE WHEN NOT ' . $nz('cashier_status') . ' AND ((' . $nz('supply_status') . ' AND NOT ' . $nz('acct_pre_status') . ') OR (' . $nz('budget_status') . ' AND NOT ' . $nz('acct_post_status') . ')) THEN 1 ELSE 0 END) AS active '
+            . 'SUM(CASE WHEN NOT ' . $nz('cashier_status') . ' AND (' . $nz('acct_status') . ' AND ' . $nz('budget_status') . ' AND NOT ' . $nz('cashier_status') . ') THEN 1 ELSE 0 END) AS pending, '
+            . 'SUM(CASE WHEN NOT ' . $nz('cashier_status') . ' AND ((' . $nz('supply_status') . ' AND NOT ' . $nz('acct_status') . ') OR (' . $nz('budget_status') . ' AND NOT ' . $nz('cashier_status') . ')) THEN 1 ELSE 0 END) AS active '
             . 'FROM transactions '
             . 'WHERE ' . $nz('supply_status')
         );
@@ -63,9 +63,9 @@ try {
             'SELECT '
             . 'SUM(CASE WHEN ' . $nz('cashier_status') . ' THEN 1 ELSE 0 END) AS approved, '
             . 'SUM(CASE WHEN NOT ' . $nz('cashier_status') . ' AND ' . $nz('budget_status') . ' THEN 1 ELSE 0 END) AS pending, '
-            . 'SUM(CASE WHEN NOT ' . $nz('cashier_status') . ' AND ' . $nz('acct_pre_status') . ' AND NOT ' . $nz('budget_status') . ' THEN 1 ELSE 0 END) AS active '
+            . 'SUM(CASE WHEN NOT ' . $nz('cashier_status') . ' AND ' . $nz('acct_status') . ' AND NOT ' . $nz('budget_status') . ' THEN 1 ELSE 0 END) AS active '
             . 'FROM transactions '
-            . 'WHERE ' . $nz('acct_pre_status')
+            . 'WHERE ' . $nz('acct_status')
         );
         $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
         $active = (int)($row['active'] ?? 0);
@@ -76,9 +76,9 @@ try {
             'SELECT '
             . "SUM(CASE WHEN UPPER(TRIM(cashier_status)) = 'COMPLETED' THEN 1 ELSE 0 END) AS approved, "
             . "SUM(CASE WHEN " . $nz('cashier_status') . " AND UPPER(TRIM(cashier_status)) <> 'COMPLETED' THEN 1 ELSE 0 END) AS pending, "
-            . 'SUM(CASE WHEN NOT ' . $nz('cashier_status') . ' AND ' . $nz('acct_post_status') . ' THEN 1 ELSE 0 END) AS active '
+            . 'SUM(CASE WHEN NOT ' . $nz('cashier_status') . ' AND ' . $nz('acct_status') . ' THEN 1 ELSE 0 END) AS active '
             . 'FROM transactions '
-            . 'WHERE ' . $nz('acct_post_status')
+            . 'WHERE ' . $nz('acct_status')
         );
         $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
         $active = (int)($row['active'] ?? 0);

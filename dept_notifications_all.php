@@ -9,79 +9,80 @@ require_login();
 $role = $_SESSION['role'] ?? '';
 $allowedRoles = ['procurement', 'supply', 'accounting', 'budget', 'cashier'];
 if (!in_array($role, $allowedRoles, true)) {
-    http_response_code(403);
-    echo 'Access denied.';
+    header('Location: dashboard.php');
     exit;
 }
 
 $db = get_db();
-$rows = [];
-try {
-    dept_notifications_ensure_table($db);
-    if (!dept_notifications_table_exists($db)) {
-        $rows = [];
-    } else {
-        $stmt = $db->prepare('SELECT id, title, message, link, is_read, created_at FROM department_notifications WHERE role = ? ORDER BY created_at DESC LIMIT 500');
-        $stmt->execute([(string)$role]);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-} catch (Exception $e) {
-    $rows = [];
+dept_notifications_ensure_table($db);
+
+$notifications = [];
+if (dept_notifications_table_exists($db)) {
+    $notifications = fetch_dept_notifications($db, $role, 50);
 }
 
 $pageTitle = 'All Notifications';
 include __DIR__ . '/header.php';
 ?>
 
-<div class="page-header">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <h2 class="page-title mb-0">Notifications</h2>
-        <a class="btn btn-outline-secondary btn-sm" href="dashboard.php">Back</a>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>All Notifications</h3>
+        <a href="dashboard.php" class="btn btn-secondary">Back to Dashboard</a>
     </div>
-    <p class="page-subtitle">All notifications</p>
-</div>
 
-<div class="card">
-    <div class="card-body">
-        <?php if (!$rows): ?>
-            <div class="text-muted">No notifications found.</div>
-        <?php else: ?>
-            <div class="table-responsive">
-                <table class="table table-striped table-compact align-middle">
-                    <thead>
-                        <tr>
-                            <th style="width: 1%;">Status</th>
-                            <th>Title</th>
-                            <th>Message</th>
-                            <th style="width: 1%;">Time</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($rows as $n): ?>
+    <?php if (empty($notifications)): ?>
+        <div class="alert alert-info">No notifications found.</div>
+    <?php else: ?>
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
                             <tr>
-                                <td>
-                                    <?php if (empty($n['is_read'])): ?>
-                                        <span class="badge bg-danger">Unread</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-secondary">Read</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="fw-semibold">
-                                    <a class="text-decoration-none" href="<?php echo !empty($n['link']) ? 'dept_notification_open.php?id=' . (int)$n['id'] : '#'; ?>">
-                                        <?php echo htmlspecialchars((string)($n['title'] ?? '')); ?>
-                                    </a>
-                                </td>
-                                <td><?php echo htmlspecialchars((string)($n['message'] ?? '')); ?></td>
-                                <td class="text-muted small" style="white-space: nowrap;">
-                                    <?php echo htmlspecialchars(date('m/d/Y H:i', strtotime((string)($n['created_at'] ?? '')))); ?>
-                                </td>
+                                <th>Title</th>
+                                <th>Message</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($notifications as $n): ?>
+                                <tr class="<?php echo empty($n['is_read']) ? 'table-primary' : ''; ?>">
+                                    <td>
+                                        <?php if (!empty($n['link'])): ?>
+                                            <a href="<?php echo htmlspecialchars($n['link']); ?>" class="text-decoration-none fw-semibold">
+                                                <?php echo htmlspecialchars($n['title']); ?>
+                                            </a>
+                                        <?php else: ?>
+                                            <?php echo htmlspecialchars($n['title']); ?>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><?php echo nl2br(htmlspecialchars($n['message'])); ?></td>
+                                    <td><?php echo date('M j, Y H:i', strtotime($n['created_at'])); ?></td>
+                                    <td>
+                                        <?php if (empty($n['is_read'])): ?>
+                                            <span class="badge bg-primary">Unread</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary">Read</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if (empty($n['is_read'])): ?>
+                                            <a href="dept_notification_open.php?id=<?php echo (int)$n['id']; ?>" class="btn btn-sm btn-outline-primary">Mark as Read</a>
+                                        <?php else: ?>
+                                            <span class="text-muted">Already read</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        <?php endif; ?>
-    </div>
+        </div>
+    <?php endif; ?>
 </div>
 
 <?php include __DIR__ . '/footer.php'; ?>
