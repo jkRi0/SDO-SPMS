@@ -1123,1453 +1123,1452 @@ include __DIR__ . '/header.php';
     <div class="alert alert-success py-2"><?php echo htmlspecialchars($success); ?></div>
 <?php endif; ?>
 
-<div class="row g-3">
-    <div class="col-lg-7">
-        <div class="card mb-3">
-            <div class="card-body">
-                <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Basic Information</h6>
-                <div id="basicInfoContainer">
-                    <?php
-                    $programTitle = trim((string)($transaction['program_title'] ?? ''));
-                    $expectedText = trim((string)($transaction['expected_date'] ?? ''));
-                    $poType = trim((string)($transaction['po_type'] ?? ''));
+<div class="d-flex flex-wrap gap-3" style="">
+    <div class="card mb-3" style="flex: 1 1 560px; min-width: 560px;">
+        <div class="card-body" style="max-height: 70vh; overflow-y: auto;">
+            <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Basic Information</h6>
+            <div id="basicInfoContainer">
+                <?php
+                $programTitle = trim((string)($transaction['program_title'] ?? ''));
+                $expectedText = trim((string)($transaction['expected_date'] ?? ''));
+                $poType = trim((string)($transaction['po_type'] ?? ''));
 
-                    $hasCoverage = (!empty($transaction['coverage_start']) || !empty($transaction['coverage_end']));
+                $hasCoverage = (!empty($transaction['coverage_start']) || !empty($transaction['coverage_end']));
 
-                    $hasSupplyGroup = (
-                        !empty($transaction['supply_delivery_receipt'])
-                        || !empty($transaction['supply_sales_invoice'])
-                        || !empty($transaction['supply_partial_delivery_date'])
-                        || !empty($transaction['supply_delivery_date'])
-                    );
+                $hasSupplyGroup = (
+                    !empty($transaction['supply_delivery_receipt'])
+                    || !empty($transaction['supply_sales_invoice'])
+                    || !empty($transaction['supply_partial_delivery_date'])
+                    || !empty($transaction['supply_delivery_date'])
+                );
 
-                    $hasDvGroup = (
-                        !empty($transaction['acct_post_dv_amount'])
-                        || !empty($transaction['acct_post_dv_number'])
-                        || !empty($transaction['acct_post_dv_date'])
-                    );
+                $hasDvGroup = (
+                    !empty($transaction['acct_post_dv_amount'])
+                    || !empty($transaction['acct_post_dv_number'])
+                    || !empty($transaction['acct_post_dv_date'])
+                );
 
-                    $hasOrsGroup = (
-                        !empty($transaction['budget_ors_number'])
-                        || !empty($transaction['budget_ors_date'])
-                        || !empty($transaction['budget_demandability'])
-                    );
+                $hasOrsGroup = (
+                    !empty($transaction['budget_ors_number'])
+                    || !empty($transaction['budget_ors_date'])
+                    || !empty($transaction['budget_demandability'])
+                );
 
-                    $hasCashierGroup = (
-                        !empty($transaction['cashier_or_number'])
-                        || !empty($transaction['cashier_or_date'])
-                        || !empty($transaction['cashier_landbank_ref'])
-                        || !empty($transaction['cashier_payment_date'])
-                    );
-                    ?>
+                $hasCashierGroup = (
+                    !empty($transaction['cashier_or_number'])
+                    || !empty($transaction['cashier_or_date'])
+                    || !empty($transaction['cashier_landbank_ref'])
+                    || !empty($transaction['cashier_payment_date'])
+                );
+                ?>
 
-                    <?php if ($programTitle !== ''): ?>
-                        <div class="border rounded p-3 mb-2 bg-white">
-                            <div><strong>Program Title:</strong> <?php echo htmlspecialchars($programTitle); ?></div>
-                        </div>
-                    <?php endif; ?>
-
+                <?php if ($programTitle !== ''): ?>
                     <div class="border rounded p-3 mb-2 bg-white">
-                        <div><strong>Date Created:</strong> <?php echo date('m/d/Y H:i:s', strtotime($transaction['created_at'])); ?></div>
-                        <?php if ($hasCoverage): ?>
-                            <div class="mt-1"><strong>Date Coverage:</strong> <?php echo htmlspecialchars($coverageDisplay); ?></div>
-                        <?php endif; ?>
-                        <?php if ($expectedText !== ''): ?>
-                            <div class="mt-1"><strong>Expected Date:</strong> <?php echo htmlspecialchars($expectedText); ?></div>
-                        <?php endif; ?>
-                        <div class="mt-1"><strong>PO (Gross Amount):</strong> ₱ <?php echo number_format((float)$transaction['amount'], 2); ?></div>
-                        <?php if ($poType !== ''): ?>
-                            <div class="mt-1"><strong>Transaction Type:</strong> <?php echo htmlspecialchars($poType); ?></div>
-                        <?php endif; ?>
+                        <div><strong>Program Title:</strong> <?php echo htmlspecialchars($programTitle); ?></div>
                     </div>
+                <?php endif; ?>
 
-                    <?php if ($hasSupplyGroup): ?>
-                        <div class="border rounded p-3 mb-2 bg-white">
-                            <?php if (!empty($transaction['supply_delivery_receipt'])): ?>
-                                <div><strong>Delivery Receipt:</strong> <?php echo htmlspecialchars($transaction['supply_delivery_receipt']); ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($transaction['supply_sales_invoice'])): ?>
-                                <div class="mt-1"><strong>Sales Invoice:</strong> <?php echo htmlspecialchars($transaction['supply_sales_invoice']); ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($transaction['supply_partial_delivery_date'])): ?>
-                                <div class="mt-1"><strong>Partial Delivery Date:</strong> <?php echo htmlspecialchars($transaction['supply_partial_delivery_date']); ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($transaction['supply_delivery_date'])): ?>
-                                <div class="mt-1"><strong>Delivery Date:</strong> <?php echo htmlspecialchars($transaction['supply_delivery_date']); ?></div>
-                            <?php endif; ?>
-                        </div>
+                <div class="border rounded p-3 mb-2 bg-white">
+                    <div><strong>Date Created:</strong> <?php echo date('m/d/Y H:i:s', strtotime($transaction['created_at'])); ?></div>
+                    <?php if ($hasCoverage): ?>
+                        <div class="mt-1"><strong>Date Coverage:</strong> <?php echo htmlspecialchars($coverageDisplay); ?></div>
                     <?php endif; ?>
-
-                    <?php if ($hasDvGroup): ?>
-                        <div class="border rounded p-3 mb-2 bg-white">
-                            <?php if (!empty($transaction['acct_post_dv_amount'])): ?>
-                                <div><strong>DV Amount:</strong> ₱ <?php echo number_format((float)$transaction['acct_post_dv_amount'], 2); ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($transaction['acct_post_dv_number'])): ?>
-                                <div class="mt-1"><strong>DV Number:</strong> <?php echo htmlspecialchars($transaction['acct_post_dv_number']); ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($transaction['acct_post_dv_date'])): ?>
-                                <div class="mt-1"><strong>DV Date:</strong> <?php echo htmlspecialchars($transaction['acct_post_dv_date']); ?></div>
-                            <?php endif; ?>
-                        </div>
+                    <?php if ($expectedText !== ''): ?>
+                        <div class="mt-1"><strong>Expected Date:</strong> <?php echo htmlspecialchars($expectedText); ?></div>
                     <?php endif; ?>
-
-                    <?php if ($hasOrsGroup): ?>
-                        <div class="border rounded p-3 mb-2 bg-white">
-                            <?php if (!empty($transaction['budget_ors_number'])): ?>
-                                <div><strong>ORS Number:</strong> <?php echo htmlspecialchars($transaction['budget_ors_number']); ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($transaction['budget_ors_date'])): ?>
-                                <div class="mt-1"><strong>ORS Date:</strong> <?php echo htmlspecialchars($transaction['budget_ors_date']); ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($transaction['budget_demandability'])): ?>
-                                <div class="mt-1"><strong>Demandability:</strong> <?php echo htmlspecialchars($transaction['budget_demandability']); ?></div>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if ($hasCashierGroup): ?>
-                        <div class="border rounded p-3 mb-0 bg-white">
-                            <?php if (!empty($transaction['cashier_or_number'])): ?>
-                                <div><strong>ACIC Number:</strong> <?php echo htmlspecialchars($transaction['cashier_or_number']); ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($transaction['cashier_or_date'])): ?>
-                                <div class="mt-1"><strong>ACIC Date:</strong> <?php echo htmlspecialchars($transaction['cashier_or_date']); ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($transaction['cashier_landbank_ref'])): ?>
-                                <div class="mt-1"><strong>Amount:</strong> ₱ <?php
-                                    $cashierAmountDisplay = trim((string)$transaction['cashier_landbank_ref']);
-                                    $cashierAmountClean = str_replace(',', '', $cashierAmountDisplay);
-                                    if ($cashierAmountClean !== '' && is_numeric($cashierAmountClean)) {
-                                        echo htmlspecialchars(number_format((float)$cashierAmountClean, 2));
-                                    } else {
-                                        echo htmlspecialchars($cashierAmountDisplay);
-                                    }
-                                ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($transaction['cashier_payment_date'])): ?>
-                                <div class="mt-1"><strong>Payment Date:</strong> <?php echo htmlspecialchars($transaction['cashier_payment_date']); ?></div>
-                            <?php endif; ?>
-                        </div>
+                    <div class="mt-1"><strong>PO (Gross Amount):</strong> ₱ <?php echo number_format((float)$transaction['amount'], 2); ?></div>
+                    <?php if ($poType !== ''): ?>
+                        <div class="mt-1"><strong>Transaction Type:</strong> <?php echo htmlspecialchars($poType); ?></div>
                     <?php endif; ?>
                 </div>
+
+                <?php if ($hasSupplyGroup): ?>
+                    <div class="border rounded p-3 mb-2 bg-white">
+                        <?php if (!empty($transaction['supply_delivery_receipt'])): ?>
+                            <div><strong>Delivery Receipt:</strong> <?php echo htmlspecialchars($transaction['supply_delivery_receipt']); ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($transaction['supply_sales_invoice'])): ?>
+                            <div class="mt-1"><strong>Sales Invoice:</strong> <?php echo htmlspecialchars($transaction['supply_sales_invoice']); ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($transaction['supply_partial_delivery_date'])): ?>
+                            <div class="mt-1"><strong>Partial Delivery Date:</strong> <?php echo htmlspecialchars($transaction['supply_partial_delivery_date']); ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($transaction['supply_delivery_date'])): ?>
+                            <div class="mt-1"><strong>Delivery Date:</strong> <?php echo htmlspecialchars($transaction['supply_delivery_date']); ?></div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($hasDvGroup): ?>
+                    <div class="border rounded p-3 mb-2 bg-white">
+                        <?php if (!empty($transaction['acct_post_dv_amount'])): ?>
+                            <div><strong>DV Amount:</strong> ₱ <?php echo number_format((float)$transaction['acct_post_dv_amount'], 2); ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($transaction['acct_post_dv_number'])): ?>
+                            <div class="mt-1"><strong>DV Number:</strong> <?php echo htmlspecialchars($transaction['acct_post_dv_number']); ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($transaction['acct_post_dv_date'])): ?>
+                            <div class="mt-1"><strong>DV Date:</strong> <?php echo htmlspecialchars($transaction['acct_post_dv_date']); ?></div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($hasOrsGroup): ?>
+                    <div class="border rounded p-3 mb-2 bg-white">
+                        <?php if (!empty($transaction['budget_ors_number'])): ?>
+                            <div><strong>ORS Number:</strong> <?php echo htmlspecialchars($transaction['budget_ors_number']); ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($transaction['budget_ors_date'])): ?>
+                            <div class="mt-1"><strong>ORS Date:</strong> <?php echo htmlspecialchars($transaction['budget_ors_date']); ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($transaction['budget_demandability'])): ?>
+                            <div class="mt-1"><strong>Demandability:</strong> <?php echo htmlspecialchars($transaction['budget_demandability']); ?></div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($hasCashierGroup): ?>
+                    <div class="border rounded p-3 mb-0 bg-white">
+                        <?php if (!empty($transaction['cashier_or_number'])): ?>
+                            <div><strong>ACIC Number:</strong> <?php echo htmlspecialchars($transaction['cashier_or_number']); ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($transaction['cashier_or_date'])): ?>
+                            <div class="mt-1"><strong>ACIC Date:</strong> <?php echo htmlspecialchars($transaction['cashier_or_date']); ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($transaction['cashier_landbank_ref'])): ?>
+                            <div class="mt-1"><strong>Amount:</strong> ₱ <?php
+                                $cashierAmountDisplay = trim((string)$transaction['cashier_landbank_ref']);
+                                $cashierAmountClean = str_replace(',', '', $cashierAmountDisplay);
+                                if ($cashierAmountClean !== '' && is_numeric($cashierAmountClean)) {
+                                    echo htmlspecialchars(number_format((float)$cashierAmountClean, 2));
+                                } else {
+                                    echo htmlspecialchars($cashierAmountDisplay);
+                                }
+                            ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($transaction['cashier_payment_date'])): ?>
+                            <div class="mt-1"><strong>Payment Date:</strong> <?php echo htmlspecialchars($transaction['cashier_payment_date']); ?></div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
-        </div>
+            <hr class="my-4">
+            <h6 class="mb-3">Update (<?php echo htmlspecialchars(strtoupper($role)); ?>)</h6>
+            <?php if ($role === 'supplier'): ?>
+                <p class="text-muted mb-0">Suppliers can only view the status of their transactions.</p>
+            <?php else: ?>
+                <?php
+                $budgetDoneForHandoff = !empty($transaction['budget_status']) || !empty($transaction['budget_ors_number']) || !empty($transaction['budget_ors_date']);
+                $deptForRoleUi = [
+                    'procurement' => 'procurement',
+                    'supply' => 'supply',
+                    'accounting' => $budgetDoneForHandoff ? 'accounting_post' : 'accounting_pre',
+                    'budget' => 'budget',
+                    'cashier' => 'cashier',
+                ];
+                $roleDeptUi = $deptForRoleUi[$role] ?? '';
 
-        <div class="card">
-            <div class="card-body">
-                <h6 class="mb-3">Update (<?php echo htmlspecialchars(strtoupper($role)); ?>)</h6>
-                <?php if ($role === 'supplier'): ?>
-                    <p class="text-muted mb-0">Suppliers can only view the status of their transactions.</p>
-                <?php else: ?>
-                    <?php
-                    $budgetDoneForHandoff = !empty($transaction['budget_status']) || !empty($transaction['budget_ors_number']) || !empty($transaction['budget_ors_date']);
-                    $deptForRoleUi = [
-                        'procurement' => 'procurement',
-                        'supply' => 'supply',
-                        'accounting' => $budgetDoneForHandoff ? 'accounting_post' : 'accounting_pre',
-                        'budget' => 'budget',
-                        'cashier' => 'cashier',
-                    ];
-                    $roleDeptUi = $deptForRoleUi[$role] ?? '';
-
-                    $currentDeptByHandoffUi = '';
-                    if ($handoffOpen && !empty($handoffOpen['to_dept'])) {
-                        $currentDeptByHandoffUi = (string)$handoffOpen['to_dept'];
-                    } elseif (!empty($handoffHistory)) {
-                        $lastH = end($handoffHistory);
-                        if (!empty($lastH['received_at']) && !empty($lastH['to_dept'])) {
-                            $currentDeptByHandoffUi = (string)$lastH['to_dept'];
-                        }
-                        reset($handoffHistory);
+                $currentDeptByHandoffUi = '';
+                if ($handoffOpen && !empty($handoffOpen['to_dept'])) {
+                    $currentDeptByHandoffUi = (string)$handoffOpen['to_dept'];
+                } elseif (!empty($handoffHistory)) {
+                    $lastH = end($handoffHistory);
+                    if (!empty($lastH['received_at']) && !empty($lastH['to_dept'])) {
+                        $currentDeptByHandoffUi = (string)$lastH['to_dept'];
                     }
+                    reset($handoffHistory);
+                }
 
-                    $nextDeptUi = '';
+                $nextDeptUi = '';
+                $fromDeptUi = '';
+                if ($currentDeptByHandoffUi !== '') {
+                    $fromDeptUi = $currentDeptByHandoffUi;
+                    $nextMapUi = [
+                        'procurement' => 'supply',
+                        'supply' => 'accounting_pre',
+                        'accounting_pre' => 'budget',
+                        'budget' => 'accounting_post',
+                        'accounting_post' => 'cashier',
+                        'cashier' => '',
+                    ];
+                    $nextDeptUi = $nextMapUi[$fromDeptUi] ?? '';
+                } elseif (!empty($transaction['cashier_status'])) {
                     $fromDeptUi = '';
-                    if ($currentDeptByHandoffUi !== '') {
-                        $fromDeptUi = $currentDeptByHandoffUi;
-                        $nextMapUi = [
-                            'procurement' => 'supply',
-                            'supply' => 'accounting_pre',
-                            'accounting_pre' => 'budget',
-                            'budget' => 'accounting_post',
-                            'accounting_post' => 'cashier',
-                            'cashier' => '',
-                        ];
-                        $nextDeptUi = $nextMapUi[$fromDeptUi] ?? '';
-                    } elseif (!empty($transaction['cashier_status'])) {
-                        $fromDeptUi = '';
-                        $nextDeptUi = '';
-                    } elseif (!empty($transaction['acct_post_status'])) {
-                        $fromDeptUi = 'accounting_post';
-                        $nextDeptUi = empty($transaction['cashier_status']) ? 'cashier' : '';
-                    } elseif ($budgetDoneForHandoff) {
-                        $fromDeptUi = 'budget';
-                        $nextDeptUi = empty($transaction['acct_post_status']) ? 'accounting_post' : '';
-                    } elseif (!empty($transaction['acct_pre_status'])) {
-                        $fromDeptUi = 'accounting_pre';
-                        $nextDeptUi = !$budgetDoneForHandoff ? 'budget' : '';
-                    } elseif (!empty($transaction['supply_status']) || !empty($transaction['supply_date'])) {
-                        $fromDeptUi = 'supply';
-                        $nextDeptUi = empty($transaction['acct_pre_status']) ? 'accounting_pre' : '';
-                    } elseif (!empty($transaction['proc_date']) || !empty($transaction['proc_status'])) {
-                        $fromDeptUi = 'procurement';
-                        $nextDeptUi = (empty($transaction['supply_status']) && empty($transaction['supply_date'])) ? 'supply' : '';
+                    $nextDeptUi = '';
+                } elseif (!empty($transaction['acct_post_status'])) {
+                    $fromDeptUi = 'accounting_post';
+                    $nextDeptUi = empty($transaction['cashier_status']) ? 'cashier' : '';
+                } elseif ($budgetDoneForHandoff) {
+                    $fromDeptUi = 'budget';
+                    $nextDeptUi = empty($transaction['acct_post_status']) ? 'accounting_post' : '';
+                } elseif (!empty($transaction['acct_pre_status'])) {
+                    $fromDeptUi = 'accounting_pre';
+                    $nextDeptUi = !$budgetDoneForHandoff ? 'budget' : '';
+                } elseif (!empty($transaction['supply_status']) || !empty($transaction['supply_date'])) {
+                    $fromDeptUi = 'supply';
+                    $nextDeptUi = empty($transaction['acct_pre_status']) ? 'accounting_pre' : '';
+                } elseif (!empty($transaction['proc_date']) || !empty($transaction['proc_status'])) {
+                    $fromDeptUi = 'procurement';
+                    $nextDeptUi = (empty($transaction['supply_status']) && empty($transaction['supply_date'])) ? 'supply' : '';
+                } else {
+                    $fromDeptUi = 'procurement';
+                    $nextDeptUi = 'supply';
+                }
+
+                $isFromDeptForwardableUi = ($fromDeptUi !== '' && is_dept_forwardable($transaction, $fromDeptUi));
+
+                $canForward = ($roleDeptUi !== '' && $roleDeptUi === $fromDeptUi && $nextDeptUi !== '' && $isFromDeptForwardableUi);
+                $canReceive = false;
+                $handoffForwardedTs = null;
+                $handoffGraceEndsTs = null;
+                $handoffFromDept = '';
+                $handoffToDept = '';
+                $showHandoffBanner = false;
+                $handoffBannerText = '';
+                $handoffReceivedFlash = '';
+                if ($handoffOpen) {
+                    $handoffFromDept = (string)($handoffOpen['from_dept'] ?? '');
+                    $handoffToDept = (string)($handoffOpen['to_dept'] ?? '');
+                    $fwdTs = (int)($handoffOpen['forwarded_ts'] ?? 0);
+                    if ($fwdTs > 0) {
+                        $handoffForwardedTs = $fwdTs;
+                        $handoffGraceEndsTs = $fwdTs + $handoffGraceSeconds;
+                    }
+                }
+
+                $handoffRemainingSeconds = '';
+                if ($handoffForwardedTs && $handoffGraceEndsTs) {
+                    $serverNowForAttr = (int)($handoffOpen['server_now_ts'] ?? time());
+                    $handoffRemainingSeconds = (string)max(0, (int)$handoffGraceEndsTs - $serverNowForAttr);
+                }
+
+                $handoffOverdueSeconds = '';
+                if ($handoffForwardedTs && $handoffGraceEndsTs) {
+                    $serverNowForOverdueAttr = (int)($handoffOpen['server_now_ts'] ?? time());
+                    $handoffOverdueSeconds = (string)max(0, $serverNowForOverdueAttr - (int)$handoffGraceEndsTs);
+                }
+
+                $receiveCountdown = '';
+                if ($handoffRemainingSeconds !== '') {
+                    $remainingInt = (int)$handoffRemainingSeconds;
+                    if ($remainingInt > 0) {
+                        $hh = intdiv($remainingInt, 3600);
+                        $mm = intdiv($remainingInt % 3600, 60);
+                        $ss = $remainingInt % 60;
+                        $receiveCountdown = 'Grace ends in ' . sprintf('%02d:%02d:%02d', $hh, $mm, $ss);
                     } else {
-                        $fromDeptUi = 'procurement';
-                        $nextDeptUi = 'supply';
+                        $overdueInt = (int)($handoffOverdueSeconds !== '' ? $handoffOverdueSeconds : '0');
+                        $hh = intdiv($overdueInt, 3600);
+                        $mm = intdiv($overdueInt % 3600, 60);
+                        $ss = $overdueInt % 60;
+                        $receiveCountdown = 'Grace period exceeded by ' . sprintf('%02d:%02d:%02d', $hh, $mm, $ss);
                     }
+                }
 
-                    $isFromDeptForwardableUi = ($fromDeptUi !== '' && is_dept_forwardable($transaction, $fromDeptUi));
+                if ($roleDeptUi !== '' && $handoffOpen && !empty($handoffOpen['to_dept'])) {
+                    $canReceive = ((string)$handoffOpen['to_dept'] === $roleDeptUi);
+                }
 
-                    $canForward = ($roleDeptUi !== '' && $roleDeptUi === $fromDeptUi && $nextDeptUi !== '' && $isFromDeptForwardableUi);
-                    $canReceive = false;
-                    $handoffForwardedTs = null;
-                    $handoffGraceEndsTs = null;
-                    $handoffFromDept = '';
-                    $handoffToDept = '';
-                    $showHandoffBanner = false;
-                    $handoffBannerText = '';
-                    $handoffReceivedFlash = '';
-                    if ($handoffOpen) {
-                        $handoffFromDept = (string)($handoffOpen['from_dept'] ?? '');
-                        $handoffToDept = (string)($handoffOpen['to_dept'] ?? '');
-                        $fwdTs = (int)($handoffOpen['forwarded_ts'] ?? 0);
-                        if ($fwdTs > 0) {
-                            $handoffForwardedTs = $fwdTs;
-                            $handoffGraceEndsTs = $fwdTs + $handoffGraceSeconds;
-                        }
-                    }
-
-                    $handoffRemainingSeconds = '';
-                    if ($handoffForwardedTs && $handoffGraceEndsTs) {
-                        $serverNowForAttr = (int)($handoffOpen['server_now_ts'] ?? time());
-                        $handoffRemainingSeconds = (string)max(0, (int)$handoffGraceEndsTs - $serverNowForAttr);
-                    }
-
-                    $handoffOverdueSeconds = '';
-                    if ($handoffForwardedTs && $handoffGraceEndsTs) {
-                        $serverNowForOverdueAttr = (int)($handoffOpen['server_now_ts'] ?? time());
-                        $handoffOverdueSeconds = (string)max(0, $serverNowForOverdueAttr - (int)$handoffGraceEndsTs);
-                    }
-
-                    $receiveCountdown = '';
-                    if ($handoffRemainingSeconds !== '') {
-                        $remainingInt = (int)$handoffRemainingSeconds;
-                        if ($remainingInt > 0) {
-                            $hh = intdiv($remainingInt, 3600);
-                            $mm = intdiv($remainingInt % 3600, 60);
-                            $ss = $remainingInt % 60;
-                            $receiveCountdown = 'Grace ends in ' . sprintf('%02d:%02d:%02d', $hh, $mm, $ss);
+                if ($roleDeptUi !== '' && $handoffOpen && $handoffForwardedTs && $handoffFromDept !== '' && $handoffToDept !== '') {
+                    $showHandoffBanner = ($roleDeptUi === $handoffFromDept || $roleDeptUi === $handoffToDept);
+                    if ($showHandoffBanner) {
+                        $handoffFromLabel = dept_ui_label($handoffFromDept);
+                        $handoffToLabel = dept_ui_label($handoffToDept);
+                        if ($roleDeptUi === $handoffToDept) {
+                            $handoffBannerText = 'Pending handoff from ' . $handoffFromLabel . ' to ' . $handoffToLabel . '.';
                         } else {
-                            $overdueInt = (int)($handoffOverdueSeconds !== '' ? $handoffOverdueSeconds : '0');
-                            $hh = intdiv($overdueInt, 3600);
-                            $mm = intdiv($overdueInt % 3600, 60);
-                            $ss = $overdueInt % 60;
-                            $receiveCountdown = 'Grace period exceeded by ' . sprintf('%02d:%02d:%02d', $hh, $mm, $ss);
+                            $handoffBannerText = 'Waiting for ' . $handoffToLabel . ' to receive (forwarded by ' . $handoffFromLabel . ')';
                         }
                     }
+                }
 
-                    if ($roleDeptUi !== '' && $handoffOpen && !empty($handoffOpen['to_dept'])) {
-                        $canReceive = ((string)$handoffOpen['to_dept'] === $roleDeptUi);
+                if (isset($_GET['handoff_received']) && (string)($_GET['handoff_received'] ?? '') === '1') {
+                    $flashFrom = (string)($_GET['handoff_from'] ?? '');
+                    $flashTo = (string)($_GET['handoff_to'] ?? '');
+                    if ($roleDeptUi !== '' && $flashFrom !== '' && $flashTo !== '' && ($roleDeptUi === $flashFrom || $roleDeptUi === $flashTo)) {
+                        $handoffReceivedFlash = 'Handoff received: ' . dept_ui_label($flashFrom) . ' → ' . dept_ui_label($flashTo) . '.';
                     }
+                }
 
-                    if ($roleDeptUi !== '' && $handoffOpen && $handoffForwardedTs && $handoffFromDept !== '' && $handoffToDept !== '') {
-                        $showHandoffBanner = ($roleDeptUi === $handoffFromDept || $roleDeptUi === $handoffToDept);
-                        if ($showHandoffBanner) {
-                            $handoffFromLabel = dept_ui_label($handoffFromDept);
-                            $handoffToLabel = dept_ui_label($handoffToDept);
-                            if ($roleDeptUi === $handoffToDept) {
-                                $handoffBannerText = 'Pending handoff from ' . $handoffFromLabel . ' to ' . $handoffToLabel . '.';
-                            } else {
-                                $handoffBannerText = 'Waiting for ' . $handoffToLabel . ' to receive (forwarded by ' . $handoffFromLabel . ')';
-                            }
-                        }
+                $ownerDeptUi = 'procurement';
+                if ($handoffOpen && !empty($handoffFromDept)) {
+                    $ownerDeptUi = $handoffFromDept;
+                } elseif (!empty($handoffHistory)) {
+                    $lastH = end($handoffHistory);
+                    if (!empty($lastH['received_at']) && !empty($lastH['to_dept'])) {
+                        $ownerDeptUi = (string)$lastH['to_dept'];
                     }
+                    reset($handoffHistory);
+                }
 
-                    if (isset($_GET['handoff_received']) && (string)($_GET['handoff_received'] ?? '') === '1') {
-                        $flashFrom = (string)($_GET['handoff_from'] ?? '');
-                        $flashTo = (string)($_GET['handoff_to'] ?? '');
-                        if ($roleDeptUi !== '' && $flashFrom !== '' && $flashTo !== '' && ($roleDeptUi === $flashFrom || $roleDeptUi === $flashTo)) {
-                            $handoffReceivedFlash = 'Handoff received: ' . dept_ui_label($flashFrom) . ' → ' . dept_ui_label($flashTo) . '.';
-                        }
-                    }
+                $workflowOrderUi = [
+                    'procurement' => 0,
+                    'supply' => 1,
+                    'accounting_pre' => 2,
+                    'budget' => 3,
+                    'accounting_post' => 4,
+                    'cashier' => 5,
+                ];
+                $roleRankUi = $workflowOrderUi[$roleDeptUi] ?? null;
+                $ownerRankUi = $workflowOrderUi[$ownerDeptUi] ?? null;
+                $canEditUpdatesUi = (
+                    $role !== 'admin'
+                    && $roleDeptUi !== ''
+                    && $roleRankUi !== null
+                    && $ownerRankUi !== null
+                    && $roleRankUi <= $ownerRankUi
+                );
+                ?>
 
-                    $ownerDeptUi = 'procurement';
-                    if ($handoffOpen && !empty($handoffFromDept)) {
-                        $ownerDeptUi = $handoffFromDept;
-                    } elseif (!empty($handoffHistory)) {
-                        $lastH = end($handoffHistory);
-                        if (!empty($lastH['received_at']) && !empty($lastH['to_dept'])) {
-                            $ownerDeptUi = (string)$lastH['to_dept'];
-                        }
-                        reset($handoffHistory);
-                    }
+                <?php if ($role === 'admin'): ?>
+                    <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mb-2">
+                        <form method="post" class="m-0 d-flex align-items-center gap-2">
+                            <input type="hidden" name="action" value="set_handoff_grace">
+                            <span class="text-muted small">Grace Period for forwarding and receiving. (seconds)</span>
+                            <input type="number" class="form-control form-control-sm" name="handoff_grace_seconds" min="0" step="1" value="<?php echo (int)$handoffGraceSeconds; ?>" style="width: 140px;" aria-label="Handoff grace seconds">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                        </form>
+                    </div>
+                <?php endif; ?>
 
-                    $workflowOrderUi = [
-                        'procurement' => 0,
-                        'supply' => 1,
-                        'accounting_pre' => 2,
-                        'budget' => 3,
-                        'accounting_post' => 4,
-                        'cashier' => 5,
-                    ];
-                    $roleRankUi = $workflowOrderUi[$roleDeptUi] ?? null;
-                    $ownerRankUi = $workflowOrderUi[$ownerDeptUi] ?? null;
-                    $canEditUpdatesUi = (
-                        $role !== 'admin'
-                        && $roleDeptUi !== ''
-                        && $roleRankUi !== null
-                        && $ownerRankUi !== null
-                        && $roleRankUi <= $ownerRankUi
-                    );
-                    ?>
-
-                    <?php if ($role === 'admin'): ?>
-                        <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mb-2">
-                            <form method="post" class="m-0 d-flex align-items-center gap-2">
-                                <input type="hidden" name="action" value="set_handoff_grace">
-                                <span class="text-muted small">Grace Period for forwarding and receiving. (seconds)</span>
-                                <input type="number" class="form-control form-control-sm" name="handoff_grace_seconds" min="0" step="1" value="<?php echo (int)$handoffGraceSeconds; ?>" style="width: 140px;" aria-label="Handoff grace seconds">
-                                <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
-                            </form>
-                        </div>
-                    <?php endif; ?>
-
-                    <div id="handoffStatusContainer" class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3" data-forwarded-ts="<?php echo $handoffForwardedTs ? (int)$handoffForwardedTs : ''; ?>" data-grace-ends-ts="<?php echo $handoffGraceEndsTs ? (int)$handoffGraceEndsTs : ''; ?>" data-server-now-ts="<?php echo !empty($handoffOpen['server_now_ts']) ? (int)$handoffOpen['server_now_ts'] : (int)time(); ?>" data-remaining-seconds="<?php echo htmlspecialchars($handoffRemainingSeconds); ?>" data-overdue-seconds="<?php echo htmlspecialchars($handoffOverdueSeconds); ?>" data-client-sync-ts="">
-                        <div class="text-muted small">
-                            <?php if ($showHandoffBanner && $handoffBannerText !== ''): ?>
-                                <?php echo htmlspecialchars($handoffBannerText); ?>
-                            <?php else: ?>
-                                No pending handoff.
-                            <?php endif; ?>
-                            <?php if ($handoffReceivedFlash !== ''): ?>
-                                <span class="ms-2 text-success fw-semibold"><?php echo htmlspecialchars($handoffReceivedFlash); ?></span>
-                            <?php endif; ?>
-                            <?php if ($roleDeptUi !== '' && ($roleDeptUi === $handoffFromDept || $roleDeptUi === $handoffToDept) && $handoffOpen && $handoffForwardedTs && $receiveCountdown !== ''): ?>
-                                <span class="ms-2 text-danger" data-handoff-countdown><?php echo htmlspecialchars($receiveCountdown); ?></span>
-                            <?php endif; ?>
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <?php if ($canForward && !$handoffOpen): ?>
-                                <form method="post" class="m-0">
-                                    <input type="hidden" name="handoff_action" value="forward">
-                                    <button type="submit" class="btn btn-outline-primary btn-sm">Forward</button>
-                                </form>
-                            <?php endif; ?>
-
-                            <?php if ($canReceive && $handoffOpen && !empty($handoffOpen['id'])): ?>
-                                <form method="post" class="m-0">
-                                    <input type="hidden" name="handoff_action" value="receive">
-                                    <button type="submit" class="btn btn-success btn-sm">Receive</button>
-                                </form>
-                            <?php endif; ?>
-                        </div>
+                <div id="handoffStatusContainer" class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3" data-forwarded-ts="<?php echo $handoffForwardedTs ? (int)$handoffForwardedTs : ''; ?>" data-grace-ends-ts="<?php echo $handoffGraceEndsTs ? (int)$handoffGraceEndsTs : ''; ?>" data-server-now-ts="<?php echo !empty($handoffOpen['server_now_ts']) ? (int)$handoffOpen['server_now_ts'] : (int)time(); ?>" data-remaining-seconds="<?php echo htmlspecialchars($handoffRemainingSeconds); ?>" data-overdue-seconds="<?php echo htmlspecialchars($handoffOverdueSeconds); ?>" data-client-sync-ts="">
+                    <div class="text-muted small">
+                        <?php if ($showHandoffBanner && $handoffBannerText !== ''): ?>
+                            <?php echo htmlspecialchars($handoffBannerText); ?>
+                        <?php else: ?>
+                            No pending handoff.
+                        <?php endif; ?>
+                        <?php if ($handoffReceivedFlash !== ''): ?>
+                            <span class="ms-2 text-success fw-semibold"><?php echo htmlspecialchars($handoffReceivedFlash); ?></span>
+                        <?php endif; ?>
+                        <?php if ($roleDeptUi !== '' && ($roleDeptUi === $handoffFromDept || $roleDeptUi === $handoffToDept) && $handoffOpen && $handoffForwardedTs && $receiveCountdown !== ''): ?>
+                            <span class="ms-2 text-danger" data-handoff-countdown><?php echo htmlspecialchars($receiveCountdown); ?></span>
+                        <?php endif; ?>
                     </div>
 
-                    <?php if (!$canEditUpdatesUi): ?>
-                        <div class="alert alert-secondary py-2 mb-2" style="opacity: 0.85;">
-                            View only. You can update once this transaction is forwarded to your department and received.
+                    <div class="d-flex gap-2">
+                        <?php if ($canForward && !$handoffOpen): ?>
+                            <form method="post" class="m-0">
+                                <input type="hidden" name="handoff_action" value="forward">
+                                <button type="submit" class="btn btn-outline-primary btn-sm">Forward</button>
+                            </form>
+                        <?php endif; ?>
+
+                        <?php if ($canReceive && $handoffOpen && !empty($handoffOpen['id'])): ?>
+                            <form method="post" class="m-0">
+                                <input type="hidden" name="handoff_action" value="receive">
+                                <button type="submit" class="btn btn-success btn-sm">Receive</button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <?php if (!$canEditUpdatesUi): ?>
+                    <div class="alert alert-secondary py-2 mb-2" style="opacity: 0.85;">
+                        View only. You can update once this transaction is forwarded to your department and received.
+                    </div>
+                <?php endif; ?>
+
+                <form method="post" novalidate>
+                    <fieldset id="updateFieldset" <?php echo !$canEditUpdatesUi ? 'disabled' : ''; ?> style="<?php echo !$canEditUpdatesUi ? 'opacity:0.65;' : ''; ?>">
+                    <?php if ($role === 'procurement'): ?>
+                        <div class="mb-3">
+                            <label class="form-label">Procurement Status</label>
+                            <select name="proc_status" class="form-control">
+                                <?php
+                                $currentProcStatus = $transaction['proc_status'] ?? '';
+                                // Empty placeholder
+                                echo '<option value="">-- Select status --</option>';
+                                $procOptions = ['FOR SUPPLY REVIEW', 'COMPLETED'];
+                                foreach ($procOptions as $opt) {
+                                    $selected = ($currentProcStatus === $opt) ? 'selected' : '';
+                                    echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
+                                }
+                                ?>
+                            </select>
                         </div>
-                    <?php endif; ?>
-
-                    <form method="post" novalidate>
-                        <fieldset id="updateFieldset" <?php echo !$canEditUpdatesUi ? 'disabled' : ''; ?> style="<?php echo !$canEditUpdatesUi ? 'opacity:0.65;' : ''; ?>">
-                        <?php if ($role === 'procurement'): ?>
-                            <div class="mb-3">
-                                <label class="form-label">Procurement Status</label>
-                                <select name="proc_status" class="form-control">
-                                    <?php
-                                    $currentProcStatus = $transaction['proc_status'] ?? '';
-                                    // Empty placeholder
-                                    echo '<option value="">-- Select status --</option>';
-                                    $procOptions = ['FOR SUPPLY REVIEW', 'COMPLETED'];
-                                    foreach ($procOptions as $opt) {
-                                        $selected = ($currentProcStatus === $opt) ? 'selected' : '';
-                                        echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
+                        <div class="mb-3">
+                            <label class="form-label">Procurement Remarks</label>
+                            <textarea name="proc_remarks" class="form-control"
+                                        rows="2"><?php echo htmlspecialchars($transaction['proc_remarks'] ?? ''); ?></textarea>
+                        </div>
+                    <?php elseif ($role === 'supply'): ?>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Delivery Receipt</label>
+                                <input type="text" name="supply_delivery_receipt" class="form-control"
+                                        inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
+                                        value="<?php echo htmlspecialchars($transaction['supply_delivery_receipt'] ?? ''); ?>">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sales Invoice</label>
+                                <input type="text" name="supply_sales_invoice" class="form-control"
+                                        inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
+                                        value="<?php echo htmlspecialchars($transaction['supply_sales_invoice'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Supply Status</label>
+                            <select name="supply_status" class="form-control" id="supplyStatusSelect">
+                                <?php
+                                $currentSupplyStatus = $transaction['supply_status'] ?? '';
+                                $normalizedCurrentSupplyStatus = strtoupper(trim((string)$currentSupplyStatus));
+                                // Empty placeholder
+                                echo '<option value="">-- Select status --</option>';
+                                $supplyOptions = ['PARTIAL DELIVERY', 'COMPLETED'];
+                                foreach ($supplyOptions as $opt) {
+                                    $selected = '';
+                                    if ($opt === 'PARTIAL DELIVERY') {
+                                        $selected = ($normalizedCurrentSupplyStatus === 'PARTIAL DELIVER' || $normalizedCurrentSupplyStatus === 'PARTIAL DELIVERY') ? 'selected' : '';
+                                    } else {
+                                        $selected = ($normalizedCurrentSupplyStatus === strtoupper($opt)) ? 'selected' : '';
                                     }
-                                    ?>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Procurement Remarks</label>
-                                <textarea name="proc_remarks" class="form-control"
-                                          rows="2"><?php echo htmlspecialchars($transaction['proc_remarks'] ?? ''); ?></textarea>
-                            </div>
-                        <?php elseif ($role === 'supply'): ?>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Delivery Receipt</label>
-                                    <input type="text" name="supply_delivery_receipt" class="form-control"
-                                           inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
-                                           value="<?php echo htmlspecialchars($transaction['supply_delivery_receipt'] ?? ''); ?>">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Sales Invoice</label>
-                                    <input type="text" name="supply_sales_invoice" class="form-control"
-                                           inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
-                                           value="<?php echo htmlspecialchars($transaction['supply_sales_invoice'] ?? ''); ?>">
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Supply Status</label>
-                                <select name="supply_status" class="form-control" id="supplyStatusSelect">
-                                    <?php
-                                    $currentSupplyStatus = $transaction['supply_status'] ?? '';
-                                    $normalizedCurrentSupplyStatus = strtoupper(trim((string)$currentSupplyStatus));
-                                    // Empty placeholder
-                                    echo '<option value="">-- Select status --</option>';
-                                    $supplyOptions = ['PARTIAL DELIVERY', 'COMPLETED'];
-                                    foreach ($supplyOptions as $opt) {
-                                        $selected = '';
-                                        if ($opt === 'PARTIAL DELIVERY') {
-                                            $selected = ($normalizedCurrentSupplyStatus === 'PARTIAL DELIVER' || $normalizedCurrentSupplyStatus === 'PARTIAL DELIVERY') ? 'selected' : '';
-                                        } else {
-                                            $selected = ($normalizedCurrentSupplyStatus === strtoupper($opt)) ? 'selected' : '';
-                                        }
-                                        echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
-                                    }
-                                    ?>
-                                </select>
-                            </div>
+                                    echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
+                                }
+                                ?>
+                            </select>
+                        </div>
 
-                            <div class="mb-3" id="partialDeliveryDateGroup" style="display: none;">
-                                <label class="form-label">Partial Delivery Date</label>
-                                <input type="date" name="supply_partial_delivery_date" class="form-control"
-                                       value="<?php echo htmlspecialchars($transaction['supply_partial_delivery_date'] ?? ''); ?>">
-                            </div>
+                        <div class="mb-3" id="partialDeliveryDateGroup" style="display: none;">
+                            <label class="form-label">Partial Delivery Date</label>
+                            <input type="date" name="supply_partial_delivery_date" class="form-control"
+                                    value="<?php echo htmlspecialchars($transaction['supply_partial_delivery_date'] ?? ''); ?>">
+                        </div>
 
-                            <div class="mb-3" id="deliveryDateGroup" style="display: none;">
-                                <label class="form-label">Delivery Date</label>
-                                <input type="date" name="supply_delivery_date" class="form-control"
-                                       value="<?php echo htmlspecialchars($transaction['supply_delivery_date'] ?? ''); ?>">
-                            </div>
+                        <div class="mb-3" id="deliveryDateGroup" style="display: none;">
+                            <label class="form-label">Delivery Date</label>
+                            <input type="date" name="supply_delivery_date" class="form-control"
+                                    value="<?php echo htmlspecialchars($transaction['supply_delivery_date'] ?? ''); ?>">
+                        </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Supply Remarks</label>
-                                <textarea name="supply_remarks" class="form-control"
-                                          rows="2"><?php echo htmlspecialchars($transaction['supply_remarks'] ?? ''); ?></textarea>
-                            </div>
+                        <div class="mb-3">
+                            <label class="form-label">Supply Remarks</label>
+                            <textarea name="supply_remarks" class="form-control"
+                                        rows="2"><?php echo htmlspecialchars($transaction['supply_remarks'] ?? ''); ?></textarea>
+                        </div>
 
-                            <script>
-                                (function () {
-                                    var select = document.getElementById('supplyStatusSelect');
-                                    var partialGroup = document.getElementById('partialDeliveryDateGroup');
-                                    var deliveryGroup = document.getElementById('deliveryDateGroup');
-                                    if (!select || !partialGroup || !deliveryGroup) {
-                                        return;
-                                    }
+                        <script>
+                            (function () {
+                                var select = document.getElementById('supplyStatusSelect');
+                                var partialGroup = document.getElementById('partialDeliveryDateGroup');
+                                var deliveryGroup = document.getElementById('deliveryDateGroup');
+                                if (!select || !partialGroup || !deliveryGroup) {
+                                    return;
+                                }
 
-                                    function updateVisibility() {
-                                        var val = String(select.value || '').toUpperCase();
-                                        partialGroup.style.display = (val === 'PARTIAL DELIVER' || val === 'PARTIAL DELIVERY') ? '' : 'none';
-                                        deliveryGroup.style.display = (val === 'COMPLETED') ? '' : 'none';
-                                    }
+                                function updateVisibility() {
+                                    var val = String(select.value || '').toUpperCase();
+                                    partialGroup.style.display = (val === 'PARTIAL DELIVER' || val === 'PARTIAL DELIVERY') ? '' : 'none';
+                                    deliveryGroup.style.display = (val === 'COMPLETED') ? '' : 'none';
+                                }
 
-                                    select.addEventListener('change', updateVisibility);
-                                    updateVisibility();
-                                })();
-                            </script>
-                        <?php elseif ($role === 'accounting'): ?>
-                            <div class="border rounded p-3 mb-2">
-                                <h6 class="mb-2">Accounting</h6>
-                                <div class="mb-2">
-                                    <label class="form-label mb-1">Status</label>
-                                    <?php
-                                    $budgetDoneUiAcct = !empty($transaction['budget_status']) || !empty($transaction['budget_ors_number']) || !empty($transaction['budget_ors_date']);
-                                    $currentAcctStatus = ($transaction['acct_post_status'] ?: $transaction['acct_pre_status']) ?? '';
-                                    $currentAcctStatusNorm = strtoupper(trim((string)$currentAcctStatus));
-                                    ?>
+                                select.addEventListener('change', updateVisibility);
+                                updateVisibility();
+                            })();
+                        </script>
+                    <?php elseif ($role === 'accounting'): ?>
+                        <div class="border rounded p-3 mb-2">
+                            <h6 class="mb-2">Accounting</h6>
+                            <div class="mb-2">
+                                <label class="form-label mb-1">Status</label>
+                                <?php
+                                $budgetDoneUiAcct = !empty($transaction['budget_status']) || !empty($transaction['budget_ors_number']) || !empty($transaction['budget_ors_date']);
+                                $currentAcctStatus = ($transaction['acct_post_status'] ?: $transaction['acct_pre_status']) ?? '';
+                                $currentAcctStatusNorm = strtoupper(trim((string)$currentAcctStatus));
+                                ?>
 
-                                    <?php if (!$budgetDoneUiAcct): ?>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="radio" name="acct_pre_status" id="acctPreForOrs" value="FOR ORS" <?php echo ($currentAcctStatusNorm === 'FOR ORS') ? 'checked' : ''; ?>>
-                                            <label class="form-check-label" for="acctPreForOrs">FOR ORS</label>
-                                        </div>
-
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="radio" name="acct_pre_status" id="acctPreIncomplete" value="INCOMPLETE" <?php echo ($currentAcctStatusNorm === 'INCOMPLETE') ? 'checked' : ''; ?>>
-                                            <label class="form-check-label" for="acctPreIncomplete">INCOMPLETE</label>
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="acct_for_voucher" id="acctForVoucher" value="1" <?php echo ($currentAcctStatusNorm === 'FOR VOUCHER') ? 'checked' : ''; ?>>
-                                            <label class="form-check-label" for="acctForVoucher">FOR VOUCHER</label>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label mb-1">Remarks</label>
-                                    <textarea name="acct_remarks" class="form-control" rows="2"
-                                              placeholder="Enter accounting remarks"></textarea>
-                                </div>
-                                <?php if ($budgetDoneUiAcct): ?>
-                                    <div class="row">
-                                        <div class="col-md-6 mb-2">
-                                            <label class="form-label mb-1">DV Number</label>
-                                            <input type="text" name="acct_dv_number" class="form-control"
-                                                   inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
-                                                   placeholder="Enter DV number">
-                                        </div>
-                                        <div class="col-md-6 mb-2">
-                                            <label class="form-label mb-1">DV Date</label>
-                                            <input type="date" name="acct_dv_date" class="form-control">
-                                        </div>
+                                <?php if (!$budgetDoneUiAcct): ?>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="acct_pre_status" id="acctPreForOrs" value="FOR ORS" <?php echo ($currentAcctStatusNorm === 'FOR ORS') ? 'checked' : ''; ?>>
+                                        <label class="form-check-label" for="acctPreForOrs">FOR ORS</label>
                                     </div>
-                                    <div class="mb-0">
-                                        <label class="form-label mb-1">DV Amount</label>
-                                        <input type="number" step="0.01" min="0" name="acct_dv_amount" class="form-control" required
-                                               placeholder="Enter DV amount (net)">
+
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="acct_pre_status" id="acctPreIncomplete" value="INCOMPLETE" <?php echo ($currentAcctStatusNorm === 'INCOMPLETE') ? 'checked' : ''; ?>>
+                                        <label class="form-check-label" for="acctPreIncomplete">INCOMPLETE</label>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="acct_for_voucher" id="acctForVoucher" value="1" <?php echo ($currentAcctStatusNorm === 'FOR VOUCHER') ? 'checked' : ''; ?>>
+                                        <label class="form-check-label" for="acctForVoucher">FOR VOUCHER</label>
                                     </div>
                                 <?php endif; ?>
                             </div>
-                        <?php elseif ($role === 'budget'): ?>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">ORS Number</label>
-                                    <input type="text" name="budget_ors_number" class="form-control"
-                                           inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
-                                           value="<?php echo htmlspecialchars($transaction['budget_ors_number'] ?? ''); ?>">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">ORS Date</label>
-                                    <input type="date" name="budget_ors_date" class="form-control"
-                                           value="<?php echo htmlspecialchars($transaction['budget_ors_date'] ?? ''); ?>">
-                                </div>
+                            <div class="mb-2">
+                                <label class="form-label mb-1">Remarks</label>
+                                <textarea name="acct_remarks" class="form-control" rows="2"
+                                            placeholder="Enter accounting remarks"></textarea>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Budget Status</label>
-                                <select name="budget_status" class="form-control">
-                                    <?php
-                                    $currentBudgetStatus = $transaction['budget_status'] ?? '';
-                                    // Empty placeholder option
-                                    echo '<option value="">-- Select status --</option>';
-                                    $budgetStatusOptions = ['FOR PAYMENT', 'ACCOUNTS PAYABLE', 'COMPLETED'];
-                                    foreach ($budgetStatusOptions as $opt) {
-                                        $selected = ($currentBudgetStatus === $opt) ? 'selected' : '';
-                                        echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
+                            <?php if ($budgetDoneUiAcct): ?>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <label class="form-label mb-1">DV Number</label>
+                                        <input type="text" name="acct_dv_number" class="form-control"
+                                                inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
+                                                placeholder="Enter DV number">
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label class="form-label mb-1">DV Date</label>
+                                        <input type="date" name="acct_dv_date" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="mb-0">
+                                    <label class="form-label mb-1">DV Amount</label>
+                                    <input type="number" step="0.01" min="0" name="acct_dv_amount" class="form-control" required
+                                            placeholder="Enter DV amount (net)">
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php elseif ($role === 'budget'): ?>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">ORS Number</label>
+                                <input type="text" name="budget_ors_number" class="form-control"
+                                        inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
+                                        value="<?php echo htmlspecialchars($transaction['budget_ors_number'] ?? ''); ?>">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">ORS Date</label>
+                                <input type="date" name="budget_ors_date" class="form-control"
+                                        value="<?php echo htmlspecialchars($transaction['budget_ors_date'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Budget Status</label>
+                            <select name="budget_status" class="form-control">
+                                <?php
+                                $currentBudgetStatus = $transaction['budget_status'] ?? '';
+                                // Empty placeholder option
+                                echo '<option value="">-- Select status --</option>';
+                                $budgetStatusOptions = ['FOR PAYMENT', 'ACCOUNTS PAYABLE', 'COMPLETED'];
+                                foreach ($budgetStatusOptions as $opt) {
+                                    $selected = ($currentBudgetStatus === $opt) ? 'selected' : '';
+                                    echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
+                                }
+                                ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Demandability</label>
+                            <select name="budget_demandability" class="form-control">
+                                <?php
+                                $currentDemand = $transaction['budget_demandability'] ?? '';
+                                // Empty placeholder option
+                                echo '<option value="">-- Select demandability --</option>';
+                                $demandOptions = ['Due and Demandable', 'Not Yet Due and Demandable'];
+                                foreach ($demandOptions as $opt) {
+                                    $selected = ($currentDemand === $opt) ? 'selected' : '';
+                                    echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
+                                }
+                                ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Budget Remarks</label>
+                            <textarea name="budget_remarks" class="form-control"
+                                        rows="2"><?php echo htmlspecialchars($transaction['budget_remarks'] ?? ''); ?></textarea>
+                        </div>
+                    <?php elseif ($role === 'cashier'): ?>
+                        <div class="mb-3">
+                            <label class="form-label">Cashier Status</label>
+                            <select name="cashier_status" class="form-control">
+                                <?php
+                                $currentCashierStatus = $transaction['cashier_status'] ?? '';
+                                // Empty placeholder
+                                echo '<option value="">-- Select status --</option>';
+                                $cashierStatusOptions = ['For ACIC', 'For OR Issuance', 'For SDS/ASDS Approval', 'COMPLETED'];
+                                foreach ($cashierStatusOptions as $opt) {
+                                    $selected = ($currentCashierStatus === $opt) ? 'selected' : '';
+                                    echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
+                                }
+                                ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Cashier Remarks</label>
+                            <textarea name="cashier_remarks" class="form-control"
+                                        rows="2"><?php echo htmlspecialchars($transaction['cashier_remarks'] ?? ''); ?></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">ACIC Number</label>
+                                <input type="text" name="cashier_or_number" class="form-control"
+                                        inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
+                                        value="<?php echo htmlspecialchars($transaction['cashier_or_number'] ?? ''); ?>">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">ACIC Date</label>
+                                <input type="date" name="cashier_or_date" class="form-control"
+                                        value="<?php echo htmlspecialchars($transaction['cashier_or_date'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Amount</label>
+                                <input type="text" name="cashier_landbank_ref" class="form-control"
+                                    value="<?php
+                                    $cashierAmountUi = trim((string)($transaction['cashier_landbank_ref'] ?? ''));
+                                    if ($cashierAmountUi === '') {
+                                        $cashierAmountUi = trim((string)($transaction['acct_post_dv_amount'] ?? ''));
+                                        if ($cashierAmountUi === '') {
+                                            $cashierAmountUi = trim((string)($transaction['amount'] ?? ''));
+                                        }
                                     }
-                                    ?>
-                                </select>
+                                    echo htmlspecialchars($cashierAmountUi);
+                                    ?>">
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Demandability</label>
-                                <select name="budget_demandability" class="form-control">
-                                    <?php
-                                    $currentDemand = $transaction['budget_demandability'] ?? '';
-                                    // Empty placeholder option
-                                    echo '<option value="">-- Select demandability --</option>';
-                                    $demandOptions = ['Due and Demandable', 'Not Yet Due and Demandable'];
-                                    foreach ($demandOptions as $opt) {
-                                        $selected = ($currentDemand === $opt) ? 'selected' : '';
-                                        echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
-                                    }
-                                    ?>
-                                </select>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Payment Date</label>
+                                <input type="date" name="cashier_payment_date" class="form-control"
+                                        value="<?php echo htmlspecialchars($transaction['cashier_payment_date'] ?? ''); ?>">
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Budget Remarks</label>
-                                <textarea name="budget_remarks" class="form-control"
-                                          rows="2"><?php echo htmlspecialchars($transaction['budget_remarks'] ?? ''); ?></textarea>
-                            </div>
-                        <?php elseif ($role === 'cashier'): ?>
-                            <div class="mb-3">
-                                <label class="form-label">Cashier Status</label>
-                                <select name="cashier_status" class="form-control">
-                                    <?php
-                                    $currentCashierStatus = $transaction['cashier_status'] ?? '';
-                                    // Empty placeholder
-                                    echo '<option value="">-- Select status --</option>';
-                                    $cashierStatusOptions = ['For ACIC', 'For OR Issuance', 'For SDS/ASDS Approval', 'COMPLETED'];
-                                    foreach ($cashierStatusOptions as $opt) {
-                                        $selected = ($currentCashierStatus === $opt) ? 'selected' : '';
-                                        echo '<option value="' . htmlspecialchars($opt) . '" ' . $selected . '>' . htmlspecialchars($opt) . '</option>';
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Cashier Remarks</label>
-                                <textarea name="cashier_remarks" class="form-control"
-                                          rows="2"><?php echo htmlspecialchars($transaction['cashier_remarks'] ?? ''); ?></textarea>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">ACIC Number</label>
-                                    <input type="text" name="cashier_or_number" class="form-control"
-                                           inputmode="numeric" pattern="\d*" oninput="this.value=this.value.replace(/[^0-9]/g,'');"
-                                           value="<?php echo htmlspecialchars($transaction['cashier_or_number'] ?? ''); ?>">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">ACIC Date</label>
-                                    <input type="date" name="cashier_or_date" class="form-control"
-                                           value="<?php echo htmlspecialchars($transaction['cashier_or_date'] ?? ''); ?>">
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Amount</label>
-                                    <input type="text" name="cashier_landbank_ref" class="form-control"
-                                           value="<?php
-                                           $cashierAmountUi = trim((string)($transaction['cashier_landbank_ref'] ?? ''));
-                                           if ($cashierAmountUi === '') {
-                                               $cashierAmountUi = trim((string)($transaction['acct_post_dv_amount'] ?? ''));
-                                               if ($cashierAmountUi === '') {
-                                                   $cashierAmountUi = trim((string)($transaction['amount'] ?? ''));
-                                               }
-                                           }
-                                           echo htmlspecialchars($cashierAmountUi);
-                                           ?>">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Payment Date</label>
-                                    <input type="date" name="cashier_payment_date" class="form-control"
-                                           value="<?php echo htmlspecialchars($transaction['cashier_payment_date'] ?? ''); ?>">
-                                </div>
-                            </div>
-                        <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
 
-                        <?php if ($role !== 'supplier'): ?>
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary" id="saveUpdatesBtn">Save Updates</button>
+                    <?php if ($role !== 'supplier'): ?>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary" id="saveUpdatesBtn">Save Updates</button>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ($role === 'cashier'): ?>
+                        
+                        <hr class="my-4">
+                        <h6 class="mb-2">Proceed to Landbank</h6>
+                        <p class="small text-muted">
+                            All requirements from Procurement, Supply, Accounting, and Budget are complete.
+                        </p>
+                        <a href="<?php echo htmlspecialchars(LANDBANK_URL); ?>" target="_blank"
+                            class="btn btn-success w-100 mb-2">
+                            Proceed to Landbank Site
+                        </a>
+                        <?php $notifyDefaultMsgUi = 'Your PO ' . ($transaction['po_number'] ?? '') . ' is now marked as COMPLETED. Please check the portal for details.'; ?>
+                        
+                        <br><br>
+                        <form method="post" class="mt-1">
+                            <input type="hidden" name="notify_supplier" value="1">
+
+                            <div class="mb-2">
+                                <label class="form-label small mb-1">Message</label>
+                                <textarea class="form-control" name="notify_message" id="notifyMessageTextarea" rows="3"><?php echo htmlspecialchars($notifyDefaultMsgUi); ?></textarea>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label small mb-1">CC</label>
+                                <input type="text" class="form-control" name="notify_cc" placeholder="example1@email.com, example2@email.com">
+                            </div>
+
+                            <button type="submit" class="btn btn-outline-primary w-100">
+                                Notify Supplier
+                            </button>
+                        </form>
+                    <?php endif; ?>
+                    
+                    </fieldset>
+                </form>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="card mb-3" style="flex: 1 1 420px; min-width: 420px;">
+        <div class="card-body" style="max-height: 70vh; overflow-y: auto;">
+            <h6 class="mb-3">
+                <i class="fas fa-stream me-2"></i>Flow Timeline
+            </h6>
+            <div class="timeline-scroll" style="padding-right: 8px;">
+            <div class="timeline">
+                <!-- Procurement -->
+                <?php $procCompleted = (!empty($transaction['created_at']) || !empty($updatesByStage['procurement'])); ?>
+                <div class="timeline-item <?php echo $procCompleted ? 'completed' : 'pending'; ?>">
+                    <div class="timeline-marker">
+                        <i class="fas fa-<?php echo $procCompleted ? 'check-circle' : 'circle'; ?>"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <?php
+                        // Elapsed from transaction created_at to forwarded_at (handoff) or latest Procurement update
+                        $elapsedProc = '';
+                        if (!empty($updatesByStage['procurement'])) {
+                            $createdTs = strtotime($transaction['created_at']);
+                            $endTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'forwarded_at');
+                            if ($endTs === null) {
+                                $endTs = get_last_stage_timestamp($updatesByStage, 'procurement');
+                            }
+                            if ($createdTs !== false && $endTs !== null && $endTs >= $createdTs) {
+                                $elapsedProc = format_elapsed_time(($endTs - $createdTs) + (int)($handoffExtras['procurement'] ?? 0));
+                            }
+                        }
+                        ?>
+                        <h6 class="timeline-title d-flex justify-content-between align-items-center">
+                            <span>Procurement</span>
+                            <span class="small text-muted"><?php echo $elapsedProc ? htmlspecialchars($elapsedProc) : ''; ?></span>
+                        </h6>
+
+                        <?php if (!empty($updatesByStage['procurement'])): ?>
+                            <div class="timeline-history mt-2 p-2 border rounded bg-white">
+                                <div class="small text-muted mb-1">Update history</div>
+                                <?php
+                                $procForwardTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'forwarded_at');
+                                $procForwardPrinted = false;
+                                ?>
+                                <?php $countProc = count($updatesByStage['procurement']); ?>
+                                <?php foreach ($updatesByStage['procurement'] as $idx => $u): ?>
+                                    <?php
+                                    $isLatest = ($idx === $countProc - 1);
+                                    $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+
+                                    $showForwardHere = false;
+                                    $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
+                                    $nextUpdateTs = false;
+                                    if (($idx + 1) < $countProc) {
+                                        $next = $updatesByStage['procurement'][$idx + 1] ?? null;
+                                        if (!empty($next['created_at'])) {
+                                            $nextUpdateTs = strtotime((string)$next['created_at']);
+                                        }
+                                    }
+                                    if (!$procForwardPrinted && $procForwardTs !== null && $updateTs !== false) {
+                                        $fwd = (int)$procForwardTs;
+                                        if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
+                                            $showForwardHere = true;
+                                            $procForwardPrinted = true;
+                                        } elseif ($idx === 0 && $updateTs > $fwd) {
+                                            $showForwardHere = true;
+                                            $procForwardPrinted = true;
+                                        } elseif ($isLatest && !$procForwardPrinted) {
+                                            $showForwardHere = true;
+                                            $procForwardPrinted = true;
+                                        }
+                                    }
+                                    ?>
+                                    <div class="<?php echo $rowClass; ?>">
+                                        <?php if ($isLatest): ?>
+                                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                                <div>
+                                                    <div class="text-muted">
+                                                        <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                                    </div>
+                                                    <?php if ($u['status'] !== ''): ?>
+                                                        <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($u['remarks'] !== ''): ?>
+                                                        <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="text-end text-muted">
+                                                    <?php if ($showForwardHere && $procForwardTs !== null): ?>
+                                                        <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$procForwardTs)); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                                <div>
+                                                    <div class="text-muted">
+                                                        <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                                    </div>
+                                                    <?php if ($u['status'] !== ''): ?>
+                                                        <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($u['remarks'] !== ''): ?>
+                                                        <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="text-end text-muted">
+                                                    <?php if ($showForwardHere && $procForwardTs !== null): ?>
+                                                        <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$procForwardTs)); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
                         <?php endif; ?>
-                        </fieldset>
-                    </form>
+                    </div>
+                </div>
+
+                <?php
+                $procSupplyForwardTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'forwarded_at');
+                $procSupplyRecvTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'received_at');
+                $procSupplyOverdue = 0;
+                if ($procSupplyForwardTs !== null) {
+                    $endTs = $procSupplyRecvTs !== null ? $procSupplyRecvTs : time();
+                    $delaySecs = max(0, (int)$endTs - (int)$procSupplyForwardTs);
+                    $procSupplyOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
+                }
+                ?>
+                <?php if ($procSupplyOverdue > 0): ?>
+                    <div class="handoff-between-due">
+                        <div class="small text-danger fw-semibold">
+                            <?php echo htmlspecialchars(format_elapsed_time((int)$procSupplyOverdue)); ?>
+                        </div>
+                    </div>
                 <?php endif; ?>
+
+                <!-- Supply Unit -->
+                <?php $supplyCompleted = (!empty($updatesByStage['supply']) || get_handoff_timestamp_first($handoffHistory, 'procurement', 'supply', 'received_at') !== null); ?>
+                <div class="timeline-item <?php echo $supplyCompleted ? 'completed' : 'pending'; ?>">
+                    <div class="timeline-marker">
+                        <i class="fas fa-<?php echo $supplyCompleted ? 'check-circle' : 'circle'; ?>"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <?php
+                        // Elapsed from received_at (handoff) to forwarded_at (handoff) or latest Supply update
+                        $elapsedSupply = '';
+                        $startTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'received_at');
+                        $endTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting_pre', 'forwarded_at');
+                        if ($endTs === null) {
+                            $endTs = get_last_stage_timestamp($updatesByStage, 'supply');
+                        }
+                        if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
+                            $elapsedSupply = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['supply'] ?? 0));
+                        }
+                        ?>
+                        <h6 class="timeline-title d-flex justify-content-between align-items-center">
+                            <span>Supply Unit</span>
+                            <span class="small text-muted"><?php echo $elapsedSupply ? htmlspecialchars($elapsedSupply) : ''; ?></span>
+                        </h6>
+
+                        <?php if (!empty($updatesByStage['supply'])): ?>
+                            <div class="timeline-history mt-2 p-2 border rounded bg-white">
+                                <div class="small text-muted mb-1">Update history</div>
+                                <?php
+                                $supplyReceivedTs = get_handoff_timestamp_first($handoffHistory, 'procurement', 'supply', 'received_at');
+                                $supplyReceivedPrinted = false;
+                                $supplyForwardTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting_pre', 'forwarded_at');
+                                $supplyForwardPrinted = false;
+                                ?>
+                                <?php $countSupply = count($updatesByStage['supply']); ?>
+                                <?php foreach ($updatesByStage['supply'] as $idx => $u): ?>
+                                    <?php
+                                    $isLatest = ($idx === $countSupply - 1);
+
+                                    $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+
+                                    $showReceivedHere = false;
+                                    $showForwardHere = false;
+                                    $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
+                                    $nextUpdateTs = false;
+                                    if (($idx + 1) < $countSupply) {
+                                        $next = $updatesByStage['supply'][$idx + 1] ?? null;
+                                        if (!empty($next['created_at'])) {
+                                            $nextUpdateTs = strtotime((string)$next['created_at']);
+                                        }
+                                    }
+                                    if (!$supplyReceivedPrinted && $supplyReceivedTs !== null && $updateTs !== false && $updateTs >= (int)$supplyReceivedTs) {
+                                        $showReceivedHere = true;
+                                        $supplyReceivedPrinted = true;
+                                    }
+
+                                    if (!$supplyForwardPrinted && $supplyForwardTs !== null && $updateTs !== false) {
+                                        $fwd = (int)$supplyForwardTs;
+                                        if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
+                                            $showForwardHere = true;
+                                            $supplyForwardPrinted = true;
+                                        } elseif ($idx === 0 && $updateTs > $fwd) {
+                                            $showForwardHere = true;
+                                            $supplyForwardPrinted = true;
+                                        } elseif ($isLatest && !$supplyForwardPrinted) {
+                                            $showForwardHere = true;
+                                            $supplyForwardPrinted = true;
+                                        }
+                                    }
+
+                                    ?>
+                                    <div class="<?php echo $rowClass; ?>">
+                                        <?php if ($isLatest): ?>
+                                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                                <div>
+                                                    <div class="text-muted">
+                                                        <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                                    </div>
+                                                    <?php if ($u['status'] !== ''): ?>
+                                                        <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($u['remarks'] !== ''): ?>
+                                                        <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="text-end text-muted">
+
+                                                    <?php if ($showReceivedHere && $supplyReceivedTs !== null): ?>
+                                                        <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$supplyReceivedTs)); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($showForwardHere && $supplyForwardTs !== null): ?>
+                                                        <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$supplyForwardTs)); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                                <div>
+                                                    <div class="text-muted">
+                                                        <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                                    </div>
+                                                    <?php if ($u['status'] !== ''): ?>
+                                                        <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($u['remarks'] !== ''): ?>
+                                                        <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="text-end text-muted">
+                                                    <?php if ($showReceivedHere && $supplyReceivedTs !== null): ?>
+                                                        <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$supplyReceivedTs)); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($showForwardHere && $supplyForwardTs !== null): ?>
+                                                        <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$supplyForwardTs)); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <?php
+                $supplyAcctForwardTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting_pre', 'forwarded_at');
+                $supplyAcctRecvTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting_pre', 'received_at');
+                $supplyAcctOverdue = 0;
+                if ($supplyAcctForwardTs !== null) {
+                    $endTs = $supplyAcctRecvTs !== null ? $supplyAcctRecvTs : time();
+                    $delaySecs = max(0, (int)$endTs - (int)$supplyAcctForwardTs);
+                    $supplyAcctOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
+                }
+                ?>
+                <?php if ($supplyAcctOverdue > 0): ?>
+                    <div class="handoff-between-due">
+                        <div class="small text-danger fw-semibold">
+                            <?php echo htmlspecialchars(format_elapsed_time((int)$supplyAcctOverdue)); ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Accounting -->
+                <?php $acctPreCompleted = (!empty($updatesByStage['accounting_pre']) || get_handoff_timestamp_first($handoffHistory, 'supply', 'accounting_pre', 'received_at') !== null); ?>
+                <div class="timeline-item <?php echo $acctPreCompleted ? 'completed' : 'pending'; ?>">
+                    <div class="timeline-marker">
+                        <i class="fas fa-<?php echo $acctPreCompleted ? 'check-circle' : 'circle'; ?>"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <?php
+                        // Elapsed from received_at (handoff) to forwarded_at (handoff) or latest Accounting (pre-budget) update
+                        $elapsedAcctPre = '';
+                        $startTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting_pre', 'received_at');
+                        $endTs = get_handoff_timestamp($handoffHistory, 'accounting_pre', 'budget', 'forwarded_at');
+                        if ($endTs === null) {
+                            $endTs = get_last_stage_timestamp($updatesByStage, 'accounting_pre');
+                        }
+                        if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
+                            $elapsedAcctPre = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['accounting_pre'] ?? 0));
+                        }
+                        ?>
+                        <h6 class="timeline-title d-flex justify-content-between align-items-center">
+                            <span>Accounting</span>
+                            <span class="small text-muted"><?php echo $elapsedAcctPre ? htmlspecialchars($elapsedAcctPre) : ''; ?></span>
+                        </h6>
+
+                        <?php if (!empty($updatesByStage['accounting_pre'])): ?>
+                            <div class="timeline-history mt-2 p-2 border rounded bg-white">
+                                <div class="small text-muted mb-1">Update history</div>
+                                <?php
+                                $acctPreReceivedTs = get_handoff_timestamp_first($handoffHistory, 'supply', 'accounting_pre', 'received_at');
+                                $acctPreReceivedPrinted = false;
+                                $acctPreForwardTs = get_handoff_timestamp($handoffHistory, 'accounting_pre', 'budget', 'forwarded_at');
+                                $acctPreForwardPrinted = false;
+                                ?>
+                                <?php $countAcctPre = count($updatesByStage['accounting_pre']); ?>
+                                <?php foreach ($updatesByStage['accounting_pre'] as $idx => $u): ?>
+                                    <?php
+                                    $isLatest = ($idx === $countAcctPre - 1);
+
+                                    $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+
+                                    $showReceivedHere = false;
+                                    $showForwardHere = false;
+                                    $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
+                                    $nextUpdateTs = false;
+                                    if (($idx + 1) < $countAcctPre) {
+                                        $next = $updatesByStage['accounting_pre'][$idx + 1] ?? null;
+                                        if (!empty($next['created_at'])) {
+                                            $nextUpdateTs = strtotime((string)$next['created_at']);
+                                        }
+                                    }
+                                    if (!$acctPreReceivedPrinted && $acctPreReceivedTs !== null && $updateTs !== false && $updateTs >= (int)$acctPreReceivedTs) {
+                                        $showReceivedHere = true;
+                                        $acctPreReceivedPrinted = true;
+                                    }
+
+                                    if (!$acctPreForwardPrinted && $acctPreForwardTs !== null && $updateTs !== false) {
+                                        $fwd = (int)$acctPreForwardTs;
+                                        if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
+                                            $showForwardHere = true;
+                                            $acctPreForwardPrinted = true;
+                                        } elseif ($idx === 0 && $updateTs > $fwd) {
+                                            $showForwardHere = true;
+                                            $acctPreForwardPrinted = true;
+                                        } elseif ($isLatest && !$acctPreForwardPrinted) {
+                                            $showForwardHere = true;
+                                            $acctPreForwardPrinted = true;
+                                        }
+                                    }
+
+                                    ?>
+                                    <div class="<?php echo $rowClass; ?>">
+                                        <?php if ($isLatest): ?>
+                                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                                <div>
+                                                    <div class="text-muted">
+                                                        <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                                    </div>
+                                                    <?php if ($u['status'] !== ''): ?>
+                                                        <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($u['remarks'] !== ''): ?>
+                                                        <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="text-end text-muted">
+
+                                                    <?php if ($showReceivedHere && $acctPreReceivedTs !== null): ?>
+                                                        <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPreReceivedTs)); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($showForwardHere && $acctPreForwardTs !== null): ?>
+                                                        <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPreForwardTs)); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                                <div>
+                                                    <div class="text-muted">
+                                                        <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                                    </div>
+                                                    <?php if ($u['status'] !== ''): ?>
+                                                        <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($u['remarks'] !== ''): ?>
+                                                        <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="text-end text-muted">
+                                                    <?php if ($showReceivedHere && $acctPreReceivedTs !== null): ?>
+                                                        <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPreReceivedTs)); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($showForwardHere && $acctPreForwardTs !== null): ?>
+                                                        <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPreForwardTs)); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <?php
+                $acctPreBudgetForwardTs = get_handoff_timestamp($handoffHistory, 'accounting_pre', 'budget', 'forwarded_at');
+                $acctPreBudgetRecvTs = get_handoff_timestamp($handoffHistory, 'accounting_pre', 'budget', 'received_at');
+                $acctPreBudgetOverdue = 0;
+                if ($acctPreBudgetForwardTs !== null) {
+                    $endTs = $acctPreBudgetRecvTs !== null ? $acctPreBudgetRecvTs : time();
+                    $delaySecs = max(0, (int)$endTs - (int)$acctPreBudgetForwardTs);
+                    $acctPreBudgetOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
+                }
+                ?>
+                <?php if ($acctPreBudgetOverdue > 0): ?>
+                    <div class="handoff-between-due">
+                        <div class="small text-danger fw-semibold">
+                            <?php echo htmlspecialchars(format_elapsed_time((int)$acctPreBudgetOverdue)); ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Budget Unit -->
+                <?php $budgetCompleted = (!empty($updatesByStage['budget']) || get_handoff_timestamp_first($handoffHistory, 'accounting_pre', 'budget', 'received_at') !== null); ?>
+                <div class="timeline-item <?php echo $budgetCompleted ? 'completed' : 'pending'; ?>">
+                    <div class="timeline-marker">
+                        <i class="fas fa-<?php echo $budgetCompleted ? 'check-circle' : 'circle'; ?>"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <?php
+                        // Elapsed from received_at (handoff) to forwarded_at (handoff) or latest Budget update
+                        $elapsedBudget = '';
+                        $startTs = get_handoff_timestamp($handoffHistory, 'accounting_pre', 'budget', 'received_at');
+                        $endTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting_post', 'forwarded_at');
+                        if ($endTs === null) {
+                            $endTs = get_last_stage_timestamp($updatesByStage, 'budget');
+                        }
+                        if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
+                            $elapsedBudget = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['budget'] ?? 0));
+                        }
+                        ?>
+                        <h6 class="timeline-title d-flex justify-content-between align-items-center">
+                            <span>Budget Unit</span>
+                            <span class="small text-muted"><?php echo $elapsedBudget ? htmlspecialchars($elapsedBudget) : ''; ?></span>
+                        </h6>
+
+                        <?php if (!empty($updatesByStage['budget'])): ?>
+                            <div class="timeline-history mt-2 p-2 border rounded bg-white">
+                                <div class="small text-muted mb-1">Update history</div>
+                                <?php
+                                $budgetReceivedTs = get_handoff_timestamp_first($handoffHistory, 'accounting_pre', 'budget', 'received_at');
+                                $budgetReceivedPrinted = false;
+                                $budgetForwardTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting_post', 'forwarded_at');
+                                $budgetForwardPrinted = false;
+                                ?>
+                                <?php $countBudget = count($updatesByStage['budget']); ?>
+                                <?php foreach ($updatesByStage['budget'] as $idx => $u): ?>
+                                    <?php
+                                    $isLatest = ($idx === $countBudget - 1);
+
+                                    $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+
+                                    $showReceivedHere = false;
+                                    $showForwardHere = false;
+                                    $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
+                                    $nextUpdateTs = false;
+                                    if (($idx + 1) < $countBudget) {
+                                        $next = $updatesByStage['budget'][$idx + 1] ?? null;
+                                        if (!empty($next['created_at'])) {
+                                            $nextUpdateTs = strtotime((string)$next['created_at']);
+                                        }
+                                    }
+                                    if (!$budgetReceivedPrinted && $budgetReceivedTs !== null && $updateTs !== false && $updateTs >= (int)$budgetReceivedTs) {
+                                        $showReceivedHere = true;
+                                        $budgetReceivedPrinted = true;
+                                    }
+
+                                    if (!$budgetForwardPrinted && $budgetForwardTs !== null && $updateTs !== false) {
+                                        $fwd = (int)$budgetForwardTs;
+                                        if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
+                                            $showForwardHere = true;
+                                            $budgetForwardPrinted = true;
+                                        } elseif ($idx === 0 && $updateTs > $fwd) {
+                                            $showForwardHere = true;
+                                            $budgetForwardPrinted = true;
+                                        } elseif ($isLatest && !$budgetForwardPrinted) {
+                                            $showForwardHere = true;
+                                            $budgetForwardPrinted = true;
+                                        }
+                                    }
+
+                                    ?>
+                                    <div class="<?php echo $rowClass; ?>">
+                                        <?php if ($isLatest): ?>
+                                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                                <div>
+                                                    <div class="text-muted">
+                                                        <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                                    </div>
+                                                    <?php if ($u['status'] !== ''): ?>
+                                                        <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($u['remarks'] !== ''): ?>
+                                                        <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="text-end text-muted">
+
+                                                    <?php if ($showReceivedHere && $budgetReceivedTs !== null): ?>
+                                                        <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$budgetReceivedTs)); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($showForwardHere && $budgetForwardTs !== null): ?>
+                                                        <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$budgetForwardTs)); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                                <div>
+                                                    <div class="text-muted">
+                                                        <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                                    </div>
+                                                    <?php if ($u['status'] !== ''): ?>
+                                                        <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($u['remarks'] !== ''): ?>
+                                                        <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="text-end text-muted">
+                                                    <?php if ($showReceivedHere && $budgetReceivedTs !== null): ?>
+                                                        <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$budgetReceivedTs)); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($showForwardHere && $budgetForwardTs !== null): ?>
+                                                        <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$budgetForwardTs)); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <?php
+                $budgetAcctPostForwardTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting_post', 'forwarded_at');
+                $budgetAcctPostRecvTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting_post', 'received_at');
+                $budgetAcctPostOverdue = 0;
+                if ($budgetAcctPostForwardTs !== null) {
+                    $endTs = $budgetAcctPostRecvTs !== null ? $budgetAcctPostRecvTs : time();
+                    $delaySecs = max(0, (int)$endTs - (int)$budgetAcctPostForwardTs);
+                    $budgetAcctPostOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
+                }
+                ?>
+                <?php if ($budgetAcctPostOverdue > 0): ?>
+                    <div class="handoff-between-due">
+                        <div class="small text-danger fw-semibold">
+                            <?php echo htmlspecialchars(format_elapsed_time((int)$budgetAcctPostOverdue)); ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Accounting -->
+                <?php $acctPostCompleted = (!empty($updatesByStage['accounting_post']) || get_handoff_timestamp_first($handoffHistory, 'budget', 'accounting_post', 'received_at') !== null); ?>
+                <div class="timeline-item <?php echo $acctPostCompleted ? 'completed' : 'pending'; ?>">
+                    <div class="timeline-marker">
+                        <i class="fas fa-<?php echo $acctPostCompleted ? 'check-circle' : 'circle'; ?>"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <?php
+                        // Elapsed from received_at (handoff) to forwarded_at (handoff) or latest Accounting (post-budget) update
+                        $elapsedAcctPost = '';
+                        $startTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting_post', 'received_at');
+                        $endTs = get_handoff_timestamp($handoffHistory, 'accounting_post', 'cashier', 'forwarded_at');
+                        if ($endTs === null) {
+                            $endTs = get_last_stage_timestamp($updatesByStage, 'accounting_post');
+                        }
+                        if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
+                            $elapsedAcctPost = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['accounting_post'] ?? 0));
+                        }
+                        ?>
+                        <h6 class="timeline-title d-flex justify-content-between align-items-center">
+                            <span>Accounting</span>
+                            <span class="small text-muted"><?php echo $elapsedAcctPost ? htmlspecialchars($elapsedAcctPost) : ''; ?></span>
+                        </h6>
+
+                        <?php if (!empty($updatesByStage['accounting_post'])): ?>
+                            <div class="timeline-history mt-2 p-2 border rounded bg-white">
+                                <div class="small text-muted mb-1">Update history</div>
+                                <?php
+                                $acctPostReceivedTs = get_handoff_timestamp_first($handoffHistory, 'budget', 'accounting_post', 'received_at');
+                                $acctPostReceivedPrinted = false;
+                                $acctPostForwardTs = get_handoff_timestamp($handoffHistory, 'accounting_post', 'cashier', 'forwarded_at');
+                                $acctPostForwardPrinted = false;
+                                ?>
+                                <?php $countAcctPost = count($updatesByStage['accounting_post']); ?>
+                                <?php foreach ($updatesByStage['accounting_post'] as $idx => $u): ?>
+                                    <?php
+                                    $isLatest = ($idx === $countAcctPost - 1);
+
+                                    $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+
+                                    $showReceivedHere = false;
+                                    $showForwardHere = false;
+                                    $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
+                                    $nextUpdateTs = false;
+                                    if (($idx + 1) < $countAcctPost) {
+                                        $next = $updatesByStage['accounting_post'][$idx + 1] ?? null;
+                                        if (!empty($next['created_at'])) {
+                                            $nextUpdateTs = strtotime((string)$next['created_at']);
+                                        }
+                                    }
+                                    if (!$acctPostReceivedPrinted && $acctPostReceivedTs !== null && $updateTs !== false && $updateTs >= (int)$acctPostReceivedTs) {
+                                        $showReceivedHere = true;
+                                        $acctPostReceivedPrinted = true;
+                                    }
+
+                                    if (!$acctPostForwardPrinted && $acctPostForwardTs !== null && $updateTs !== false) {
+                                        $fwd = (int)$acctPostForwardTs;
+                                        if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
+                                            $showForwardHere = true;
+                                            $acctPostForwardPrinted = true;
+                                        } elseif ($idx === 0 && $updateTs > $fwd) {
+                                            $showForwardHere = true;
+                                            $acctPostForwardPrinted = true;
+                                        } elseif ($isLatest && !$acctPostForwardPrinted) {
+                                            $showForwardHere = true;
+                                            $acctPostForwardPrinted = true;
+                                        }
+                                    }
+
+                                    ?>
+                                    <div class="<?php echo $rowClass; ?>">
+                                        <?php if ($isLatest): ?>
+                                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                                <div>
+                                                    <div class="text-muted">
+                                                        <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                                    </div>
+                                                    <?php if ($u['status'] !== ''): ?>
+                                                        <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($u['remarks'] !== ''): ?>
+                                                        <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="text-end text-muted">
+
+                                                    <?php if ($showReceivedHere && $acctPostReceivedTs !== null): ?>
+                                                        <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPostReceivedTs)); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($showForwardHere && $acctPostForwardTs !== null): ?>
+                                                        <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPostForwardTs)); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                                <div>
+                                                    <div class="text-muted">
+                                                        <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                                    </div>
+                                                    <?php if ($u['status'] !== ''): ?>
+                                                        <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($u['remarks'] !== ''): ?>
+                                                        <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="text-end text-muted">
+                                                    <?php if ($showReceivedHere && $acctPostReceivedTs !== null): ?>
+                                                        <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPostReceivedTs)); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($showForwardHere && $acctPostForwardTs !== null): ?>
+                                                        <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPostForwardTs)); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <?php
+                $acctPostCashierForwardTs = get_handoff_timestamp($handoffHistory, 'accounting_post', 'cashier', 'forwarded_at');
+                $acctPostCashierRecvTs = get_handoff_timestamp($handoffHistory, 'accounting_post', 'cashier', 'received_at');
+                $acctPostCashierOverdue = 0;
+                if ($acctPostCashierForwardTs !== null) {
+                    $endTs = $acctPostCashierRecvTs !== null ? $acctPostCashierRecvTs : time();
+                    $delaySecs = max(0, (int)$endTs - (int)$acctPostCashierForwardTs);
+                    $acctPostCashierOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
+                }
+                ?>
+                <?php if ($acctPostCashierOverdue > 0): ?>
+                    <div class="handoff-between-due">
+                        <div class="small text-danger fw-semibold">
+                            <?php echo htmlspecialchars(format_elapsed_time((int)$acctPostCashierOverdue)); ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Cashier -->
+                <?php $cashierCompleted = (!empty($updatesByStage['cashier']) || get_handoff_timestamp_first($handoffHistory, 'accounting_post', 'cashier', 'received_at') !== null); ?>
+                <div class="timeline-item <?php echo $cashierCompleted ? 'completed' : 'pending'; ?>">
+                    <div class="timeline-marker">
+                        <i class="fas fa-<?php echo $cashierCompleted ? 'check-circle' : 'circle'; ?>"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <?php
+                        // Elapsed from received_at (handoff) to latest Cashier update
+                        $elapsedCashier = '';
+                        $startTs = get_handoff_timestamp($handoffHistory, 'accounting_post', 'cashier', 'received_at');
+                        $endTs = get_last_stage_timestamp($updatesByStage, 'cashier');
+                        if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
+                            $elapsedCashier = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['cashier'] ?? 0));
+                        }
+                        ?>
+                        <h6 class="timeline-title d-flex justify-content-between align-items-center">
+                            <span>Cashier</span>
+                            <span class="small text-muted"><?php echo $elapsedCashier ? htmlspecialchars($elapsedCashier) : ''; ?></span>
+                        </h6>
+                        <?php if (!empty($updatesByStage['cashier'])): ?>
+                            <div class="timeline-history mt-2 p-2 border rounded bg-white">
+                                <div class="small text-muted mb-1">Update history</div>
+                                <?php
+                                $cashierReceivedTs = get_handoff_timestamp_first($handoffHistory, 'accounting_post', 'cashier', 'received_at');
+                                $cashierReceivedPrinted = false;
+                                ?>
+                                <?php $countCashier = count($updatesByStage['cashier']); ?>
+                                <?php foreach ($updatesByStage['cashier'] as $idx => $u): ?>
+                                    <?php
+                                    $isLatest = ($idx === $countCashier - 1);
+
+                                    $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
+
+                                    $showReceivedHere = false;
+                                    $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
+                                    if (!$cashierReceivedPrinted && $cashierReceivedTs !== null && $updateTs !== false && $updateTs >= (int)$cashierReceivedTs) {
+                                        $showReceivedHere = true;
+                                        $cashierReceivedPrinted = true;
+                                    }
+
+                                    ?>
+                                    <div class="<?php echo $rowClass; ?>">
+                                        <?php if ($isLatest): ?>
+                                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                                <div>
+                                                    <div class="text-muted">
+                                                        <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                                    </div>
+                                                    <?php if ($u['status'] !== ''): ?>
+                                                        <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($u['remarks'] !== ''): ?>
+                                                        <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="text-end text-muted">
+
+                                                    <?php if ($showReceivedHere && $cashierReceivedTs !== null): ?>
+                                                        <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$cashierReceivedTs)); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                                <div>
+                                                    <div class="text-muted">
+                                                        <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
+                                                    </div>
+                                                    <?php if ($u['status'] !== ''): ?>
+                                                        <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
+                                                    <?php endif; ?>
+                                                    <?php if ($u['remarks'] !== ''): ?>
+                                                        <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="text-end text-muted">
+                                                    <?php if ($showReceivedHere && $cashierReceivedTs !== null): ?>
+                                                        <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$cashierReceivedTs)); ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
         </div>
-        <?php if ($role === 'cashier'): ?>
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h6 class="mb-2">Proceed to Landbank</h6>
-                    <p class="small text-muted">
-                        All requirements from Procurement, Supply, Accounting, and Budget are complete.
-                    </p>
-                    <a href="<?php echo htmlspecialchars(LANDBANK_URL); ?>" target="_blank"
-                       class="btn btn-success w-100 mb-2">
-                        Proceed to Landbank Site
-                    </a>
-                    <?php $notifyDefaultMsgUi = 'Your PO ' . ($transaction['po_number'] ?? '') . ' is now marked as COMPLETED. Please check the portal for details.'; ?>
-                    <form method="post" class="mt-1">
-                        <input type="hidden" name="notify_supplier" value="1">
-
-                        <div class="mb-2">
-                            <label class="form-label small mb-1">Message</label>
-                            <textarea class="form-control" name="notify_message" id="notifyMessageTextarea" rows="3"><?php echo htmlspecialchars($notifyDefaultMsgUi); ?></textarea>
-                        </div>
-
-                        <div class="mb-2">
-                            <label class="form-label small mb-1">CC</label>
-                            <input type="text" class="form-control" name="notify_cc" placeholder="example1@email.com, example2@email.com">
-                        </div>
-
-                        <button type="submit" class="btn btn-outline-primary w-100">
-                            Notify Supplier
-                        </button>
-                    </form>
-                </div>
-            </div>
-        <?php endif; ?>
     </div>
 
-    <div class="col-lg-5">
-        <div class="card mb-3">
-            <div class="card-body">
-                <h6 class="mb-3">
-                    <i class="fas fa-stream me-2"></i>Flow Timeline
-                </h6>
-                <div class="timeline-scroll" style="max-height: 70vh; overflow-y: auto; padding-right: 8px;">
-                <div class="timeline">
-                    <!-- Procurement -->
-                    <?php $procCompleted = (!empty($transaction['created_at']) || !empty($updatesByStage['procurement'])); ?>
-                    <div class="timeline-item <?php echo $procCompleted ? 'completed' : 'pending'; ?>">
-                        <div class="timeline-marker">
-                            <i class="fas fa-<?php echo $procCompleted ? 'check-circle' : 'circle'; ?>"></i>
-                        </div>
-                        <div class="timeline-content">
-                            <?php
-                            // Elapsed from transaction created_at to forwarded_at (handoff) or latest Procurement update
-                            $elapsedProc = '';
-                            if (!empty($updatesByStage['procurement'])) {
-                                $createdTs = strtotime($transaction['created_at']);
-                                $endTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'forwarded_at');
-                                if ($endTs === null) {
-                                    $endTs = get_last_stage_timestamp($updatesByStage, 'procurement');
-                                }
-                                if ($createdTs !== false && $endTs !== null && $endTs >= $createdTs) {
-                                    $elapsedProc = format_elapsed_time(($endTs - $createdTs) + (int)($handoffExtras['procurement'] ?? 0));
-                                }
-                            }
-                            ?>
-                            <h6 class="timeline-title d-flex justify-content-between align-items-center">
-                                <span>Procurement</span>
-                                <span class="small text-muted"><?php echo $elapsedProc ? htmlspecialchars($elapsedProc) : ''; ?></span>
-                            </h6>
 
-                            <?php if (!empty($updatesByStage['procurement'])): ?>
-                                <div class="timeline-history mt-2 p-2 border rounded bg-white">
-                                    <div class="small text-muted mb-1">Update history</div>
-                                    <?php
-                                    $procForwardTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'forwarded_at');
-                                    $procForwardPrinted = false;
-                                    ?>
-                                    <?php $countProc = count($updatesByStage['procurement']); ?>
-                                    <?php foreach ($updatesByStage['procurement'] as $idx => $u): ?>
-                                        <?php
-                                        $isLatest = ($idx === $countProc - 1);
-                                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
 
-                                        $showForwardHere = false;
-                                        $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
-                                        $nextUpdateTs = false;
-                                        if (($idx + 1) < $countProc) {
-                                            $next = $updatesByStage['procurement'][$idx + 1] ?? null;
-                                            if (!empty($next['created_at'])) {
-                                                $nextUpdateTs = strtotime((string)$next['created_at']);
-                                            }
-                                        }
-                                        if (!$procForwardPrinted && $procForwardTs !== null && $updateTs !== false) {
-                                            $fwd = (int)$procForwardTs;
-                                            if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
-                                                $showForwardHere = true;
-                                                $procForwardPrinted = true;
-                                            } elseif ($idx === 0 && $updateTs > $fwd) {
-                                                $showForwardHere = true;
-                                                $procForwardPrinted = true;
-                                            } elseif ($isLatest && !$procForwardPrinted) {
-                                                $showForwardHere = true;
-                                                $procForwardPrinted = true;
-                                            }
-                                        }
-                                        ?>
-                                        <div class="<?php echo $rowClass; ?>">
-                                            <?php if ($isLatest): ?>
-                                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                                    <div>
-                                                        <div class="text-muted">
-                                                            <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
-                                                        </div>
-                                                        <?php if ($u['status'] !== ''): ?>
-                                                            <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($u['remarks'] !== ''): ?>
-                                                            <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div class="text-end text-muted">
-                                                        <?php if ($showForwardHere && $procForwardTs !== null): ?>
-                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$procForwardTs)); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php else: ?>
-                                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                                    <div>
-                                                        <div class="text-muted">
-                                                            <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
-                                                        </div>
-                                                        <?php if ($u['status'] !== ''): ?>
-                                                            <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($u['remarks'] !== ''): ?>
-                                                            <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div class="text-end text-muted">
-                                                        <?php if ($showForwardHere && $procForwardTs !== null): ?>
-                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$procForwardTs)); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-
-                    <?php
-                    $procSupplyForwardTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'forwarded_at');
-                    $procSupplyRecvTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'received_at');
-                    $procSupplyOverdue = 0;
-                    if ($procSupplyForwardTs !== null) {
-                        $endTs = $procSupplyRecvTs !== null ? $procSupplyRecvTs : time();
-                        $delaySecs = max(0, (int)$endTs - (int)$procSupplyForwardTs);
-                        $procSupplyOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
-                    }
-                    ?>
-                    <?php if ($procSupplyOverdue > 0): ?>
-                        <div class="handoff-between-due">
-                            <div class="small text-danger fw-semibold">
-                                <?php echo htmlspecialchars(format_elapsed_time((int)$procSupplyOverdue)); ?>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
-                    <!-- Supply Unit -->
-                    <?php $supplyCompleted = (!empty($updatesByStage['supply']) || get_handoff_timestamp_first($handoffHistory, 'procurement', 'supply', 'received_at') !== null); ?>
-                    <div class="timeline-item <?php echo $supplyCompleted ? 'completed' : 'pending'; ?>">
-                        <div class="timeline-marker">
-                            <i class="fas fa-<?php echo $supplyCompleted ? 'check-circle' : 'circle'; ?>"></i>
-                        </div>
-                        <div class="timeline-content">
-                            <?php
-                            // Elapsed from received_at (handoff) to forwarded_at (handoff) or latest Supply update
-                            $elapsedSupply = '';
-                            $startTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'received_at');
-                            $endTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting_pre', 'forwarded_at');
-                            if ($endTs === null) {
-                                $endTs = get_last_stage_timestamp($updatesByStage, 'supply');
-                            }
-                            if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
-                                $elapsedSupply = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['supply'] ?? 0));
-                            }
-                            ?>
-                            <h6 class="timeline-title d-flex justify-content-between align-items-center">
-                                <span>Supply Unit</span>
-                                <span class="small text-muted"><?php echo $elapsedSupply ? htmlspecialchars($elapsedSupply) : ''; ?></span>
-                            </h6>
-
-                            <?php if (!empty($updatesByStage['supply'])): ?>
-                                <div class="timeline-history mt-2 p-2 border rounded bg-white">
-                                    <div class="small text-muted mb-1">Update history</div>
-                                    <?php
-                                    $supplyReceivedTs = get_handoff_timestamp_first($handoffHistory, 'procurement', 'supply', 'received_at');
-                                    $supplyReceivedPrinted = false;
-                                    $supplyForwardTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting_pre', 'forwarded_at');
-                                    $supplyForwardPrinted = false;
-                                    ?>
-                                    <?php $countSupply = count($updatesByStage['supply']); ?>
-                                    <?php foreach ($updatesByStage['supply'] as $idx => $u): ?>
-                                        <?php
-                                        $isLatest = ($idx === $countSupply - 1);
-
-                                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
-
-                                        $showReceivedHere = false;
-                                        $showForwardHere = false;
-                                        $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
-                                        $nextUpdateTs = false;
-                                        if (($idx + 1) < $countSupply) {
-                                            $next = $updatesByStage['supply'][$idx + 1] ?? null;
-                                            if (!empty($next['created_at'])) {
-                                                $nextUpdateTs = strtotime((string)$next['created_at']);
-                                            }
-                                        }
-                                        if (!$supplyReceivedPrinted && $supplyReceivedTs !== null && $updateTs !== false && $updateTs >= (int)$supplyReceivedTs) {
-                                            $showReceivedHere = true;
-                                            $supplyReceivedPrinted = true;
-                                        }
-
-                                        if (!$supplyForwardPrinted && $supplyForwardTs !== null && $updateTs !== false) {
-                                            $fwd = (int)$supplyForwardTs;
-                                            if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
-                                                $showForwardHere = true;
-                                                $supplyForwardPrinted = true;
-                                            } elseif ($idx === 0 && $updateTs > $fwd) {
-                                                $showForwardHere = true;
-                                                $supplyForwardPrinted = true;
-                                            } elseif ($isLatest && !$supplyForwardPrinted) {
-                                                $showForwardHere = true;
-                                                $supplyForwardPrinted = true;
-                                            }
-                                        }
-
-                                        ?>
-                                        <div class="<?php echo $rowClass; ?>">
-                                            <?php if ($isLatest): ?>
-                                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                                    <div>
-                                                        <div class="text-muted">
-                                                            <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
-                                                        </div>
-                                                        <?php if ($u['status'] !== ''): ?>
-                                                            <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($u['remarks'] !== ''): ?>
-                                                            <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div class="text-end text-muted">
-
-                                                        <?php if ($showReceivedHere && $supplyReceivedTs !== null): ?>
-                                                            <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$supplyReceivedTs)); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($showForwardHere && $supplyForwardTs !== null): ?>
-                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$supplyForwardTs)); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php else: ?>
-                                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                                    <div>
-                                                        <div class="text-muted">
-                                                            <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
-                                                        </div>
-                                                        <?php if ($u['status'] !== ''): ?>
-                                                            <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($u['remarks'] !== ''): ?>
-                                                            <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div class="text-end text-muted">
-                                                        <?php if ($showReceivedHere && $supplyReceivedTs !== null): ?>
-                                                            <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$supplyReceivedTs)); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($showForwardHere && $supplyForwardTs !== null): ?>
-                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$supplyForwardTs)); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-
-                    <?php
-                    $supplyAcctForwardTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting_pre', 'forwarded_at');
-                    $supplyAcctRecvTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting_pre', 'received_at');
-                    $supplyAcctOverdue = 0;
-                    if ($supplyAcctForwardTs !== null) {
-                        $endTs = $supplyAcctRecvTs !== null ? $supplyAcctRecvTs : time();
-                        $delaySecs = max(0, (int)$endTs - (int)$supplyAcctForwardTs);
-                        $supplyAcctOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
-                    }
-                    ?>
-                    <?php if ($supplyAcctOverdue > 0): ?>
-                        <div class="handoff-between-due">
-                            <div class="small text-danger fw-semibold">
-                                <?php echo htmlspecialchars(format_elapsed_time((int)$supplyAcctOverdue)); ?>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
-                    <!-- Accounting -->
-                    <?php $acctPreCompleted = (!empty($updatesByStage['accounting_pre']) || get_handoff_timestamp_first($handoffHistory, 'supply', 'accounting_pre', 'received_at') !== null); ?>
-                    <div class="timeline-item <?php echo $acctPreCompleted ? 'completed' : 'pending'; ?>">
-                        <div class="timeline-marker">
-                            <i class="fas fa-<?php echo $acctPreCompleted ? 'check-circle' : 'circle'; ?>"></i>
-                        </div>
-                        <div class="timeline-content">
-                            <?php
-                            // Elapsed from received_at (handoff) to forwarded_at (handoff) or latest Accounting (pre-budget) update
-                            $elapsedAcctPre = '';
-                            $startTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting_pre', 'received_at');
-                            $endTs = get_handoff_timestamp($handoffHistory, 'accounting_pre', 'budget', 'forwarded_at');
-                            if ($endTs === null) {
-                                $endTs = get_last_stage_timestamp($updatesByStage, 'accounting_pre');
-                            }
-                            if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
-                                $elapsedAcctPre = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['accounting_pre'] ?? 0));
-                            }
-                            ?>
-                            <h6 class="timeline-title d-flex justify-content-between align-items-center">
-                                <span>Accounting</span>
-                                <span class="small text-muted"><?php echo $elapsedAcctPre ? htmlspecialchars($elapsedAcctPre) : ''; ?></span>
-                            </h6>
-
-                            <?php if (!empty($updatesByStage['accounting_pre'])): ?>
-                                <div class="timeline-history mt-2 p-2 border rounded bg-white">
-                                    <div class="small text-muted mb-1">Update history</div>
-                                    <?php
-                                    $acctPreReceivedTs = get_handoff_timestamp_first($handoffHistory, 'supply', 'accounting_pre', 'received_at');
-                                    $acctPreReceivedPrinted = false;
-                                    $acctPreForwardTs = get_handoff_timestamp($handoffHistory, 'accounting_pre', 'budget', 'forwarded_at');
-                                    $acctPreForwardPrinted = false;
-                                    ?>
-                                    <?php $countAcctPre = count($updatesByStage['accounting_pre']); ?>
-                                    <?php foreach ($updatesByStage['accounting_pre'] as $idx => $u): ?>
-                                        <?php
-                                        $isLatest = ($idx === $countAcctPre - 1);
-
-                                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
-
-                                        $showReceivedHere = false;
-                                        $showForwardHere = false;
-                                        $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
-                                        $nextUpdateTs = false;
-                                        if (($idx + 1) < $countAcctPre) {
-                                            $next = $updatesByStage['accounting_pre'][$idx + 1] ?? null;
-                                            if (!empty($next['created_at'])) {
-                                                $nextUpdateTs = strtotime((string)$next['created_at']);
-                                            }
-                                        }
-                                        if (!$acctPreReceivedPrinted && $acctPreReceivedTs !== null && $updateTs !== false && $updateTs >= (int)$acctPreReceivedTs) {
-                                            $showReceivedHere = true;
-                                            $acctPreReceivedPrinted = true;
-                                        }
-
-                                        if (!$acctPreForwardPrinted && $acctPreForwardTs !== null && $updateTs !== false) {
-                                            $fwd = (int)$acctPreForwardTs;
-                                            if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
-                                                $showForwardHere = true;
-                                                $acctPreForwardPrinted = true;
-                                            } elseif ($idx === 0 && $updateTs > $fwd) {
-                                                $showForwardHere = true;
-                                                $acctPreForwardPrinted = true;
-                                            } elseif ($isLatest && !$acctPreForwardPrinted) {
-                                                $showForwardHere = true;
-                                                $acctPreForwardPrinted = true;
-                                            }
-                                        }
-
-                                        ?>
-                                        <div class="<?php echo $rowClass; ?>">
-                                            <?php if ($isLatest): ?>
-                                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                                    <div>
-                                                        <div class="text-muted">
-                                                            <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
-                                                        </div>
-                                                        <?php if ($u['status'] !== ''): ?>
-                                                            <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($u['remarks'] !== ''): ?>
-                                                            <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div class="text-end text-muted">
-
-                                                        <?php if ($showReceivedHere && $acctPreReceivedTs !== null): ?>
-                                                            <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPreReceivedTs)); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($showForwardHere && $acctPreForwardTs !== null): ?>
-                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPreForwardTs)); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php else: ?>
-                                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                                    <div>
-                                                        <div class="text-muted">
-                                                            <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
-                                                        </div>
-                                                        <?php if ($u['status'] !== ''): ?>
-                                                            <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($u['remarks'] !== ''): ?>
-                                                            <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div class="text-end text-muted">
-                                                        <?php if ($showReceivedHere && $acctPreReceivedTs !== null): ?>
-                                                            <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPreReceivedTs)); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($showForwardHere && $acctPreForwardTs !== null): ?>
-                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPreForwardTs)); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-
-                    <?php
-                    $acctPreBudgetForwardTs = get_handoff_timestamp($handoffHistory, 'accounting_pre', 'budget', 'forwarded_at');
-                    $acctPreBudgetRecvTs = get_handoff_timestamp($handoffHistory, 'accounting_pre', 'budget', 'received_at');
-                    $acctPreBudgetOverdue = 0;
-                    if ($acctPreBudgetForwardTs !== null) {
-                        $endTs = $acctPreBudgetRecvTs !== null ? $acctPreBudgetRecvTs : time();
-                        $delaySecs = max(0, (int)$endTs - (int)$acctPreBudgetForwardTs);
-                        $acctPreBudgetOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
-                    }
-                    ?>
-                    <?php if ($acctPreBudgetOverdue > 0): ?>
-                        <div class="handoff-between-due">
-                            <div class="small text-danger fw-semibold">
-                                <?php echo htmlspecialchars(format_elapsed_time((int)$acctPreBudgetOverdue)); ?>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
-                    <!-- Budget Unit -->
-                    <?php $budgetCompleted = (!empty($updatesByStage['budget']) || get_handoff_timestamp_first($handoffHistory, 'accounting_pre', 'budget', 'received_at') !== null); ?>
-                    <div class="timeline-item <?php echo $budgetCompleted ? 'completed' : 'pending'; ?>">
-                        <div class="timeline-marker">
-                            <i class="fas fa-<?php echo $budgetCompleted ? 'check-circle' : 'circle'; ?>"></i>
-                        </div>
-                        <div class="timeline-content">
-                            <?php
-                            // Elapsed from received_at (handoff) to forwarded_at (handoff) or latest Budget update
-                            $elapsedBudget = '';
-                            $startTs = get_handoff_timestamp($handoffHistory, 'accounting_pre', 'budget', 'received_at');
-                            $endTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting_post', 'forwarded_at');
-                            if ($endTs === null) {
-                                $endTs = get_last_stage_timestamp($updatesByStage, 'budget');
-                            }
-                            if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
-                                $elapsedBudget = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['budget'] ?? 0));
-                            }
-                            ?>
-                            <h6 class="timeline-title d-flex justify-content-between align-items-center">
-                                <span>Budget Unit</span>
-                                <span class="small text-muted"><?php echo $elapsedBudget ? htmlspecialchars($elapsedBudget) : ''; ?></span>
-                            </h6>
-
-                            <?php if (!empty($updatesByStage['budget'])): ?>
-                                <div class="timeline-history mt-2 p-2 border rounded bg-white">
-                                    <div class="small text-muted mb-1">Update history</div>
-                                    <?php
-                                    $budgetReceivedTs = get_handoff_timestamp_first($handoffHistory, 'accounting_pre', 'budget', 'received_at');
-                                    $budgetReceivedPrinted = false;
-                                    $budgetForwardTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting_post', 'forwarded_at');
-                                    $budgetForwardPrinted = false;
-                                    ?>
-                                    <?php $countBudget = count($updatesByStage['budget']); ?>
-                                    <?php foreach ($updatesByStage['budget'] as $idx => $u): ?>
-                                        <?php
-                                        $isLatest = ($idx === $countBudget - 1);
-
-                                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
-
-                                        $showReceivedHere = false;
-                                        $showForwardHere = false;
-                                        $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
-                                        $nextUpdateTs = false;
-                                        if (($idx + 1) < $countBudget) {
-                                            $next = $updatesByStage['budget'][$idx + 1] ?? null;
-                                            if (!empty($next['created_at'])) {
-                                                $nextUpdateTs = strtotime((string)$next['created_at']);
-                                            }
-                                        }
-                                        if (!$budgetReceivedPrinted && $budgetReceivedTs !== null && $updateTs !== false && $updateTs >= (int)$budgetReceivedTs) {
-                                            $showReceivedHere = true;
-                                            $budgetReceivedPrinted = true;
-                                        }
-
-                                        if (!$budgetForwardPrinted && $budgetForwardTs !== null && $updateTs !== false) {
-                                            $fwd = (int)$budgetForwardTs;
-                                            if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
-                                                $showForwardHere = true;
-                                                $budgetForwardPrinted = true;
-                                            } elseif ($idx === 0 && $updateTs > $fwd) {
-                                                $showForwardHere = true;
-                                                $budgetForwardPrinted = true;
-                                            } elseif ($isLatest && !$budgetForwardPrinted) {
-                                                $showForwardHere = true;
-                                                $budgetForwardPrinted = true;
-                                            }
-                                        }
-
-                                        ?>
-                                        <div class="<?php echo $rowClass; ?>">
-                                            <?php if ($isLatest): ?>
-                                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                                    <div>
-                                                        <div class="text-muted">
-                                                            <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
-                                                        </div>
-                                                        <?php if ($u['status'] !== ''): ?>
-                                                            <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($u['remarks'] !== ''): ?>
-                                                            <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div class="text-end text-muted">
-
-                                                        <?php if ($showReceivedHere && $budgetReceivedTs !== null): ?>
-                                                            <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$budgetReceivedTs)); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($showForwardHere && $budgetForwardTs !== null): ?>
-                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$budgetForwardTs)); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php else: ?>
-                                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                                    <div>
-                                                        <div class="text-muted">
-                                                            <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
-                                                        </div>
-                                                        <?php if ($u['status'] !== ''): ?>
-                                                            <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($u['remarks'] !== ''): ?>
-                                                            <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div class="text-end text-muted">
-                                                        <?php if ($showReceivedHere && $budgetReceivedTs !== null): ?>
-                                                            <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$budgetReceivedTs)); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($showForwardHere && $budgetForwardTs !== null): ?>
-                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$budgetForwardTs)); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-
-                    <?php
-                    $budgetAcctPostForwardTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting_post', 'forwarded_at');
-                    $budgetAcctPostRecvTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting_post', 'received_at');
-                    $budgetAcctPostOverdue = 0;
-                    if ($budgetAcctPostForwardTs !== null) {
-                        $endTs = $budgetAcctPostRecvTs !== null ? $budgetAcctPostRecvTs : time();
-                        $delaySecs = max(0, (int)$endTs - (int)$budgetAcctPostForwardTs);
-                        $budgetAcctPostOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
-                    }
-                    ?>
-                    <?php if ($budgetAcctPostOverdue > 0): ?>
-                        <div class="handoff-between-due">
-                            <div class="small text-danger fw-semibold">
-                                <?php echo htmlspecialchars(format_elapsed_time((int)$budgetAcctPostOverdue)); ?>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
-                    <!-- Accounting -->
-                    <?php $acctPostCompleted = (!empty($updatesByStage['accounting_post']) || get_handoff_timestamp_first($handoffHistory, 'budget', 'accounting_post', 'received_at') !== null); ?>
-                    <div class="timeline-item <?php echo $acctPostCompleted ? 'completed' : 'pending'; ?>">
-                        <div class="timeline-marker">
-                            <i class="fas fa-<?php echo $acctPostCompleted ? 'check-circle' : 'circle'; ?>"></i>
-                        </div>
-                        <div class="timeline-content">
-                            <?php
-                            // Elapsed from received_at (handoff) to forwarded_at (handoff) or latest Accounting (post-budget) update
-                            $elapsedAcctPost = '';
-                            $startTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting_post', 'received_at');
-                            $endTs = get_handoff_timestamp($handoffHistory, 'accounting_post', 'cashier', 'forwarded_at');
-                            if ($endTs === null) {
-                                $endTs = get_last_stage_timestamp($updatesByStage, 'accounting_post');
-                            }
-                            if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
-                                $elapsedAcctPost = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['accounting_post'] ?? 0));
-                            }
-                            ?>
-                            <h6 class="timeline-title d-flex justify-content-between align-items-center">
-                                <span>Accounting</span>
-                                <span class="small text-muted"><?php echo $elapsedAcctPost ? htmlspecialchars($elapsedAcctPost) : ''; ?></span>
-                            </h6>
-
-                            <?php if (!empty($updatesByStage['accounting_post'])): ?>
-                                <div class="timeline-history mt-2 p-2 border rounded bg-white">
-                                    <div class="small text-muted mb-1">Update history</div>
-                                    <?php
-                                    $acctPostReceivedTs = get_handoff_timestamp_first($handoffHistory, 'budget', 'accounting_post', 'received_at');
-                                    $acctPostReceivedPrinted = false;
-                                    $acctPostForwardTs = get_handoff_timestamp($handoffHistory, 'accounting_post', 'cashier', 'forwarded_at');
-                                    $acctPostForwardPrinted = false;
-                                    ?>
-                                    <?php $countAcctPost = count($updatesByStage['accounting_post']); ?>
-                                    <?php foreach ($updatesByStage['accounting_post'] as $idx => $u): ?>
-                                        <?php
-                                        $isLatest = ($idx === $countAcctPost - 1);
-
-                                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
-
-                                        $showReceivedHere = false;
-                                        $showForwardHere = false;
-                                        $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
-                                        $nextUpdateTs = false;
-                                        if (($idx + 1) < $countAcctPost) {
-                                            $next = $updatesByStage['accounting_post'][$idx + 1] ?? null;
-                                            if (!empty($next['created_at'])) {
-                                                $nextUpdateTs = strtotime((string)$next['created_at']);
-                                            }
-                                        }
-                                        if (!$acctPostReceivedPrinted && $acctPostReceivedTs !== null && $updateTs !== false && $updateTs >= (int)$acctPostReceivedTs) {
-                                            $showReceivedHere = true;
-                                            $acctPostReceivedPrinted = true;
-                                        }
-
-                                        if (!$acctPostForwardPrinted && $acctPostForwardTs !== null && $updateTs !== false) {
-                                            $fwd = (int)$acctPostForwardTs;
-                                            if ($updateTs <= $fwd && ($nextUpdateTs === false || $nextUpdateTs > $fwd)) {
-                                                $showForwardHere = true;
-                                                $acctPostForwardPrinted = true;
-                                            } elseif ($idx === 0 && $updateTs > $fwd) {
-                                                $showForwardHere = true;
-                                                $acctPostForwardPrinted = true;
-                                            } elseif ($isLatest && !$acctPostForwardPrinted) {
-                                                $showForwardHere = true;
-                                                $acctPostForwardPrinted = true;
-                                            }
-                                        }
-
-                                        ?>
-                                        <div class="<?php echo $rowClass; ?>">
-                                            <?php if ($isLatest): ?>
-                                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                                    <div>
-                                                        <div class="text-muted">
-                                                            <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
-                                                        </div>
-                                                        <?php if ($u['status'] !== ''): ?>
-                                                            <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($u['remarks'] !== ''): ?>
-                                                            <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div class="text-end text-muted">
-
-                                                        <?php if ($showReceivedHere && $acctPostReceivedTs !== null): ?>
-                                                            <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPostReceivedTs)); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($showForwardHere && $acctPostForwardTs !== null): ?>
-                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPostForwardTs)); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php else: ?>
-                                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                                    <div>
-                                                        <div class="text-muted">
-                                                            <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
-                                                        </div>
-                                                        <?php if ($u['status'] !== ''): ?>
-                                                            <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($u['remarks'] !== ''): ?>
-                                                            <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div class="text-end text-muted">
-                                                        <?php if ($showReceivedHere && $acctPostReceivedTs !== null): ?>
-                                                            <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPostReceivedTs)); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($showForwardHere && $acctPostForwardTs !== null): ?>
-                                                            <div>Forwarded: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$acctPostForwardTs)); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-
-                    <?php
-                    $acctPostCashierForwardTs = get_handoff_timestamp($handoffHistory, 'accounting_post', 'cashier', 'forwarded_at');
-                    $acctPostCashierRecvTs = get_handoff_timestamp($handoffHistory, 'accounting_post', 'cashier', 'received_at');
-                    $acctPostCashierOverdue = 0;
-                    if ($acctPostCashierForwardTs !== null) {
-                        $endTs = $acctPostCashierRecvTs !== null ? $acctPostCashierRecvTs : time();
-                        $delaySecs = max(0, (int)$endTs - (int)$acctPostCashierForwardTs);
-                        $acctPostCashierOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
-                    }
-                    ?>
-                    <?php if ($acctPostCashierOverdue > 0): ?>
-                        <div class="handoff-between-due">
-                            <div class="small text-danger fw-semibold">
-                                <?php echo htmlspecialchars(format_elapsed_time((int)$acctPostCashierOverdue)); ?>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
-                    <!-- Cashier -->
-                    <?php $cashierCompleted = (!empty($updatesByStage['cashier']) || get_handoff_timestamp_first($handoffHistory, 'accounting_post', 'cashier', 'received_at') !== null); ?>
-                    <div class="timeline-item <?php echo $cashierCompleted ? 'completed' : 'pending'; ?>">
-                        <div class="timeline-marker">
-                            <i class="fas fa-<?php echo $cashierCompleted ? 'check-circle' : 'circle'; ?>"></i>
-                        </div>
-                        <div class="timeline-content">
-                            <?php
-                            // Elapsed from received_at (handoff) to latest Cashier update
-                            $elapsedCashier = '';
-                            $startTs = get_handoff_timestamp($handoffHistory, 'accounting_post', 'cashier', 'received_at');
-                            $endTs = get_last_stage_timestamp($updatesByStage, 'cashier');
-                            if ($startTs !== null && $endTs !== null && $endTs >= $startTs) {
-                                $elapsedCashier = format_elapsed_time(($endTs - $startTs) + (int)($handoffExtras['cashier'] ?? 0));
-                            }
-                            ?>
-                            <h6 class="timeline-title d-flex justify-content-between align-items-center">
-                                <span>Cashier</span>
-                                <span class="small text-muted"><?php echo $elapsedCashier ? htmlspecialchars($elapsedCashier) : ''; ?></span>
-                            </h6>
-                            <?php if (!empty($updatesByStage['cashier'])): ?>
-                                <div class="timeline-history mt-2 p-2 border rounded bg-white">
-                                    <div class="small text-muted mb-1">Update history</div>
-                                    <?php
-                                    $cashierReceivedTs = get_handoff_timestamp_first($handoffHistory, 'accounting_post', 'cashier', 'received_at');
-                                    $cashierReceivedPrinted = false;
-                                    ?>
-                                    <?php $countCashier = count($updatesByStage['cashier']); ?>
-                                    <?php foreach ($updatesByStage['cashier'] as $idx => $u): ?>
-                                        <?php
-                                        $isLatest = ($idx === $countCashier - 1);
-
-                                        $rowClass = 'timeline-history-item py-1 px-2 small ' . ($isLatest ? 'border border-primary bg-primary bg-opacity-10 rounded' : 'border-top');
-
-                                        $showReceivedHere = false;
-                                        $updateTs = !empty($u['created_at']) ? strtotime((string)$u['created_at']) : false;
-                                        if (!$cashierReceivedPrinted && $cashierReceivedTs !== null && $updateTs !== false && $updateTs >= (int)$cashierReceivedTs) {
-                                            $showReceivedHere = true;
-                                            $cashierReceivedPrinted = true;
-                                        }
-
-                                        ?>
-                                        <div class="<?php echo $rowClass; ?>">
-                                            <?php if ($isLatest): ?>
-                                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                                    <div>
-                                                        <div class="text-muted">
-                                                            <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
-                                                        </div>
-                                                        <?php if ($u['status'] !== ''): ?>
-                                                            <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($u['remarks'] !== ''): ?>
-                                                            <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div class="text-end text-muted">
-
-                                                        <?php if ($showReceivedHere && $cashierReceivedTs !== null): ?>
-                                                            <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$cashierReceivedTs)); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php else: ?>
-                                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                                    <div>
-                                                        <div class="text-muted">
-                                                            <?php echo date('m/d/Y H:i:s', strtotime($u['created_at'])); ?>
-                                                        </div>
-                                                        <?php if ($u['status'] !== ''): ?>
-                                                            <div class="fw-semibold"><?php echo htmlspecialchars($u['status']); ?></div>
-                                                        <?php endif; ?>
-                                                        <?php if ($u['remarks'] !== ''): ?>
-                                                            <div><?php echo nl2br(htmlspecialchars($u['remarks'])); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <div class="text-end text-muted">
-                                                        <?php if ($showReceivedHere && $cashierReceivedTs !== null): ?>
-                                                            <div>Received: <?php echo htmlspecialchars(date('m/d/Y H:i:s', (int)$cashierReceivedTs)); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-                </div>
-
-    </div>
+    
+    
+    
 </div>
 
 <style>
