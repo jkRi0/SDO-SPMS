@@ -618,6 +618,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmtRecv->execute([$handoffOpen['id']]);
 
                 try {
+                    $poNum = $transaction['po_number'] ?? '';
+                    $link = 'transaction_view.php?id=' . (int)$id;
+                    $recvTitle = 'Handoff Received';
+                    $recvMsg = dept_ui_label($roleDept) . ' has received PO ' . $poNum . ' from ' . dept_ui_label($handoffOpen['from_dept']) . '.';
+                    create_dept_notification($db, $handoffOpen['from_dept'], $id, $recvTitle, $recvMsg, $link, $roleDept);
+                } catch (Exception $e) {
+                }
+
+                try {
                     create_log($db, $_SESSION['user_id'] ?? null, 'transaction_handoff_receive', 'transaction', (int)$id, json_encode([
                         'transaction_id' => (int)$id,
                         'po_number' => (string)($transaction['po_number'] ?? ''),
@@ -673,7 +682,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $link = 'transaction_view.php?id=' . (int)$id;
                         $pendingTitle = 'Handoff Forwarded';
                         $pendingMsg = dept_ui_label($fromDept) . ' forwarded PO ' . $poNum . ' to ' . dept_ui_label($selectedToDept) . '. Please receive it.';
-                        create_dept_notification_once($db, $selectedToDept, $id, $pendingTitle, $pendingMsg, $link);
+                        create_dept_notification_once($db, $selectedToDept, $id, $pendingTitle, $pendingMsg, $link, 120, $fromDept);
                     } catch (Exception $e) {
                     }
                 }

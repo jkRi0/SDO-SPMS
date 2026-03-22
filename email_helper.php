@@ -19,7 +19,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 if (!function_exists('send_supplier_email')) {
-    function send_supplier_email($toEmail, $subject, $htmlBody, $ccEmails = null)
+    function send_supplier_email($toEmail, $subject, $htmlBody, $ccEmails = null, $replyToEmail = null, $replyToName = null)
     {
         if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
             return false;
@@ -44,9 +44,16 @@ if (!function_exists('send_supplier_email')) {
 
             // Recipients
             // Note: Gmail SMTP often requires the From address to match the authenticated account (SMTP_USERNAME).
-            // We set From to SMTP_FROM_EMAIL, and also add a Reply-To to ensure your desired address is used.
-            $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
-            $mail->addReplyTo(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
+            // We set From to SMTP_FROM_EMAIL (or SMTP_USERNAME if FROM_EMAIL is empty).
+            $fromEmail = !empty(SMTP_FROM_EMAIL) ? SMTP_FROM_EMAIL : SMTP_USERNAME;
+            $mail->setFrom($fromEmail, SMTP_FROM_NAME);
+            
+            if ($replyToEmail && filter_var($replyToEmail, FILTER_VALIDATE_EMAIL)) {
+                $mail->addReplyTo($replyToEmail, $replyToName ?: SMTP_FROM_NAME);
+            } else {
+                $mail->addReplyTo($fromEmail, SMTP_FROM_NAME);
+            }
+            
             $mail->addAddress($toEmail);
 
             $ccList = [];

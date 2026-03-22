@@ -21,10 +21,68 @@ function dept_notifications_ensure_table(PDO $db)
     }
 }
 
-function create_dept_notification_once(PDO $db, $role, $transaction_id, $title, $message, $link = null, $dedupeWindowSeconds = 120)
+function create_dept_notification_once(PDO $db, $role, $transaction_id, $title, $message, $link = null, $dedupeWindowSeconds = 120, $fromDept = null)
 {
-    // DISABLED - No longer creates new department notifications
-    return true;
+    try {
+        dept_notifications_ensure_table($db);
+        $stmtCheck = $db->prepare('SELECT id FROM department_notifications 
+                                   WHERE role = ? AND transaction_id = ? AND title = ? 
+                                   AND created_at >= (NOW() - INTERVAL ? SECOND)
+                                   LIMIT 1');
+        $stmtCheck->execute([(string)$role, (int)$transaction_id, (string)$title, (int)$dedupeWindowSeconds]);
+        if ($stmtCheck->fetch()) {
+            return true;
+        }
+
+        $stmt = $db->prepare('INSERT INTO department_notifications (role, transaction_id, title, message, link, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
+        $stmt->execute([(string)$role, (int)$transaction_id, (string)$title, (string)$message, (string)$link]);
+
+        // Email Notification for Department
+        $userStmt = $db->prepare('
+            SELECT u.email 
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE r.name = ? 
+              AND u.email IS NOT NULL 
+              AND u.email != "" 
+            LIMIT 1
+        ');
+        $userStmt->execute([(string)$role]);
+        $deptEmail = $userStmt->fetchColumn();
+
+        if ($deptEmail) {
+            $emailSubject = $title;
+            $emailBody = '<p>' . htmlspecialchars($message) . '</p>';
+            if ($link) {
+                $emailBody .= '<p><a href="' . htmlspecialchars(BASE_URL . $link) . '">View details in STMS Portal</a></p>';
+            }
+            
+            $replyToEmail = null;
+            $replyToName = null;
+            if ($fromDept) {
+                $fromUserStmt = $db->prepare('
+                    SELECT u.email 
+                    FROM users u
+                    JOIN roles r ON u.role_id = r.id
+                    WHERE r.name = ? 
+                      AND u.email IS NOT NULL 
+                      AND u.email != "" 
+                    LIMIT 1
+                ');
+                $fromUserStmt->execute([(string)$fromDept]);
+                $replyToEmail = $fromUserStmt->fetchColumn();
+                if ($replyToEmail) {
+                    $replyToName = ucwords($fromDept) . ' Unit';
+                }
+            }
+            
+            send_supplier_email($deptEmail, $emailSubject, $emailBody, null, $replyToEmail, $replyToName);
+        }
+
+        return true;
+    } catch (Exception $e) {
+        return false;
+    }
 }
 
 function dept_notifications_table_exists(PDO $db)
@@ -39,10 +97,59 @@ function dept_notifications_table_exists(PDO $db)
     }
 }
 
-function create_dept_notification(PDO $db, $role, $transaction_id, $title, $message, $link = null)
+function create_dept_notification(PDO $db, $role, $transaction_id, $title, $message, $link = null, $fromDept = null)
 {
-    // DISABLED - No longer creates new department notifications
-    return true;
+    try {
+        dept_notifications_ensure_table($db);
+        $stmt = $db->prepare('INSERT INTO department_notifications (role, transaction_id, title, message, link, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
+        $stmt->execute([(string)$role, (int)$transaction_id, (string)$title, (string)$message, (string)$link]);
+
+        // Email Notification for Department
+        $userStmt = $db->prepare('
+            SELECT u.email 
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE r.name = ? 
+              AND u.email IS NOT NULL 
+              AND u.email != "" 
+            LIMIT 1
+        ');
+        $userStmt->execute([(string)$role]);
+        $deptEmail = $userStmt->fetchColumn();
+
+        if ($deptEmail) {
+            $emailSubject = $title;
+            $emailBody = '<p>' . htmlspecialchars($message) . '</p>';
+            if ($link) {
+                $emailBody .= '<p><a href="' . htmlspecialchars(BASE_URL . $link) . '">View details in STMS Portal</a></p>';
+            }
+
+            $replyToEmail = null;
+            $replyToName = null;
+            if ($fromDept) {
+                $fromUserStmt = $db->prepare('
+                    SELECT u.email 
+                    FROM users u
+                    JOIN roles r ON u.role_id = r.id
+                    WHERE r.name = ? 
+                      AND u.email IS NOT NULL 
+                      AND u.email != "" 
+                    LIMIT 1
+                ');
+                $fromUserStmt->execute([(string)$fromDept]);
+                $replyToEmail = $fromUserStmt->fetchColumn();
+                if ($replyToEmail) {
+                    $replyToName = ucwords($fromDept) . ' Unit';
+                }
+            }
+
+            send_supplier_email($deptEmail, $emailSubject, $emailBody, null, $replyToEmail, $replyToName);
+        }
+
+        return true;
+    } catch (Exception $e) {
+        return false;
+    }
 }
 
 function fetch_dept_notifications(PDO $db, $role, $limit = 10)
