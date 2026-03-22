@@ -1822,24 +1822,6 @@ include __DIR__ . '/header.php';
                     </div>
                 </div>
 
-                <?php
-                $procSupplyForwardTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'forwarded_at');
-                $procSupplyRecvTs = get_handoff_timestamp($handoffHistory, 'procurement', 'supply', 'received_at');
-                $procSupplyOverdue = 0;
-                if ($procSupplyForwardTs !== null) {
-                    $endTs = $procSupplyRecvTs !== null ? $procSupplyRecvTs : time();
-                    $delaySecs = max(0, (int)$endTs - (int)$procSupplyForwardTs);
-                    $procSupplyOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
-                }
-                ?>
-                <?php if ($procSupplyOverdue > 0): ?>
-                    <div class="handoff-between-due">
-                        <div class="small text-danger fw-semibold">
-                            <?php echo htmlspecialchars(format_elapsed_time((int)$procSupplyOverdue)); ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
                 <!-- Supply Unit -->
                 <?php $supplyCompleted = (!empty($updatesByStage['supply']) || get_handoff_timestamp_first($handoffHistory, 'procurement', 'supply', 'received_at') !== null); ?>
                 <div class="timeline-item <?php echo $supplyCompleted ? 'completed' : 'pending'; ?>">
@@ -1976,24 +1958,6 @@ include __DIR__ . '/header.php';
                     </div>
                 </div>
 
-                <?php
-                $supplyAcctForwardTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting', 'forwarded_at');
-                $supplyAcctRecvTs = get_handoff_timestamp($handoffHistory, 'supply', 'accounting', 'received_at');
-                $supplyAcctOverdue = 0;
-                if ($supplyAcctForwardTs !== null) {
-                    $endTs = $supplyAcctRecvTs !== null ? $supplyAcctRecvTs : time();
-                    $delaySecs = max(0, (int)$endTs - (int)$supplyAcctForwardTs);
-                    $supplyAcctOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
-                }
-                ?>
-                <?php if ($supplyAcctOverdue > 0): ?>
-                    <div class="handoff-between-due">
-                        <div class="small text-danger fw-semibold">
-                            <?php echo htmlspecialchars(format_elapsed_time((int)$supplyAcctOverdue)); ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
                 <!-- Accounting -->
                 <?php 
                 $hasAcctRecv = false;
@@ -2119,24 +2083,6 @@ include __DIR__ . '/header.php';
                         <?php endif; ?>
                     </div>
                 </div>
-
-                <?php
-                $acctBudgetForwardTs = get_handoff_timestamp($handoffHistory, 'accounting', 'budget', 'forwarded_at');
-                $acctBudgetRecvTs = get_handoff_timestamp($handoffHistory, 'accounting', 'budget', 'received_at');
-                $acctBudgetOverdue = 0;
-                if ($acctBudgetForwardTs !== null) {
-                    $endTs = $acctBudgetRecvTs !== null ? $acctBudgetRecvTs : time();
-                    $delaySecs = max(0, (int)$endTs - (int)$acctBudgetForwardTs);
-                    $acctBudgetOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
-                }
-                ?>
-                <?php if ($acctBudgetOverdue > 0): ?>
-                    <div class="handoff-between-due">
-                        <div class="small text-danger fw-semibold">
-                            <?php echo htmlspecialchars(format_elapsed_time((int)$acctBudgetOverdue)); ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
 
                 <!-- Budget Unit -->
                 <?php 
@@ -2265,42 +2211,6 @@ include __DIR__ . '/header.php';
                         <?php endif; ?>
                     </div>
                 </div>
-
-                <?php
-                $budgetAcctForwardTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting', 'forwarded_at');
-                $budgetAcctRecvTs = get_handoff_timestamp($handoffHistory, 'budget', 'accounting', 'received_at');
-                $budgetAcctOverdue = 0;
-                if ($budgetAcctForwardTs !== null) {
-                    $endTs = $budgetAcctRecvTs !== null ? $budgetAcctRecvTs : time();
-                    $delaySecs = max(0, (int)$endTs - (int)$budgetAcctForwardTs);
-                    $budgetAcctOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
-                }
-                ?>
-                <?php if ($budgetAcctOverdue > 0): ?>
-                    <div class="handoff-between-due">
-                        <div class="small text-danger fw-semibold">
-                            <?php echo htmlspecialchars(format_elapsed_time((int)$budgetAcctOverdue)); ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
-                <?php
-                $acctCashierForwardTs = get_handoff_timestamp($handoffHistory, 'accounting', 'cashier', 'forwarded_at');
-                $acctCashierRecvTs = get_handoff_timestamp($handoffHistory, 'accounting', 'cashier', 'received_at');
-                $acctCashierOverdue = 0;
-                if ($acctCashierForwardTs !== null) {
-                    $endTs = $acctCashierRecvTs !== null ? $acctCashierRecvTs : time();
-                    $delaySecs = max(0, (int)$endTs - (int)$acctCashierForwardTs);
-                    $acctCashierOverdue = max(0, $delaySecs - (int)$handoffGraceSeconds);
-                }
-                ?>
-                <?php if ($acctCashierOverdue > 0): ?>
-                    <div class="handoff-between-due">
-                        <div class="small text-danger fw-semibold">
-                            <?php echo htmlspecialchars(format_elapsed_time((int)$acctCashierOverdue)); ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
 
                 <!-- Cashier Unit -->
                 <?php 

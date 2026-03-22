@@ -41,8 +41,18 @@ if (in_array($role, ['supply', 'accounting', 'budget', 'cashier'], true)) {
 }
 
 $sql = 'SELECT t.*, s.name AS supplier_name
+        , COALESCE(lh.to_dept, "procurement") AS current_dept
         FROM transactions t
-        JOIN suppliers s ON t.supplier_id = s.id';
+        JOIN suppliers s ON t.supplier_id = s.id
+        LEFT JOIN (
+            SELECT h1.transaction_id, h1.to_dept
+            FROM transaction_handoffs h1
+            JOIN (
+                SELECT transaction_id, MAX(forwarded_at) AS max_forwarded_at
+                FROM transaction_handoffs
+                GROUP BY transaction_id
+            ) hm ON hm.transaction_id = h1.transaction_id AND hm.max_forwarded_at = h1.forwarded_at
+        ) lh ON lh.transaction_id = t.id';
 if ($where) {
     $sql .= ' WHERE ' . implode(' AND ', $where);
 }
@@ -70,141 +80,58 @@ $has = function ($v): bool {
 };
 
 foreach ($transactions as $t) {
+    // Find first non-empty department status
     $status = 'NEW';
     $statusDept = '';
-    $nextDept = '';
-    $globalStage = 'active';
-
-    if ($has($t['cashier_status'])) {
-        $status = $t['cashier_status'];
-        $statusDept = 'Cashier';
-        $nextDept = '';
-    } elseif ($has($t['acct_status'])) {
-        $status = $t['acct_status'];
-        $statusDept = 'Accounting';
-        $nextDept = '';
-    } elseif ($has($t['budget_status'])) {
-        $status = $t['budget_status'];
-        $statusDept = 'Budget';
-        $nextDept = '';
-    } elseif ($has($t['supply_status'])) {
-        $status = $t['supply_status'];
-        $statusDept = 'Supply';
-        $nextDept = '';
-    } elseif ($has($t['proc_status'])) {
-        $status = $t['proc_status'];
-        $statusDept = 'Procurement';
-        $nextDept = '';
-    } elseif (!empty($t['proc_date'])) {
-        $nextDept = '';
-    } else {
-        $nextDept = '';
-    }
-
-    $statusLabel = $statusDept ? ($statusDept . ' - ' . $status) : $status;
-
-    if ($has($t['cashier_status'])) {
-        $globalStage = 'approved';
-    } elseif ($has($t['supply_status']) || $has($t['acct_status']) || $has($t['budget_status'])) {
-        $globalStage = 'pending';
-    } else {
-        $globalStage = 'active';
-    }
-
-    $stageLabel = '';
-    $stageClass = '';
-
-    if ($role === 'procurement') {
-        if ($has($t['cashier_status'])) {
-            $stageLabel = 'Approved';
-            $stageClass = 'bg-success';
-        } elseif ($has($t['supply_status']) || $has($t['acct_status']) || $has($t['budget_status'])) {
-            $stageLabel = 'Pending';
-            $stageClass = 'bg-warning text-dark';
-        } elseif ($has($t['proc_status']) && !$has($t['supply_status'])) {
-            $stageLabel = 'Active';
-            $stageClass = 'bg-primary';
-        }
-    } elseif ($role === 'supply') {
-        if ($has($t['cashier_status'])) {
-            $stageLabel = 'Approved';
-            $stageClass = 'bg-success';
-        } elseif ($has($t['supply_status']) && !$has($t['cashier_status'])) {
-            $stageLabel = 'Pending';
-            $stageClass = 'bg-warning text-dark';
-        } elseif ($has($t['proc_date']) && !$has($t['supply_status'])) {
-            $stageLabel = 'Active';
-            $stageClass = 'bg-primary';
-        }
-    } elseif ($role === 'accounting') {
-        if ($has($t['cashier_status'])) {
-            $stageLabel = 'Approved';
-            $stageClass = 'bg-success';
-        } elseif ($has($t['acct_status']) && !$has($t['cashier_status'])) {
-            $stageLabel = 'Pending';
-            $stageClass = 'bg-warning text-dark';
-        } elseif (($has($t['supply_status']) && !$has($t['acct_status'])) || ($has($t['budget_status']) && !$has($t['cashier_status']))) {
-            $stageLabel = 'Active';
-            $stageClass = 'bg-primary';
-        }
-    } elseif ($role === 'budget') {
-        if ($has($t['cashier_status'])) {
-            $stageLabel = 'Approved';
-            $stageClass = 'bg-success';
-        } elseif ($has($t['budget_status']) && !$has($t['cashier_status'])) {
-            $stageLabel = 'Pending';
-            $stageClass = 'bg-warning text-dark';
-        } elseif ($has($t['acct_status']) && !$has($t['budget_status'])) {
-            $stageLabel = 'Active';
-            $stageClass = 'bg-primary';
-        }
-    } elseif ($role === 'cashier') {
-        $cashierStatusUpper = strtoupper(trim((string)($t['cashier_status'] ?? '')));
-        if ($cashierStatusUpper === 'COMPLETED') {
-            $stageLabel = 'Approved';
-            $stageClass = 'bg-success';
-        } elseif ($has($t['cashier_status'])) {
-            $stageLabel = 'Pending';
-            $stageClass = 'bg-warning text-dark';
-        } elseif ($has($t['acct_status']) && !$has($t['cashier_status'])) {
-            $stageLabel = 'Active';
-            $stageClass = 'bg-primary';
-        }
-    } elseif ($role === 'supplier') {
-        $cashierStatusUpper = strtoupper(trim((string)($t['cashier_status'] ?? '')));
-        if ($cashierStatusUpper === 'COMPLETED') {
-            $stageLabel = 'Approved';
-            $stageClass = 'bg-success';
-        } elseif ($has($t['cashier_status'])) {
-            $stageLabel = 'Pending';
-            $stageClass = 'bg-warning text-dark';
+    
+    $deptOrder = ['cashier', 'accounting', 'budget', 'supply', 'procurement'];
+    $statusFields = [
+        'cashier' => $t['cashier_status'],
+        'accounting' => $t['acct_status'], 
+        'budget' => $t['budget_status'],
+        'supply' => $t['supply_status'],
+        'procurement' => $t['proc_status']
+    ];
+    
+    foreach ($deptOrder as $dept) {
+        if ($has($statusFields[$dept])) {
+            $status = $statusFields[$dept];
+            $statusDept = ucfirst($dept);
+            break;
         }
     }
-
+    
+    // Status badge styling
     $statusUpper = strtoupper(trim((string)$status));
     $statusClass = 'badge-info';
-    if (strpos($statusUpper, 'PAID') !== false || strpos($statusUpper, 'APPROVE') !== false || strpos($statusUpper, 'COMPLETED') !== false) {
+
+    $currentDept = strtolower(trim((string)($t['current_dept'] ?? 'procurement')));
+
+    // Green: completed by cashier (strict)
+    $cashierUpper = strtoupper(trim((string)($t['cashier_status'] ?? '')));
+    if ($cashierUpper === 'COMPLETED') {
         $statusClass = 'badge-success';
-    } elseif (strpos($statusUpper, 'PEND') !== false || strpos($statusUpper, 'WAIT') !== false) {
+    }
+    // Yellow: transaction currently holds on viewer's department
+    elseif ($role !== '' && $currentDept === strtolower($role)) {
         $statusClass = 'badge-warning';
-    } elseif (strpos($statusUpper, 'REJECT') !== false || strpos($statusUpper, 'CANCEL') !== false || strpos($statusUpper, 'DENIED') !== false) {
-        $statusClass = 'badge-danger';
+    }
+    // Blue: viewer is involved but transaction is currently on another dept
+
+    $holderStatus = $statusFields[$currentDept] ?? null;
+    if (!$has($holderStatus)) {
+        $statusLabel = ucwords($currentDept);
+    } else {
+        $statusLabel = $statusDept ? ($statusDept . ' - ' . $status) : $status;
     }
 
-    $filterStage = $stageLabel !== '' ? strtolower($stageLabel) : $globalStage;
-
-    echo '<tr data-next-dept="' . htmlspecialchars($nextDept) . '" data-status-dept="' . htmlspecialchars(strtolower($statusDept)) . '" data-stage="' . htmlspecialchars($filterStage) . '">';
+    echo '<tr data-status-dept="' . htmlspecialchars(strtolower($statusDept)) . '">';
     echo '<td>' . htmlspecialchars($t['po_number']) . '</td>';
     echo '<td>' . htmlspecialchars($t['supplier_name']) . '</td>';
     echo '<td>' . htmlspecialchars($t['program_title']) . '</td>';
     echo '<td>₱ ' . number_format((float)$t['amount'], 2) . '</td>';
     echo '<td>';
-    echo '<div class="d-flex justify-content-between align-items-center gap-2">';
     echo '<span class="badge ' . htmlspecialchars($statusClass) . '">' . htmlspecialchars($statusLabel) . '</span>';
-    if ($stageLabel !== '') {
-        echo '<span class="badge ' . htmlspecialchars($stageClass) . '">' . htmlspecialchars($stageLabel) . '</span>';
-    }
-    echo '</div>';
     echo '</td>';
     echo '<td>' . htmlspecialchars($t['created_at']) . '</td>';
     echo '<td class="text-end">';

@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $po_number,
                 $program_title,
                 $amount,
-                $proc_status ?: 'FOR SUPPLY REVIEW',
+                $proc_status ?: null,
                 $proc_remarks
             ]);
 
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'supplier_id' => (int)$supplier_id,
                     'program_title' => (string)$program_title,
                     'amount' => (string)$amount,
-                    'proc_status' => (string)($proc_status ?: 'FOR SUPPLY REVIEW'),
+                    'proc_status' => $proc_status ?: null,
                 ]));
             } catch (Exception $e) {
             }

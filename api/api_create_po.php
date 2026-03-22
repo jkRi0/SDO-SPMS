@@ -120,7 +120,7 @@ try {
         $coverage_end,
         $expected_date,
         $amount,
-        'FOR SUPPLY REVIEW'
+        null
     ]);
 
     $db->commit();
