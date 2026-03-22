@@ -111,6 +111,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } else {
         $username = trim($_POST['username'] ?? '');
+        $current = $_POST['current_password'] ?? '';
+        $new = $_POST['new_password'] ?? '';
+        $confirm = $_POST['confirm_password'] ?? '';
         $oldUsername = $user['username'] ?? '';
 
         if ($username === '' || $current === '') {

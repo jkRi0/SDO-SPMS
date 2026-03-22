@@ -11,7 +11,7 @@ $role = $_SESSION['role'] ?? '';
 $db = get_db();
 
 // Determine display name for welcome message
-$welcomeName = ucfirst($role);
+$welcomeName = $user['username'] ?? ucfirst($role);
 if ($role === 'supplier' && !empty($user['supplier_id'])) {
     try {
         $stmtName = $db->prepare('SELECT name FROM suppliers WHERE id = ? LIMIT 1');
@@ -21,7 +21,7 @@ if ($role === 'supplier' && !empty($user['supplier_id'])) {
             $welcomeName = $rowName['name'];
         }
     } catch (Exception $e) {
-        // Fallback to role-based name if lookup fails
+        // Fallback to username if lookup fails
     }
 }
 

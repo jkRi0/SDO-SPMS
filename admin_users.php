@@ -42,8 +42,13 @@ include __DIR__ . '/header.php';
 </div>
 
 <?php if (!empty($_SESSION['flash'])): ?>
-    <div class="alert alert-success py-2"><?php echo htmlspecialchars($_SESSION['flash']); ?></div>
-    <?php unset($_SESSION['flash']); ?>
+    <?php 
+    $flashMessage = $_SESSION['flash'];
+    $alertType = $_SESSION['flash_type'] ?? 'success';
+    unset($_SESSION['flash']);
+    unset($_SESSION['flash_type']);
+    ?>
+    <div class="alert alert-<?php echo $alertType; ?> py-2"><?php echo htmlspecialchars($flashMessage); ?></div>
 <?php endif; ?>
 
 <div class="card admin-card mt-3">
@@ -120,8 +125,13 @@ include __DIR__ . '/header.php';
                                         <input type="text" name="username" class="form-control" value="<?php echo htmlspecialchars($u['username']); ?>" required>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">Password (leave blank to keep)</label>
-                                        <input type="password" name="password" class="form-control">
+                                        <label class="form-label">Password Management</label>
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-warning" onclick="showPasswordResetModal(<?php echo $u['id']; ?>, '<?php echo htmlspecialchars($u['username']); ?>')">
+                                                <i class="fas fa-key"></i> Reset Password
+                                            </button>
+                                            <small class="text-muted mt-2">Resets password to: 12345</small>
+                                        </div>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Role</label>
@@ -191,10 +201,52 @@ include __DIR__ . '/header.php';
     </div>
 </div>
 
+<!-- Password Reset Confirmation Modal -->
+<div class="modal fade" id="passwordResetModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Password Reset</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="passwordResetForm" method="post" action="admin_user_action.php">
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="reset_password">
+                    <input type="hidden" id="resetUserId" name="id">
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Warning:</strong> You are about to reset the password for <strong id="resetUsername"></strong>.
+                        <br>The password will be set to: <code>12345</code>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="adminPassword" class="form-label">Enter your admin password to confirm:</label>
+                        <input type="password" class="form-control" id="adminPassword" name="admin_password" required>
+                        <div class="form-text">This is required for security purposes.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-key"></i> Reset Password
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <script>
+function showPasswordResetModal(userId, username) {
+    document.getElementById('resetUserId').value = userId;
+    document.getElementById('resetUsername').textContent = username;
+    document.getElementById('adminPassword').value = '';
+    
+    var modal = new bootstrap.Modal(document.getElementById('passwordResetModal'));
+    modal.show();
+}
+
 // Auto-refresh only the users table body every 3 seconds
 document.addEventListener('DOMContentLoaded', function () {
     var tbody = document.getElementById('adminUsersBody');
