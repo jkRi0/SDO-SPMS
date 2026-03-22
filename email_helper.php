@@ -43,7 +43,10 @@ if (!function_exists('send_supplier_email')) {
             $mail->Port       = SMTP_PORT;
 
             // Recipients
+            // Note: Gmail SMTP often requires the From address to match the authenticated account (SMTP_USERNAME).
+            // We set From to SMTP_FROM_EMAIL, and also add a Reply-To to ensure your desired address is used.
             $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
+            $mail->addReplyTo(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
             $mail->addAddress($toEmail);
 
             $ccList = [];
@@ -76,8 +79,7 @@ if (!function_exists('send_supplier_email')) {
             $mail->send();
             return true;
         } catch (Exception $e) {
-            // Optionally log error
-            // error_log('Mail error: ' . $e->getMessage());
+            error_log('PHPMailer Error: ' . $e->getMessage());
             return false;
         }
     }

@@ -99,65 +99,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errors[] = 'Error deleting session.';
             }
         }
-    } else {
-    $current = $_POST['current_password'] ?? '';
-    $new = $_POST['new_password'] ?? '';
-    $confirm = $_POST['confirm_password'] ?? '';
-    $username = trim($_POST['username'] ?? '');
-    $oldUsername = $user['username'] ?? '';
-
-    if ($username === '' || $current === '') {
-        $errors[] = 'Please fill in all required fields.';
-    } else {
-        $new = (string)$new;
-        $confirm = (string)$confirm;
-
-        if (($new !== '' || $confirm !== '') && $new !== $confirm) {
-            $errors[] = 'New password and confirmation do not match.';
-        }
-    }
-
-    if (!$errors) {
+    } elseif ($action === 'set_email') {
+        $email = trim($_POST['email'] ?? '');
         try {
-            $stmt = $db->prepare('SELECT password_hash FROM users WHERE id = ?');
-            $stmt->execute([$user['id']]);
-            $row = $stmt->fetch();
-
-            if (!$row || !password_verify($current, $row['password_hash'])) {
-                $errors[] = 'Current password is incorrect.';
-            } else {
-                $check = $db->prepare('SELECT id FROM users WHERE username = ? AND id != ?');
-                $check->execute([$username, $user['id']]);
-                if ($check->fetch()) {
-                    $errors[] = 'Username is already taken.';
-                } else {
-                    if ($new !== '') {
-                        $newHash = password_hash($new, PASSWORD_DEFAULT);
-                        $update = $db->prepare('UPDATE users SET username = ?, password_hash = ? WHERE id = ?');
-                        $update->execute([$username, $newHash, $user['id']]);
-                    } else {
-                        $update = $db->prepare('UPDATE users SET username = ? WHERE id = ?');
-                        $update->execute([$username, $user['id']]);
-                    }
-
-                    $pwChanged = ($new !== '');
-                    if ($oldUsername !== $username || $pwChanged) {
-                        $details = json_encode([
-                            'old_username' => $oldUsername,
-                            'new_username' => $username,
-                            'password_changed' => $pwChanged,
-                        ]);
-                        create_log($db, $user['id'], 'update_account', 'user', $user['id'], $details);
-                    }
-
-                    $_SESSION['username'] = $username;
-                    $success = 'Your account details have been updated successfully.';
-                }
-            }
+            $stmt = $db->prepare('UPDATE users SET email = ? WHERE id = ?');
+            $stmt->execute([$email, $user['id']]);
+            $success = 'Email updated successfully.';
+            $user['email'] = $email; // Update local variable for UI
         } catch (Exception $e) {
-            $errors[] = 'Error updating account: ' . $e->getMessage();
+            $errors[] = 'Error updating email: ' . $e->getMessage();
         }
-    }
+    } else {
+        $username = trim($_POST['username'] ?? '');
+        $oldUsername = $user['username'] ?? '';
+
+        if ($username === '' || $current === '') {
+            $errors[] = 'Please fill in all required fields.';
+        } else {
+            $new = (string)$new;
+            $confirm = (string)$confirm;
+
+            if (($new !== '' || $confirm !== '') && $new !== $confirm) {
+                $errors[] = 'New password and confirmation do not match.';
+            }
+        }
+
+        if (!$errors) {
+            try {
+                $stmt = $db->prepare('SELECT password_hash FROM users WHERE id = ?');
+                $stmt->execute([$user['id']]);
+                $row = $stmt->fetch();
+
+                if (!$row || !password_verify($current, $row['password_hash'])) {
+                    $errors[] = 'Current password is incorrect.';
+                } else {
+                    $check = $db->prepare('SELECT id FROM users WHERE username = ? AND id != ?');
+                    $check->execute([$username, $user['id']]);
+                    if ($check->fetch()) {
+                        $errors[] = 'Username is already taken.';
+                    } else {
+                        if ($new !== '') {
+                            $newHash = password_hash($new, PASSWORD_DEFAULT);
+                            $update = $db->prepare('UPDATE users SET username = ?, password_hash = ? WHERE id = ?');
+                            $update->execute([$username, $newHash, $user['id']]);
+                        } else {
+                            $update = $db->prepare('UPDATE users SET username = ? WHERE id = ?');
+                            $update->execute([$username, $user['id']]);
+                        }
+
+                        $pwChanged = ($new !== '');
+                        if ($oldUsername !== $username || $pwChanged) {
+                            $details = json_encode([
+                                'old_username' => $oldUsername,
+                                'new_username' => $username,
+                                'password_changed' => $pwChanged,
+                            ]);
+                            create_log($db, $user['id'], 'update_account', 'user', $user['id'], $details);
+                        }
+
+                        $_SESSION['username'] = $username;
+                        $success = 'Your account details have been updated successfully.';
+                    }
+                }
+            } catch (Exception $e) {
+                $errors[] = 'Error updating account: ' . $e->getMessage();
+            }
+        }
     }
 }
 
@@ -213,6 +220,18 @@ include __DIR__ . '/header.php';
             </ul>
         </div>
     <?php endif; ?>
+
+    <div class="mb-3">
+        <form method="post">
+            <input type="hidden" name="action" value="set_email">
+            <label for="email" class="form-label">Email Address</label>
+            <div class="input-group">
+                <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>" placeholder="department@email.com">
+                <button type="submit" class="btn btn-primary">Link Email</button>
+            </div>
+            <div class="form-text small">This email will be used for department-level notifications.</div>
+        </form>
+    </div>
 
     <form method="post" autocomplete="off">
         <div class="mb-3">

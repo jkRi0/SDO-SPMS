@@ -37,6 +37,47 @@ if ($role === 'supplier' && $supplierId && $transaction['supplier_id'] != $suppl
     exit;
 }
 
+$settings = [];
+try {
+    $db->exec('CREATE TABLE IF NOT EXISTS app_settings (
+        setting_key VARCHAR(128) NOT NULL,
+        setting_value TEXT NOT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (setting_key)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
+
+    // Check for email column in users table
+    $stmtColUser = $db->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
+    $stmtColUser->execute(['users', 'email']);
+    $hasEmail = (int)$stmtColUser->fetchColumn() > 0;
+    if (!$hasEmail) {
+        $db->exec('ALTER TABLE users ADD COLUMN email VARCHAR(255) NULL AFTER username');
+    }
+
+    $stmtAll = $db->query('SELECT setting_key, setting_value FROM app_settings');
+    while ($row = $stmtAll->fetch(PDO::FETCH_ASSOC)) {
+        $settings[$row['setting_key']] = $row['setting_value'];
+    }
+} catch (Exception $e) {
+}
+
+$handoffGraceSeconds = 60;
+if (isset($settings['handoff_grace_seconds'])) {
+    $handoffGraceSeconds = max(0, (int)$settings['handoff_grace_seconds']);
+}
+
+$lastNotifyTitle = $settings['last_notify_title'] ?? 'Payment status update';
+$lastNotifyMessage = $settings['last_notify_message'] ?? '';
+
+// Retrieve current user's email for CC pre-fill
+$currentUserEmail = '';
+try {
+    $stmtUser = $db->prepare('SELECT email FROM users WHERE id = ? LIMIT 1');
+    $stmtUser->execute([$_SESSION['user_id']]);
+    $currentUserEmail = $stmtUser->fetchColumn() ?: '';
+} catch (Exception $e) {
+}
+
 $updatesByStage = [
     'procurement' => [],
     'supply' => [],
@@ -45,7 +86,6 @@ $updatesByStage = [
     'cashier' => [],
 ];
 
-$handoffGraceSeconds = 60;
 $handoffOpen = null;
 $handoffHistory = [];
 $handoffExtras = [
@@ -57,55 +97,6 @@ $handoffExtras = [
 ];
 
 try {
-    $db->exec('CREATE TABLE IF NOT EXISTS app_settings (
-        setting_key VARCHAR(128) NOT NULL,
-        setting_value VARCHAR(255) NOT NULL,
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        PRIMARY KEY (setting_key)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
-
-    $stmtGrace = $db->prepare('SELECT setting_value FROM app_settings WHERE setting_key = ?');
-    $stmtGrace->execute(['handoff_grace_seconds']);
-    $graceVal = $stmtGrace->fetchColumn();
-    if ($graceVal !== false && $graceVal !== null && $graceVal !== '') {
-        $handoffGraceSeconds = max(0, (int)$graceVal);
-    }
-} catch (Exception $e) {
-}
-
-try {
-    $stmtCol = $db->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
-    $stmtCol->execute(['transactions', 'supply_partial_delivery_date']);
-    $hasPartialDate = (int)$stmtCol->fetchColumn() > 0;
-    if (!$hasPartialDate) {
-        $db->exec('ALTER TABLE transactions ADD COLUMN supply_partial_delivery_date DATE NULL DEFAULT NULL');
-    }
-
-    $stmtCol->execute(['transactions', 'supply_delivery_date']);
-    $hasDeliveryDate = (int)$stmtCol->fetchColumn() > 0;
-    if (!$hasDeliveryDate) {
-        $db->exec('ALTER TABLE transactions ADD COLUMN supply_delivery_date DATE NULL DEFAULT NULL');
-    }
-} catch (Exception $e) {
-}
-
-try {
-    $db->exec('CREATE TABLE IF NOT EXISTS transaction_handoffs (
-        id INT(11) NOT NULL AUTO_INCREMENT,
-        transaction_id INT(11) NOT NULL,
-        from_dept VARCHAR(32) NOT NULL,
-        to_dept VARCHAR(32) NOT NULL,
-        forwarded_at DATETIME NOT NULL,
-        received_at DATETIME NULL DEFAULT NULL,
-        delay_seconds INT(11) NULL DEFAULT NULL,
-        exceeded_grace TINYINT(1) NOT NULL DEFAULT 0,
-        created_by_user_id INT(11) DEFAULT NULL,
-        received_by_user_id INT(11) DEFAULT NULL,
-        PRIMARY KEY (id),
-        KEY idx_tx_open (transaction_id, received_at),
-        KEY idx_tx_time (transaction_id, forwarded_at)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
-
     $stmtOpen = $db->prepare('SELECT *,
                                      UNIX_TIMESTAMP(forwarded_at) AS forwarded_ts,
                                      UNIX_TIMESTAMP(NOW()) AS server_now_ts
@@ -509,7 +500,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($role === 'cashier' && isset($_POST['notify_supplier']) && $_POST['notify_supplier'] === '1' && !isset($_POST['save_updates'])) {
         try {
             $notifyStmt = $db->prepare('INSERT INTO notifications (supplier_id, transaction_id, title, message, link, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
-            $title = 'Payment status update';
+            $defaultTitle = 'Payment status update';
+            $title = trim((string)($_POST['notify_title'] ?? ''));
+            if ($title === '') {
+                $title = $defaultTitle;
+            }
             $defaultMessage = 'Your PO ' . ($transaction['po_number'] ?? '') . ' is now marked as COMPLETED. Please check the portal for details.';
             $message = trim((string)($_POST['notify_message'] ?? ''));
             $ccRaw = trim((string)($_POST['notify_cc'] ?? ''));
@@ -545,6 +540,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $link,
             ]);
 
+            // Persist the last used title and message in app_settings
+            $stmtSetTitle = $db->prepare('INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?) 
+                                         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
+            $stmtSetTitle->execute(['last_notify_title', $title]);
+            
+            $stmtSetMsg = $db->prepare('INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?) 
+                                        ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
+            $stmtSetMsg->execute(['last_notify_message', $message]);
+
             // Also email supplier if an email address is available (e.g. Google OAuth suppliers)
             $emailStmt = $db->prepare('SELECT email FROM suppliers WHERE id = ? LIMIT 1');
             $emailStmt->execute([$transaction['supplier_id']]);
@@ -555,7 +559,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $emailSubject = $title;
                 $emailBody = '<p>' . htmlspecialchars($message) . '</p>' .
                     '<p><a href="' . htmlspecialchars(BASE_URL . $link) . '">View details in the STMS portal</a></p>';
+                
                 $ccParam = !empty($ccEmails) ? $ccEmails : null;
+                
                 send_supplier_email($toEmail, $emailSubject, $emailBody, $ccParam);
             }
         } catch (Exception $e) {
@@ -1672,11 +1678,21 @@ include __DIR__ . '/header.php';
                         class="btn btn-success w-100 mb-2">
                         Proceed to Landbank Site
                     </a>
-                    <?php $notifyDefaultMsgUi = 'Your PO ' . ($transaction['po_number'] ?? '') . ' is now marked as COMPLETED. Please check the portal for details.'; ?>
+                    <?php 
+                    $notifyDefaultMsgUi = $lastNotifyMessage;
+                    if (empty($notifyDefaultMsgUi)) {
+                        $notifyDefaultMsgUi = 'Your PO ' . ($transaction['po_number'] ?? '') . ' is now marked as COMPLETED. Please check the portal for details.';
+                    }
+                    ?>
                     
                     <br><br>
                     <form method="post" class="mt-1">
                         <input type="hidden" name="notify_supplier" value="1">
+
+                        <div class="mb-2">
+                            <label class="form-label small mb-1">Title</label>
+                            <input type="text" class="form-control" name="notify_title" value="<?php echo htmlspecialchars($lastNotifyTitle); ?>">
+                        </div>
 
                         <div class="mb-2">
                             <label class="form-label small mb-1">Message</label>
@@ -1685,7 +1701,7 @@ include __DIR__ . '/header.php';
 
                         <div class="mb-2">
                             <label class="form-label small mb-1">CC</label>
-                            <input type="text" class="form-control" name="notify_cc" placeholder="example1@email.com, example2@email.com">
+                            <input type="text" class="form-control" name="notify_cc" value="<?php echo htmlspecialchars($currentUserEmail); ?>" placeholder="example1@email.com, example2@email.com">
                         </div>
 
                         <button type="submit" class="btn btn-outline-primary w-100">
