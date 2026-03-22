@@ -79,6 +79,13 @@ $has = function ($v): bool {
     return trim((string)($v ?? '')) !== '';
 };
 
+// Count transactions for dashboard tiles
+$active = 0;
+$pending = 0;
+$approved = 0;
+
+
+
 foreach ($transactions as $t) {
     // Find first non-empty department status
     $status = 'NEW';
@@ -111,12 +118,17 @@ foreach ($transactions as $t) {
     $cashierUpper = strtoupper(trim((string)($t['cashier_status'] ?? '')));
     if ($cashierUpper === 'COMPLETED') {
         $statusClass = 'badge-success';
+        $approved++;
     }
     // Yellow: transaction currently holds on viewer's department
     elseif ($role !== '' && $currentDept === strtolower($role)) {
         $statusClass = 'badge-warning';
+        $pending++;
     }
     // Blue: viewer is involved but transaction is currently on another dept
+    else {
+        $active++;
+    }
 
     $holderStatus = $statusFields[$currentDept] ?? null;
     if (!$has($holderStatus)) {
@@ -125,7 +137,15 @@ foreach ($transactions as $t) {
         $statusLabel = $statusDept ? ($statusDept . ' - ' . $status) : $status;
     }
 
-    echo '<tr data-status-dept="' . htmlspecialchars(strtolower($statusDept)) . '">';
+    // Determine stage for filtering
+    $stageForFilter = 'active';
+    if ($cashierUpper === 'COMPLETED') {
+        $stageForFilter = 'approved';
+    } elseif ($role !== '' && $currentDept === strtolower($role)) {
+        $stageForFilter = 'pending';
+    }
+
+    echo '<tr data-status-dept="' . htmlspecialchars($currentDept) . '" data-stage="' . htmlspecialchars($stageForFilter) . '">';
     echo '<td>' . htmlspecialchars($t['po_number']) . '</td>';
     echo '<td>' . htmlspecialchars($t['supplier_name']) . '</td>';
     echo '<td>' . htmlspecialchars($t['program_title']) . '</td>';
@@ -142,3 +162,11 @@ foreach ($transactions as $t) {
     echo '</td>';
     echo '</tr>';
 }
+
+
+// Make counts available globally
+$GLOBALS['transaction_counts'] = [
+    'active' => $active,
+    'pending' => $pending,
+    'approved' => $approved
+];

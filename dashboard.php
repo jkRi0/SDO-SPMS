@@ -53,6 +53,19 @@ include __DIR__ . '/header.php';
     <?php endif; ?>
 </div>
 
+
+<?php
+// Get counts from transactions_rows_renderer.php
+ob_start();
+include __DIR__ . '/partials/transactions_rows_renderer.php';
+ob_end_clean();
+
+$counts = $GLOBALS['transaction_counts'] ?? ['active' => 0, 'pending' => 0, 'approved' => 0];
+$activePOs = $counts['active'];
+$pendingReview = $counts['pending'];
+$approved = $counts['approved'];
+?>
+
 <?php if ($role === 'admin'): ?>
     <?php
     $recentLoginLogs = [];
@@ -250,11 +263,7 @@ include __DIR__ . '/header.php';
     </div>
 
 <?php elseif ($role === 'procurement'): ?>
-    <?php
-    $activePOs = 0;
-    $pendingReview = 0;
-    $approved = 0;
-    ?>
+    
     <div class="stats-grid">
         <div class="stat-card blue">
             <div class="stat-content">
@@ -288,11 +297,6 @@ include __DIR__ . '/header.php';
     </div>
 
 <?php elseif ($role === 'supply'): ?>
-    <?php
-    $activePOs = 0;
-    $pendingReview = 0;
-    $approved = 0;
-    ?>
     <div class="stats-grid">
         <div class="stat-card blue">
             <div class="stat-content">
@@ -322,11 +326,6 @@ include __DIR__ . '/header.php';
     </div>
 
 <?php elseif ($role === 'accounting'): ?>
-    <?php
-    $activePOs = 0;
-    $pendingReview = 0;
-    $approved = 0;
-    ?>
     <div class="stats-grid">
         <div class="stat-card blue">
             <div class="stat-content">
@@ -356,11 +355,6 @@ include __DIR__ . '/header.php';
     </div>
 
 <?php elseif ($role === 'budget'): ?>
-    <?php
-    $activePOs = 0;
-    $pendingReview = 0;
-    $approved = 0;
-    ?>
     <div class="stats-grid">
         <div class="stat-card blue">
             <div class="stat-content">
@@ -390,11 +384,6 @@ include __DIR__ . '/header.php';
     </div>
 
 <?php elseif ($role === 'cashier'): ?>
-    <?php
-    $activePOs = 0;
-    $pendingReview = 0;
-    $approved = 0;
-    ?>
     <div class="stats-grid">
         <div class="stat-card blue">
             <div class="stat-content">
