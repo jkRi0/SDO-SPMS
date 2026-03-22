@@ -53,61 +53,7 @@ include __DIR__ . '/header.php';
     <?php endif; ?>
 </div>
 
-<?php if ($role === 'procurement'): ?>
-    <?php
-    $activePOs = 0;
-    $pendingReview = 0;
-    $approved = 0;
-    $stmtStats = $db->query('SELECT proc_status, proc_date, supply_status, acct_status, budget_status, cashier_status FROM transactions');
-    $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
-    foreach ($rowsStats as $t) {
-        $stage = '';
-        if (!empty($t['cashier_status'])) {
-            $stage = 'Approved';
-        } elseif (!empty($t['supply_status']) || !empty($t['acct_status']) || !empty($t['budget_status'])) {
-            $stage = 'Pending';
-        } elseif (!empty($t['proc_status']) && empty($t['supply_status'])) {
-            $stage = 'Active';
-        }
-
-        if ($stage === 'Active') $activePOs++;
-        if ($stage === 'Pending') $pendingReview++;
-        if ($stage === 'Approved') $approved++;
-    }
-    ?>
-    <div class="stats-grid">
-        <div class="stat-card blue">
-            <div class="stat-content">
-                <div class="stat-label">Active PO's</div>
-                <div class="stat-number" id="statActive"><?php echo $activePOs; ?></div>
-            </div>
-            <div class="stat-card-icon"><i class="fas fa-file-invoice"></i></div>
-        </div>
-        <div class="stat-card orange">
-            <div class="stat-content">
-                <div class="stat-label">Pending Review</div>
-                <div class="stat-number" id="statPending"><?php echo $pendingReview; ?></div>
-            </div>
-            <div class="stat-card-icon"><i class="fas fa-hourglass-half"></i></div>
-        </div>
-        <div class="stat-card green">
-            <div class="stat-content">
-                <div class="stat-label">Approved</div>
-                <div class="stat-number" id="statApproved"><?php echo $approved; ?></div>
-            </div>
-            <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
-        </div>
-    </div>
-
-    <div class="section-header mt-4">
-        <h5 class="section-title">Procurement - Transactions</h5>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPOModal"><i class="fas fa-plus"></i> New Transaction</button>
-    </div>
-    <div id="transactionsContainer">
-        <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
-    </div>
-
-<?php elseif ($role === 'admin'): ?>
+<?php if ($role === 'admin'): ?>
     <?php
     $recentLoginLogs = [];
     try {
@@ -297,30 +243,55 @@ include __DIR__ . '/header.php';
         <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
     </div>
 
+<?php elseif ($role === 'supplier'): ?>
+    <h8 class="mb-3">My Transactions</h8>
+    <div id="transactionsContainer">
+        <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
+    </div>
+
+<?php elseif ($role === 'procurement'): ?>
+    <?php
+    $activePOs = 0;
+    $pendingReview = 0;
+    $approved = 0;
+    ?>
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <div class="stat-content">
+                <div class="stat-label">Active PO's</div>
+                <div class="stat-number" id="statActive"><?php echo $activePOs; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-file-invoice"></i></div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-content">
+                <div class="stat-label">Pending Review</div>
+                <div class="stat-number" id="statPending"><?php echo $pendingReview; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-hourglass-half"></i></div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-content">
+                <div class="stat-label">Approved</div>
+                <div class="stat-number" id="statApproved"><?php echo $approved; ?></div>
+            </div>
+            <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
+        </div>
+    </div>
+
+    <div class="section-header mt-4">
+        <h5 class="section-title">Procurement - Transactions</h5>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPOModal"><i class="fas fa-plus"></i> New Transaction</button>
+    </div>
+    <div id="transactionsContainer">
+        <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
+    </div>
+
 <?php elseif ($role === 'supply'): ?>
     <?php
     $activePOs = 0;
     $pendingReview = 0;
     $approved = 0;
-    $has = function ($v): bool {
-        return trim((string)($v ?? '')) !== '';
-    };
-    $stmtStats = $db->query('SELECT proc_date, supply_status, cashier_status FROM transactions WHERE proc_date IS NOT NULL');
-    $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
-    foreach ($rowsStats as $t) {
-        $stage = '';
-        if ($has($t['cashier_status'])) {
-            $stage = 'Approved';
-        } elseif ($has($t['supply_status']) && !$has($t['cashier_status'])) {
-            $stage = 'Pending';
-        } elseif (!empty($t['proc_date']) && !$has($t['supply_status'])) {
-            $stage = 'Active';
-        }
-
-        if ($stage === 'Active') $activePOs++;
-        if ($stage === 'Pending') $pendingReview++;
-        if ($stage === 'Approved') $approved++;
-    }
     ?>
     <div class="stats-grid">
         <div class="stat-card blue">
@@ -355,25 +326,6 @@ include __DIR__ . '/header.php';
     $activePOs = 0;
     $pendingReview = 0;
     $approved = 0;
-    $has = function ($v): bool {
-        return trim((string)($v ?? '')) !== '';
-    };
-    $stmtStats = $db->query("SELECT supply_status, acct_status, budget_status, cashier_status FROM transactions WHERE (NULLIF(TRIM(supply_status), '') IS NOT NULL)");
-    $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
-    foreach ($rowsStats as $t) {
-        $stage = '';
-        if ($has($t['cashier_status'])) {
-            $stage = 'Approved';
-        } elseif ($has($t['acct_status']) || $has($t['budget_status'])) {
-            $stage = 'Pending';
-        } elseif ($has($t['supply_status']) && !$has($t['acct_status'])) {
-            $stage = 'Active';
-        }
-
-        if ($stage === 'Active') $activePOs++;
-        if ($stage === 'Pending') $pendingReview++;
-        if ($stage === 'Approved') $approved++;
-    }
     ?>
     <div class="stats-grid">
         <div class="stat-card blue">
@@ -408,25 +360,6 @@ include __DIR__ . '/header.php';
     $activePOs = 0;
     $pendingReview = 0;
     $approved = 0;
-    $has = function ($v): bool {
-        return trim((string)($v ?? '')) !== '';
-    };
-    $stmtStats = $db->query("SELECT acct_status, budget_status, cashier_status FROM transactions WHERE (NULLIF(TRIM(acct_status), '') IS NOT NULL)");
-    $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
-    foreach ($rowsStats as $t) {
-        $stage = '';
-        if ($has($t['cashier_status'])) {
-            $stage = 'Approved';
-        } elseif ($has($t['budget_status']) && !$has($t['cashier_status'])) {
-            $stage = 'Pending';
-        } elseif ($has($t['acct_status']) && !$has($t['budget_status'])) {
-            $stage = 'Active';
-        }
-
-        if ($stage === 'Active') $activePOs++;
-        if ($stage === 'Pending') $pendingReview++;
-        if ($stage === 'Approved') $approved++;
-    }
     ?>
     <div class="stats-grid">
         <div class="stat-card blue">
@@ -461,26 +394,6 @@ include __DIR__ . '/header.php';
     $activePOs = 0;
     $pendingReview = 0;
     $approved = 0;
-    $has = function ($v): bool {
-        return trim((string)($v ?? '')) !== '';
-    };
-    $stmtStats = $db->query("SELECT acct_status, cashier_status FROM transactions WHERE (NULLIF(TRIM(acct_status), '') IS NOT NULL)");
-    $rowsStats = $stmtStats ? $stmtStats->fetchAll(PDO::FETCH_ASSOC) : [];
-    foreach ($rowsStats as $t) {
-        $stage = '';
-        $cashierUpper = strtoupper(trim((string)($t['cashier_status'] ?? '')));
-        if ($cashierUpper === 'COMPLETED') {
-            $stage = 'Approved';
-        } elseif ($has($t['cashier_status'])) {
-            $stage = 'Pending';
-        } elseif ($has($t['acct_status']) && !$has($t['cashier_status'])) {
-            $stage = 'Active';
-        }
-
-        if ($stage === 'Active') $activePOs++;
-        if ($stage === 'Pending') $pendingReview++;
-        if ($stage === 'Approved') $approved++;
-    }
     ?>
     <div class="stats-grid">
         <div class="stat-card blue">
@@ -506,12 +419,6 @@ include __DIR__ . '/header.php';
         </div>
     </div>
     <h8 class="mb-3">Cashier Unit - For Payment / OR</h8>
-    <div id="transactionsContainer">
-        <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
-    </div>
-
-<?php elseif ($role === 'supplier'): ?>
-    <h8 class="mb-3">My Transactions</h8>
     <div id="transactionsContainer">
         <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
     </div>
@@ -598,7 +505,6 @@ document.addEventListener('DOMContentLoaded', function () {
         var statApproved = document.getElementById('statApproved');
 
         var txRefreshInFlight = false;
-        var statsRefreshInFlight = false;
 
         var dtInstance = null;
         function ensureDtInstance() {
@@ -618,32 +524,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         ensureDtInstance();
-
-        function refreshDashboardStats() {
-            if (!statActive || !statPending || !statApproved) {
-                return;
-            }
-            if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
-                return;
-            }
-            if (statsRefreshInFlight) {
-                return;
-            }
-            statsRefreshInFlight = true;
-            fetch('api/api_dashboard_stats.php', { cache: 'no-store' })
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    if (!data || !data.success) return;
-                    statActive.textContent = String(data.active ?? 0);
-                    statPending.textContent = String(data.pending ?? 0);
-                    statApproved.textContent = String(data.approved ?? 0);
-                })
-                .catch(function () {
-                })
-                .finally(function () {
-                    statsRefreshInFlight = false;
-                });
-        }
 
         function refreshDashboardTransactions() {
             if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
@@ -679,7 +559,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         txBody.innerHTML = html;
                     }
 
-                    refreshDashboardStats();
                 })
                 .catch(function () {
                     // fail silently
@@ -689,10 +568,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
         }
 
-        refreshDashboardStats();
         setInterval(function () {
             refreshDashboardTransactions();
-            refreshDashboardStats();
         }, window.POLL_INTERVALS.DASHBOARD);
     }
 

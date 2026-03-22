@@ -912,7 +912,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ];
                         if ($role === 'supply') {
                             $details['delivery_receipt'] = (string)($supplyDeliveryReceipt ?? '');
-                            $details['sales_invoice'] = (string)($supplySalesInvoice ?? '');
                         }
                         if ($role === 'accounting') {
                             $details['dv_amount'] = (string)($acctDvAmount ?? '');
@@ -932,78 +931,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     } catch (Exception $e) {
                     }
 
-                    dept_notifications_ensure_table($db);
-
                     $poNum = $transaction['po_number'] ?? '';
                     $link = 'transaction_view.php?id=' . (int)$id;
-
                     $statusUpper = strtoupper(trim((string)$logStatus));
-                    $pendingRoles = [];
-                    $completedNotifyRoles = [];
-
-                    $prevStagesByStage = [
-                        'procurement' => [],
-                        'supply' => ['procurement'],
-                        'accounting' => ['procurement', 'supply'],
-                        'budget' => ['procurement', 'supply', 'accounting'],
-                        'cashier' => ['procurement', 'supply', 'accounting', 'budget'],
-                    ];
-
-                    // Pending should fire only when the next department can actually see/act on it.
-                    // Use status transitions from empty -> non-empty, aligned with partials_transactions_table.php gating fields.
-                    if ($logStage === 'procurement') {
-                        $oldProcDate = $transaction['proc_date'] ?? null;
-                        $newHasMeaningfulUpdate = (trim((string)$logStatus) !== '' || trim((string)$logRemarks) !== '');
-                        if (empty($oldProcDate) && $newHasMeaningfulUpdate) {
-                            $pendingRoles[] = 'supply';
-                        }
-                    } elseif ($logStage === 'supply') {
-                        $old = trim((string)($transaction['supply_status'] ?? ''));
-                        $new = trim((string)$logStatus);
-                        if ($old === '' && $new !== '') {
-                            $pendingRoles[] = 'accounting';
-                        }
-                    } elseif ($logStage === 'accounting') {
-                        $old = trim((string)($transaction['acct_status'] ?? ''));
-                        $new = trim((string)$logStatus);
-                        if ($old === '' && $new !== '') {
-                            $pendingRoles[] = 'budget';
-                        }
-                    } elseif ($logStage === 'budget') {
-                        $old = trim((string)($transaction['budget_status'] ?? ''));
-                        $new = trim((string)$logStatus);
-                        if ($old === '' && $new !== '') {
-                            $pendingRoles[] = 'accounting';
-                        }
-                    }
-
-                    // Completed should notify the next department in the workflow.
-                    if ($statusUpper === 'COMPLETED') {
-                        $nextRoleByStage = [
-                            'procurement' => 'supply',
-                            'supply' => 'accounting',
-                            'accounting' => 'budget',
-                            'budget' => 'accounting',
-                            'cashier' => null,
-                        ];
-                        $nextRole = $nextRoleByStage[$logStage] ?? null;
-                        if ($nextRole) {
-                            $completedNotifyRoles = [$nextRole];
-                        }
-                    }
-
-                    foreach ($pendingRoles as $r) {
-                        $pendingTitle = 'Pending Transaction';
-                        $pendingMsg = 'Upcoming PO ' . $poNum . '';
-                        create_dept_notification_once($db, $r, $id, $pendingTitle, $pendingMsg, $link);
-                    }
-
-                    foreach ($completedNotifyRoles as $stageName) {
-                        $completedRole = $stageName;
-                        $completedTitle = ucfirst($role) . ' Completed';
-                        $completedMsg = ucfirst($role) . ' marked PO ' . $poNum . ' as Completed.';
-                        create_dept_notification_once($db, $completedRole, $id, $completedTitle, $completedMsg, $link);
-                    }
 
                     if ($logStage === 'cashier' && $statusUpper === 'COMPLETED') {
                         try {
