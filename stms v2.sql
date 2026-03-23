@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 20, 2026 at 07:36 AM
+-- Generation Time: Mar 23, 2026 at 07:19 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `stms`
+-- Database: `sdo-ftms`
 --
 
 -- --------------------------------------------------------
@@ -76,7 +76,119 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `action`, `target_type`, `target_i
 (32, 13, 'login', 'user', 13, 'Successful login', '2026-03-20 04:05:24'),
 (33, 15, 'login', 'user', 15, 'Successful login', '2026-03-20 04:05:44'),
 (34, 14, 'login', 'user', 14, 'Successful login', '2026-03-20 04:05:59'),
-(35, 16, 'login', 'user', 16, 'Successful login', '2026-03-20 04:11:29');
+(35, 16, 'login', 'user', 16, 'Successful login', '2026-03-20 04:11:29'),
+(36, 12, 'login', 'user', 12, 'Successful login', '2026-03-21 12:41:07'),
+(37, 12, 'transaction_update', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"stage\":\"procurement\",\"status\":\"FOR SUPPLY REVIEW\",\"remarks\":\"\"}', '2026-03-21 12:44:05'),
+(38, 15, 'login', 'user', 15, 'Successful login', '2026-03-21 12:51:13'),
+(39, 12, 'transaction_handoff_forward', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"procurement\",\"to_dept\":\"budget\"}', '2026-03-21 13:13:01'),
+(40, 15, 'transaction_handoff_receive', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"procurement\",\"to_dept\":\"budget\"}', '2026-03-21 13:16:51'),
+(41, 15, 'transaction_update', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"stage\":\"budget\",\"status\":\"FOR PAYMENT\",\"remarks\":\"\",\"ors_number\":\"\",\"ors_date\":\"\",\"demandability\":\"\"}', '2026-03-21 13:17:20'),
+(42, 15, 'transaction_handoff_forward', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"budget\",\"to_dept\":\"supply\"}', '2026-03-21 13:18:15'),
+(43, 13, 'transaction_handoff_receive', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"budget\",\"to_dept\":\"supply\"}', '2026-03-21 13:19:22'),
+(44, 13, 'transaction_update', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"stage\":\"supply\",\"status\":\"PARTIAL DELIVERY\",\"remarks\":\"\",\"delivery_receipt\":\"\",\"sales_invoice\":\"\"}', '2026-03-21 13:19:48'),
+(45, 13, 'transaction_handoff_forward', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"supply\",\"to_dept\":\"accounting\"}', '2026-03-21 13:19:54'),
+(46, 14, 'transaction_handoff_receive', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"supply\",\"to_dept\":\"accounting\"}', '2026-03-21 13:20:04'),
+(47, 14, 'transaction_update', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"stage\":\"accounting\",\"status\":\"FOR ORS\",\"remarks\":\"must be the pre-acc\",\"dv_amount\":\"\"}', '2026-03-21 13:20:41'),
+(48, 14, 'transaction_update', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"stage\":\"accounting\",\"status\":\"FOR VOUCHER\",\"remarks\":\"must be the post-acc\",\"dv_amount\":\"10000\"}', '2026-03-21 13:57:56'),
+(49, 14, 'transaction_handoff_forward', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"accounting\",\"to_dept\":\"budget\"}', '2026-03-21 13:59:00'),
+(50, 15, 'transaction_handoff_receive', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"accounting\",\"to_dept\":\"budget\"}', '2026-03-21 13:59:05'),
+(51, 15, 'transaction_update', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"stage\":\"budget\",\"status\":\"ACCOUNTS PAYABLE\",\"remarks\":\"\",\"ors_number\":\"\",\"ors_date\":\"\",\"demandability\":\"\"}', '2026-03-21 13:59:12'),
+(52, 15, 'transaction_update', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"stage\":\"budget\",\"status\":\"ACCOUNTS PAYABLE\",\"remarks\":\"\",\"ors_number\":\"876\",\"ors_date\":\"2026-03-21\",\"demandability\":\"\"}', '2026-03-21 13:59:28'),
+(53, 15, 'transaction_handoff_forward', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"budget\",\"to_dept\":\"cashier\"}', '2026-03-21 13:59:36'),
+(54, 16, 'login', 'user', 16, 'Successful login', '2026-03-21 13:59:55'),
+(55, 16, 'transaction_handoff_receive', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"budget\",\"to_dept\":\"cashier\"}', '2026-03-21 14:00:06'),
+(56, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-21 14:00:43'),
+(57, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-21 14:02:07'),
+(58, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-21 14:05:09'),
+(59, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-21 14:23:07'),
+(60, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-21 14:23:20'),
+(61, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-21 14:23:36'),
+(62, 16, 'transaction_update', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"stage\":\"cashier\",\"status\":\"For OR Issuance\",\"remarks\":\"Amount: 10000.00\",\"or_number\":\"\",\"or_date\":\"\",\"payment_date\":\"\",\"landbank_ref\":\"10000.00\"}', '2026-03-21 14:31:20'),
+(63, 16, 'transaction_update', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"stage\":\"cashier\",\"status\":\"For ACIC\",\"remarks\":\"Amount: 10000.00\",\"or_number\":\"987\",\"or_date\":\"2026-03-21\",\"payment_date\":\"2026-03-21\",\"landbank_ref\":\"10000.00\"}', '2026-03-21 14:31:40'),
+(64, 16, 'transaction_update', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"stage\":\"cashier\",\"status\":\"For SDS\\/ASDS Approval\",\"remarks\":\"Amount: 10000.00\",\"or_number\":\"987\",\"or_date\":\"2026-03-21\",\"payment_date\":\"2026-03-21\",\"landbank_ref\":\"10000.00\"}', '2026-03-21 14:37:19'),
+(65, 16, 'transaction_update', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"stage\":\"cashier\",\"status\":\"COMPLETED\",\"remarks\":\"Amount: 10000.00\",\"or_number\":\"987\",\"or_date\":\"2026-03-21\",\"payment_date\":\"2026-03-21\",\"landbank_ref\":\"10000.00\"}', '2026-03-21 14:38:05'),
+(66, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-21 14:38:21'),
+(67, 16, 'login', 'user', 16, 'Successful login', '2026-03-21 21:45:47'),
+(68, 16, 'transaction_update', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"stage\":\"cashier\",\"status\":\"For SDS\\/ASDS Approval\",\"remarks\":\"Amount: 10000.00\",\"or_number\":\"987\",\"or_date\":\"2026-03-21\",\"payment_date\":\"2026-03-21\",\"landbank_ref\":\"10000.00\"}', '2026-03-21 21:45:58'),
+(69, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-21 21:49:58'),
+(70, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-21 21:50:31'),
+(71, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-21 21:51:10'),
+(72, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-21 22:12:12'),
+(73, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-21 22:15:20'),
+(74, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-21 22:38:53'),
+(75, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"okay\"}', '2026-03-21 22:46:12'),
+(76, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"okay\"}', '2026-03-21 22:47:46'),
+(77, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-21 22:59:24'),
+(78, 15, 'login', 'user', 15, 'Successful login', '2026-03-22 00:31:14'),
+(79, 13, 'login', 'user', 13, 'Successful login', '2026-03-22 00:33:15'),
+(80, 14, 'login', 'user', 14, 'Successful login', '2026-03-22 00:33:30'),
+(81, 16, 'transaction_handoff_forward', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"cashier\",\"to_dept\":\"procurement\"}', '2026-03-22 00:34:01'),
+(82, 12, 'transaction_handoff_receive', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"cashier\",\"to_dept\":\"procurement\"}', '2026-03-22 00:34:25'),
+(83, 12, 'transaction_handoff_forward', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"procurement\",\"to_dept\":\"supply\"}', '2026-03-22 00:37:44'),
+(84, 13, 'transaction_handoff_receive', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"procurement\",\"to_dept\":\"supply\"}', '2026-03-22 00:54:54'),
+(85, 13, 'transaction_handoff_forward', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"supply\",\"to_dept\":\"procurement\"}', '2026-03-22 00:56:18'),
+(86, 12, 'transaction_handoff_receive', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"supply\",\"to_dept\":\"procurement\"}', '2026-03-22 00:56:45'),
+(87, 12, 'transaction_handoff_forward', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"procurement\",\"to_dept\":\"cashier\"}', '2026-03-22 01:10:33'),
+(88, 16, 'login', 'user', 16, 'Successful login', '2026-03-22 01:10:53'),
+(89, 16, 'transaction_handoff_receive', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"from_dept\":\"procurement\",\"to_dept\":\"cashier\"}', '2026-03-22 01:11:28'),
+(90, 16, 'login', 'user', 16, 'Successful login', '2026-03-22 04:16:01'),
+(91, 12, 'transaction_update', 'transaction', 54, '{\"transaction_id\":54,\"po_number\":\"234\",\"stage\":\"procurement\",\"status\":\"FOR SUPPLY REVIEW\",\"remarks\":\"\"}', '2026-03-22 04:20:21'),
+(92, 12, 'transaction_delete', 'transaction', 54, '{\"transaction_id\":54,\"po_number\":\"234\",\"supplier_id\":8}', '2026-03-22 04:25:41'),
+(93, 12, 'transaction_update', 'transaction', 55, '{\"transaction_id\":55,\"po_number\":\"23456\",\"stage\":\"procurement\",\"status\":\"FOR SUPPLY REVIEW\",\"remarks\":\"\"}', '2026-03-22 04:26:28'),
+(94, 12, 'transaction_handoff_forward', 'transaction', 55, '{\"transaction_id\":55,\"po_number\":\"23456\",\"from_dept\":\"procurement\",\"to_dept\":\"supply\"}', '2026-03-22 04:26:37'),
+(95, 13, 'transaction_handoff_receive', 'transaction', 55, '{\"transaction_id\":55,\"po_number\":\"23456\",\"from_dept\":\"procurement\",\"to_dept\":\"supply\"}', '2026-03-22 04:27:32'),
+(96, 13, 'transaction_update', 'transaction', 55, '{\"transaction_id\":55,\"po_number\":\"23456\",\"stage\":\"supply\",\"status\":\"PARTIAL DELIVERY\",\"remarks\":\"\",\"delivery_receipt\":\"\",\"sales_invoice\":\"\"}', '2026-03-22 04:28:10'),
+(97, 16, 'login', 'user', 16, 'Successful login', '2026-03-22 04:50:09'),
+(98, 16, 'transaction_update', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"stage\":\"cashier\",\"status\":\"COMPLETED\",\"remarks\":\"Amount: 10000.00\",\"or_number\":\"987\",\"or_date\":\"2026-03-21\",\"payment_date\":\"2026-03-21\",\"landbank_ref\":\"10000.00\"}', '2026-03-22 05:16:00'),
+(99, 12, 'transaction_delete', 'transaction', 55, '{\"transaction_id\":55,\"po_number\":\"23456\",\"supplier_id\":8}', '2026-03-22 06:11:12'),
+(100, 12, 'transaction_update', 'transaction', 56, '{\"transaction_id\":56,\"po_number\":\"123454\",\"stage\":\"procurement\",\"status\":\"FOR SUPPLY REVIEW\",\"remarks\":\"\"}', '2026-03-22 06:20:35'),
+(101, 12, 'transaction_delete', 'transaction', 56, '{\"transaction_id\":56,\"po_number\":\"123454\",\"supplier_id\":8}', '2026-03-22 06:45:27'),
+(102, 12, 'transaction_update', 'transaction', 57, '{\"transaction_id\":57,\"po_number\":\"12345\",\"stage\":\"procurement\",\"status\":\"FOR SUPPLY REVIEW\",\"remarks\":\"\"}', '2026-03-22 06:47:24'),
+(103, 12, 'transaction_handoff_forward', 'transaction', 57, '{\"transaction_id\":57,\"po_number\":\"12345\",\"from_dept\":\"procurement\",\"to_dept\":\"supply\"}', '2026-03-22 06:47:30'),
+(104, 13, 'transaction_handoff_receive', 'transaction', 57, '{\"transaction_id\":57,\"po_number\":\"12345\",\"from_dept\":\"procurement\",\"to_dept\":\"supply\"}', '2026-03-22 06:48:25'),
+(105, 12, 'transaction_delete', 'transaction', 59, '{\"transaction_id\":59,\"po_number\":\"234\",\"supplier_id\":8}', '2026-03-22 07:22:26'),
+(106, 12, 'transaction_delete', 'transaction', 58, '{\"transaction_id\":58,\"po_number\":\"gh67\",\"supplier_id\":8}', '2026-03-22 07:22:31'),
+(107, 12, 'transaction_delete', 'transaction', 57, '{\"transaction_id\":57,\"po_number\":\"12345\",\"supplier_id\":8}', '2026-03-22 07:22:34'),
+(108, 12, 'transaction_delete', 'transaction', 53, '{\"transaction_id\":53,\"po_number\":\"2345\",\"supplier_id\":8}', '2026-03-22 07:22:37'),
+(109, 12, 'transaction_delete', 'transaction', 61, '{\"transaction_id\":61,\"po_number\":\"2345\",\"supplier_id\":8}', '2026-03-22 07:27:07'),
+(110, 12, 'transaction_update', 'transaction', 60, '{\"transaction_id\":60,\"po_number\":\"8765\",\"stage\":\"procurement\",\"status\":\"FOR SUPPLY REVIEW\",\"remarks\":\"\"}', '2026-03-22 08:11:06'),
+(111, 12, 'transaction_handoff_forward', 'transaction', 60, '{\"transaction_id\":60,\"po_number\":\"8765\",\"from_dept\":\"procurement\",\"to_dept\":\"supply\"}', '2026-03-22 08:11:25'),
+(112, 13, 'transaction_handoff_receive', 'transaction', 60, '{\"transaction_id\":60,\"po_number\":\"8765\",\"from_dept\":\"procurement\",\"to_dept\":\"supply\"}', '2026-03-22 08:11:53'),
+(113, 12, 'transaction_delete', 'transaction', 60, '{\"transaction_id\":60,\"po_number\":\"8765\",\"supplier_id\":8}', '2026-03-22 08:21:52'),
+(114, 15, 'login', 'user', 15, 'Successful login', '2026-03-22 08:22:15'),
+(115, 12, 'transaction_update', 'transaction', 63, '{\"transaction_id\":63,\"po_number\":\"09090\",\"stage\":\"procurement\",\"status\":\"FOR SUPPLY REVIEW\",\"remarks\":\"\"}', '2026-03-22 08:23:29'),
+(116, 12, 'transaction_handoff_forward', 'transaction', 63, '{\"transaction_id\":63,\"po_number\":\"09090\",\"from_dept\":\"procurement\",\"to_dept\":\"supply\"}', '2026-03-22 08:23:36'),
+(117, 13, 'transaction_handoff_receive', 'transaction', 63, '{\"transaction_id\":63,\"po_number\":\"09090\",\"from_dept\":\"procurement\",\"to_dept\":\"supply\"}', '2026-03-22 08:23:59'),
+(118, 12, 'transaction_update', 'transaction', 64, '{\"transaction_id\":64,\"po_number\":\"123\",\"stage\":\"procurement\",\"status\":\"FOR SUPPLY REVIEW\",\"remarks\":\"\"}', '2026-03-22 08:25:02'),
+(119, 12, 'transaction_handoff_forward', 'transaction', 64, '{\"transaction_id\":64,\"po_number\":\"123\",\"from_dept\":\"procurement\",\"to_dept\":\"supply\"}', '2026-03-22 08:25:29'),
+(120, 13, 'transaction_handoff_receive', 'transaction', 64, '{\"transaction_id\":64,\"po_number\":\"123\",\"from_dept\":\"procurement\",\"to_dept\":\"supply\"}', '2026-03-22 08:25:51'),
+(121, 13, 'transaction_update', 'transaction', 64, '{\"transaction_id\":64,\"po_number\":\"123\",\"stage\":\"supply\",\"status\":\"PARTIAL DELIVERY\",\"remarks\":\"\",\"delivery_receipt\":\"\"}', '2026-03-22 08:26:02'),
+(122, 13, 'transaction_handoff_forward', 'transaction', 64, '{\"transaction_id\":64,\"po_number\":\"123\",\"from_dept\":\"supply\",\"to_dept\":\"accounting\"}', '2026-03-22 08:26:21'),
+(123, 14, 'transaction_handoff_receive', 'transaction', 64, '{\"transaction_id\":64,\"po_number\":\"123\",\"from_dept\":\"supply\",\"to_dept\":\"accounting\"}', '2026-03-22 08:26:37'),
+(124, 14, 'transaction_update', 'transaction', 64, '{\"transaction_id\":64,\"po_number\":\"123\",\"stage\":\"accounting\",\"status\":\"FOR ORS\",\"remarks\":\"\",\"dv_amount\":\"\"}', '2026-03-22 08:26:43'),
+(125, 14, 'transaction_handoff_forward', 'transaction', 64, '{\"transaction_id\":64,\"po_number\":\"123\",\"from_dept\":\"accounting\",\"to_dept\":\"budget\"}', '2026-03-22 08:27:25'),
+(126, 15, 'transaction_handoff_receive', 'transaction', 64, '{\"transaction_id\":64,\"po_number\":\"123\",\"from_dept\":\"accounting\",\"to_dept\":\"budget\"}', '2026-03-22 08:27:35'),
+(127, 12, 'transaction_delete', 'transaction', 64, '{\"transaction_id\":64,\"po_number\":\"123\",\"supplier_id\":8}', '2026-03-22 08:41:15'),
+(128, 10, 'login', 'user', 10, 'Successful login', '2026-03-22 09:42:39'),
+(129, 10, 'login', 'user', 10, 'Successful login', '2026-03-22 09:43:05'),
+(130, 10, 'login', 'user', 10, 'Successful login', '2026-03-22 09:44:13'),
+(131, 10, 'logout', 'user', 10, 'User logged out', '2026-03-22 09:44:37'),
+(132, 10, 'reset_password', 'user', 16, '{\"username\":\"cashier\",\"new_password\":\"12345\"}', '2026-03-22 09:58:08'),
+(133, NULL, 'login_failed', 'user', NULL, '{\"attempted_username\":\"erica\",\"reason\":\"unknown_username\"}', '2026-03-22 09:58:41'),
+(134, 10, 'update_user', 'user', 16, '{\"username\":\"erica\",\"role_id\":3,\"supplier_id\":null}', '2026-03-22 10:00:54'),
+(135, 16, 'login', 'user', 16, 'Successful login', '2026-03-22 10:01:06'),
+(136, 16, 'update_account', 'user', 16, '{\"old_username\":\"erica\",\"new_username\":\"erica\",\"password_changed\":true}', '2026-03-22 10:04:56'),
+(137, 16, 'logout', 'user', 16, 'User logged out', '2026-03-22 10:05:08'),
+(138, 16, 'login', 'user', 16, 'Successful login', '2026-03-22 10:05:13'),
+(139, 16, 'update_account', 'user', 16, '{\"old_username\":\"erica\",\"new_username\":\"erica shaine\",\"password_changed\":false}', '2026-03-22 10:08:16'),
+(140, 12, 'transaction_update', 'transaction', 65, '{\"transaction_id\":65,\"po_number\":\"asdfsads\",\"stage\":\"procurement\",\"status\":\"FOR SUPPLY REVIEW\",\"remarks\":\"\"}', '2026-03-22 10:13:10'),
+(141, 16, 'transaction_update', 'transaction', 65, '{\"transaction_id\":65,\"po_number\":\"asdfsads\",\"stage\":\"procurement\",\"status\":\"FOR SUPPLY REVIEW\",\"remarks\":\"asdd\"}', '2026-03-22 10:19:09'),
+(142, 10, 'update_user', 'user', 16, '{\"username\":\"erica shaine\",\"role_id\":7,\"supplier_id\":null}', '2026-03-22 10:29:20'),
+(143, 16, 'logout', 'user', 16, 'User logged out', '2026-03-22 10:30:11'),
+(144, 16, 'login', 'user', 16, 'Successful login', '2026-03-22 10:30:22'),
+(145, 10, 'update_user', 'user', 16, '{\"username\":\"erica\",\"role_id\":7,\"supplier_id\":null}', '2026-03-22 10:31:17'),
+(146, 15, 'login', 'user', 15, 'Successful login', '2026-03-23 01:19:36'),
+(147, 16, 'login', 'user', 16, 'Successful login', '2026-03-23 08:19:55');
 
 -- --------------------------------------------------------
 
@@ -89,6 +201,14 @@ CREATE TABLE `app_settings` (
   `setting_value` varchar(255) NOT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `app_settings`
+--
+
+INSERT INTO `app_settings` (`setting_key`, `setting_value`, `updated_at`) VALUES
+('last_notify_message', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', '2026-03-21 22:59:20'),
+('last_notify_title', 'Payment status update', '2026-03-21 22:59:20');
 
 -- --------------------------------------------------------
 
@@ -112,22 +232,18 @@ CREATE TABLE `department_notifications` (
 --
 
 INSERT INTO `department_notifications` (`id`, `role`, `transaction_id`, `title`, `message`, `link`, `is_read`, `created_at`) VALUES
-(1, 'supply', 51, 'Pending Transaction', 'Upcoming PO 2025030039', 'transaction_view.php?id=51', 0, '2026-03-18 10:15:46'),
-(2, 'supply', 51, 'Handoff Forwarded', 'PROCUREMENT forwarded PO 2025030039 to SUPPLY. Please receive it.', 'transaction_view.php?id=51', 0, '2026-03-18 10:16:10'),
-(3, 'procurement', 51, 'Handoff Received', 'Transaction was successfully received for PO 2025030039.', 'transaction_view.php?id=51', 0, '2026-03-18 10:17:04'),
-(4, 'accounting', 51, 'Pending Transaction', 'Upcoming PO 2025030039', 'transaction_view.php?id=51', 0, '2026-03-18 10:18:14'),
-(5, 'accounting', 51, 'Supply Completed', 'Supply marked PO 2025030039 as Completed.', 'transaction_view.php?id=51', 0, '2026-03-18 10:18:14'),
-(6, 'accounting', 51, 'Handoff Forwarded', 'SUPPLY forwarded PO 2025030039 to ACCOUNTING. Please receive it.', 'transaction_view.php?id=51', 0, '2026-03-18 10:18:38'),
-(7, 'supply', 51, 'Handoff Received', 'Transaction was successfully received for PO 2025030039.', 'transaction_view.php?id=51', 0, '2026-03-18 10:19:06'),
-(8, 'budget', 51, 'Pending Transaction', 'Upcoming PO 2025030039', 'transaction_view.php?id=51', 0, '2026-03-18 10:20:19'),
-(9, 'budget', 51, 'Handoff Forwarded', 'ACCOUNTING forwarded PO 2025030039 to BUDGET. Please receive it.', 'transaction_view.php?id=51', 0, '2026-03-18 10:20:29'),
-(10, 'accounting', 51, 'Handoff Received', 'Transaction was successfully received for PO 2025030039.', 'transaction_view.php?id=51', 0, '2026-03-18 10:20:51'),
-(11, 'accounting', 51, 'Pending Transaction', 'Upcoming PO 2025030039', 'transaction_view.php?id=51', 0, '2026-03-18 10:31:34'),
-(12, 'accounting', 51, 'Handoff Forwarded', 'BUDGET forwarded PO 2025030039 to ACCOUNTING. Please receive it.', 'transaction_view.php?id=51', 0, '2026-03-18 10:31:54'),
-(13, 'budget', 51, 'Handoff Received', 'Transaction was successfully received for PO 2025030039.', 'transaction_view.php?id=51', 0, '2026-03-18 10:32:14'),
-(14, 'cashier', 51, 'Pending Transaction', 'Upcoming PO 2025030039', 'transaction_view.php?id=51', 0, '2026-03-18 10:32:49'),
-(15, 'cashier', 51, 'Handoff Forwarded', 'ACCOUNTING forwarded PO 2025030039 to CASHIER. Please receive it.', 'transaction_view.php?id=51', 0, '2026-03-18 10:32:55'),
-(16, 'accounting', 51, 'Handoff Received', 'Transaction was successfully received for PO 2025030039.', 'transaction_view.php?id=51', 0, '2026-03-18 10:39:01');
+(1, 'supply', 57, 'Handoff Forwarded', 'PROCUREMENT forwarded PO 12345 to SUPPLY. Please receive it.', 'transaction_view.php?id=57', 1, '2026-03-22 14:47:30'),
+(2, 'procurement', 57, 'Handoff Received', 'SUPPLY has received PO 12345 from PROCUREMENT.', 'transaction_view.php?id=57', 1, '2026-03-22 14:48:20'),
+(3, 'supply', 60, 'Handoff Forwarded', 'PROCUREMENT forwarded PO 8765 to SUPPLY. Please receive it.', 'transaction_view.php?id=60', 1, '2026-03-22 16:11:25'),
+(4, 'procurement', 60, 'Handoff Received', 'SUPPLY has received PO 8765 from PROCUREMENT.', 'transaction_view.php?id=60', 1, '2026-03-22 16:11:48'),
+(5, 'supply', 63, 'Handoff Forwarded', 'PROCUREMENT forwarded PO 09090 to SUPPLY. Please receive it.', 'transaction_view.php?id=63', 1, '2026-03-22 16:23:36'),
+(6, 'procurement', 63, 'Handoff Received', 'SUPPLY has received PO 09090 from PROCUREMENT.', 'transaction_view.php?id=63', 1, '2026-03-22 16:23:54'),
+(7, 'supply', 64, 'Handoff Forwarded', 'PROCUREMENT forwarded PO 123 to SUPPLY. Please receive it.', 'transaction_view.php?id=64', 0, '2026-03-22 16:25:29'),
+(8, 'procurement', 64, 'Handoff Received', 'SUPPLY has received PO 123 from PROCUREMENT.', 'transaction_view.php?id=64', 0, '2026-03-22 16:25:46'),
+(9, 'accounting', 64, 'Handoff Forwarded', 'SUPPLY forwarded PO 123 to ACCOUNTING. Please receive it.', 'transaction_view.php?id=64', 0, '2026-03-22 16:26:21'),
+(10, 'supply', 64, 'Handoff Received', 'ACCOUNTING has received PO 123 from SUPPLY.', 'transaction_view.php?id=64', 0, '2026-03-22 16:26:31'),
+(11, 'budget', 64, 'Handoff Forwarded', 'ACCOUNTING forwarded PO 123 to BUDGET. Please receive it.', 'transaction_view.php?id=64', 1, '2026-03-22 16:27:25'),
+(12, 'accounting', 64, 'Handoff Received', 'BUDGET has received PO 123 from ACCOUNTING.', 'transaction_view.php?id=64', 0, '2026-03-22 16:27:35');
 
 -- --------------------------------------------------------
 
@@ -169,7 +285,25 @@ CREATE TABLE `notifications` (
 
 INSERT INTO `notifications` (`id`, `supplier_id`, `transaction_id`, `title`, `message`, `link`, `is_read`, `email_sent`, `created_at`) VALUES
 (1, 8, 51, 'Payment status update', 'Your PO 2025030039 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=51', 0, 0, '2026-03-18 10:42:48'),
-(2, 8, 51, 'Payment status update', 'Your PO 2025030039 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=51', 0, 0, '2026-03-18 19:06:28');
+(2, 8, 51, 'Payment status update', 'Your PO 2025030039 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=51', 0, 0, '2026-03-18 19:06:28'),
+(3, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-21 22:00:34'),
+(4, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-21 22:02:01'),
+(5, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-21 22:05:04'),
+(6, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-21 22:23:02'),
+(7, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-21 22:23:15'),
+(8, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-21 22:23:30'),
+(9, 8, 52, 'Transaction completed', 'Your PO 34 has been completed.', 'transaction_view.php?id=52', 0, 0, '2026-03-21 22:38:05'),
+(10, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-21 22:38:16'),
+(11, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-22 05:49:52'),
+(12, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-22 05:50:27'),
+(13, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-22 05:51:05'),
+(14, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-22 06:12:07'),
+(15, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-22 06:15:15'),
+(16, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-22 06:38:47'),
+(17, 8, 52, 'Payment status update', 'okay', 'transaction_view.php?id=52', 0, 0, '2026-03-22 06:46:06'),
+(18, 8, 52, 'bro', 'okay', 'transaction_view.php?id=52', 0, 0, '2026-03-22 06:47:42'),
+(19, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-22 06:59:20'),
+(20, 8, 52, 'Transaction completed', 'Your PO 34 has been completed.', 'transaction_view.php?id=52', 0, 0, '2026-03-22 13:16:00');
 
 -- --------------------------------------------------------
 
@@ -267,7 +401,11 @@ CREATE TABLE `transactions` (
 --
 
 INSERT INTO `transactions` (`id`, `supplier_id`, `po_number`, `program_title`, `po_type`, `proponent`, `coverage_start`, `coverage_end`, `expected_date`, `amount`, `created_at`, `proc_status`, `proc_remarks`, `proc_date`, `supply_status`, `supply_delivery_receipt`, `supply_sales_invoice`, `supply_remarks`, `supply_date`, `acct_status`, `acct_remarks`, `acct_dv_number`, `acct_dv_date`, `acct_dv_amount`, `acct_date`, `budget_ors_number`, `budget_ors_date`, `budget_status`, `budget_demandability`, `budget_remarks`, `cashier_status`, `cashier_remarks`, `cashier_or_number`, `cashier_or_date`, `cashier_landbank_ref`, `cashier_payment_date`, `supply_partial_delivery_date`, `supply_delivery_date`) VALUES
-(51, 8, '2025030039', 'procurement of supplies', 'Supplies', 'cid', '2026-03-20', '2026-03-31', NULL, 940288.99, '2026-03-18 02:14:59', 'FOR SUPPLY REVIEW', 'for IAR', '2026-03-18', 'COMPLETED', '12314', '98787', 'delivered', '2026-03-18', 'FOR VOUCHER', 'for payment', NULL, NULL, NULL, '2026-03-18', '876', '2026-03-27', 'FOR PAYMENT', 'Not Yet Due and Demandable', 'obligated', 'For ACIC', '', '345654', '2026-04-02', '940288.99', '2026-04-02', NULL, '2026-04-01');
+(51, 8, '2025030039', 'procurement of supplies', 'Supplies', 'cid', '2026-03-20', '2026-03-31', NULL, 940288.99, '2026-03-18 02:14:59', 'FOR SUPPLY REVIEW', 'for IAR', '2026-03-18', 'COMPLETED', '12314', '98787', 'delivered', '2026-03-18', 'FOR VOUCHER', 'for payment', NULL, NULL, NULL, '2026-03-18', '876', '2026-03-27', 'FOR PAYMENT', 'Not Yet Due and Demandable', 'obligated', 'For ACIC', '', '345654', '2026-04-02', '940288.99', '2026-04-02', NULL, '2026-04-01'),
+(52, 8, '34', '22', 'a', '2', NULL, NULL, '2', 2.00, '2026-03-21 12:43:48', 'FOR SUPPLY REVIEW', '', '2026-03-21', 'PARTIAL DELIVERY', '', '', '', '2026-03-21', 'FOR VOUCHER', 'must be the post-acc', '8789', '2026-03-21', 10000.00, '2026-03-21', '876', '2026-03-21', 'ACCOUNTS PAYABLE', '', '', 'COMPLETED', '', '987', '2026-03-21', '10000.00', '2026-03-21', '2026-03-21', NULL),
+(62, 8, '123456', 'procurementOnly', 'jlkl', 'qy', NULL, NULL, NULL, 121.00, '2026-03-22 08:22:55', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(63, 8, '09090', 'supplyOnly', 'asd', 'qwe', NULL, NULL, NULL, 234.00, '2026-03-22 08:23:19', 'FOR SUPPLY REVIEW', '', '2026-03-22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(65, 8, 'asdfsads', 'sample1', 'asd', 'qwert', NULL, NULL, NULL, 90000.00, '2026-03-22 10:12:23', 'FOR SUPPLY REVIEW', 'asdd', '2026-03-22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -297,7 +435,23 @@ INSERT INTO `transaction_handoffs` (`id`, `transaction_id`, `from_dept`, `to_dep
 (2, 51, 'supply', 'accounting', '2026-03-18 10:18:38', '2026-03-18 10:19:06', 0, 0, 13, 14),
 (3, 51, 'accounting', 'budget', '2026-03-18 10:20:29', '2026-03-18 10:20:51', 0, 0, 14, 15),
 (4, 51, 'budget', 'accounting', '2026-03-18 10:31:54', '2026-03-18 10:32:14', 0, 0, 15, 14),
-(5, 51, 'accounting', 'cashier', '2026-03-18 10:32:55', '2026-03-18 10:39:01', 0, 0, 14, 16);
+(5, 51, 'accounting', 'cashier', '2026-03-18 10:32:55', '2026-03-18 10:39:01', 0, 0, 14, 16),
+(6, 52, 'procurement', 'budget', '2026-03-21 21:13:01', '2026-03-21 21:16:51', NULL, 0, 12, NULL),
+(7, 52, 'budget', 'supply', '2026-03-21 21:18:15', '2026-03-21 21:19:22', NULL, 0, 15, NULL),
+(8, 52, 'supply', 'accounting', '2026-03-21 21:19:54', '2026-03-21 21:20:04', NULL, 0, 13, NULL),
+(9, 52, 'accounting', 'budget', '2026-03-21 21:59:00', '2026-03-21 21:59:05', NULL, 0, 14, NULL),
+(10, 52, 'budget', 'cashier', '2026-03-21 21:59:36', '2026-03-21 22:00:06', NULL, 0, 15, NULL),
+(11, 52, 'cashier', 'procurement', '2026-03-22 08:34:01', '2026-03-22 08:34:25', NULL, 0, 16, NULL),
+(12, 52, 'procurement', 'supply', '2026-03-22 08:37:44', '2026-03-22 08:54:49', NULL, 0, 12, NULL),
+(13, 52, 'supply', 'procurement', '2026-03-22 08:56:18', '2026-03-22 08:56:39', NULL, 0, 13, NULL),
+(14, 52, 'procurement', 'cashier', '2026-03-22 09:10:33', '2026-03-22 09:11:23', NULL, 0, 12, NULL),
+(15, 55, 'procurement', 'supply', '2026-03-22 12:26:37', '2026-03-22 12:27:27', NULL, 0, 12, NULL),
+(16, 57, 'procurement', 'supply', '2026-03-22 14:47:30', '2026-03-22 14:48:20', NULL, 0, 12, NULL),
+(17, 60, 'procurement', 'supply', '2026-03-22 16:11:25', '2026-03-22 16:11:48', NULL, 0, 12, NULL),
+(18, 63, 'procurement', 'supply', '2026-03-22 16:23:36', '2026-03-22 16:23:54', NULL, 0, 12, NULL),
+(19, 64, 'procurement', 'supply', '2026-03-22 16:25:29', '2026-03-22 16:25:46', NULL, 0, 12, NULL),
+(20, 64, 'supply', 'accounting', '2026-03-22 16:26:21', '2026-03-22 16:26:31', NULL, 0, 13, NULL),
+(21, 64, 'accounting', 'budget', '2026-03-22 16:27:25', '2026-03-22 16:27:35', NULL, 0, 14, NULL);
 
 -- --------------------------------------------------------
 
@@ -326,7 +480,23 @@ INSERT INTO `transaction_updates` (`id`, `transaction_id`, `stage`, `status`, `r
 (5, 51, 'accounting', 'FOR ORS', 'incomplete', '2026-03-18 02:26:14'),
 (6, 51, 'budget', 'FOR PAYMENT', 'obligated', '2026-03-18 02:31:34'),
 (7, 51, 'accounting', 'FOR VOUCHER', 'for payment', '2026-03-18 02:32:49'),
-(8, 51, 'cashier', 'For ACIC', 'Amount: 940288.99', '2026-03-18 02:41:16');
+(8, 51, 'cashier', 'For ACIC', 'Amount: 940288.99', '2026-03-18 02:41:16'),
+(9, 52, 'procurement', 'FOR SUPPLY REVIEW', '', '2026-03-21 12:44:05'),
+(10, 52, 'budget', 'FOR PAYMENT', '', '2026-03-21 13:17:20'),
+(11, 52, 'supply', 'PARTIAL DELIVERY', '', '2026-03-21 13:19:48'),
+(12, 52, 'accounting', 'FOR ORS', 'must be the pre-acc', '2026-03-21 13:20:41'),
+(13, 52, 'accounting', 'FOR VOUCHER', 'must be the post-acc', '2026-03-21 13:57:56'),
+(14, 52, 'budget', 'ACCOUNTS PAYABLE', '', '2026-03-21 13:59:12'),
+(15, 52, 'budget', 'ACCOUNTS PAYABLE', '', '2026-03-21 13:59:28'),
+(16, 52, 'cashier', 'For OR Issuance', 'Amount: 10000.00', '2026-03-21 14:31:20'),
+(17, 52, 'cashier', 'For ACIC', 'Amount: 10000.00', '2026-03-21 14:31:40'),
+(18, 52, 'cashier', 'For SDS/ASDS Approval', 'Amount: 10000.00', '2026-03-21 14:37:19'),
+(19, 52, 'cashier', 'COMPLETED', 'Amount: 10000.00', '2026-03-21 14:38:05'),
+(20, 52, 'cashier', 'For SDS/ASDS Approval', 'Amount: 10000.00', '2026-03-21 21:45:58'),
+(24, 52, 'cashier', 'COMPLETED', 'Amount: 10000.00', '2026-03-22 05:16:00'),
+(28, 63, 'procurement', 'FOR SUPPLY REVIEW', '', '2026-03-22 08:23:29'),
+(32, 65, 'procurement', 'FOR SUPPLY REVIEW', '', '2026-03-22 10:13:10'),
+(33, 65, 'procurement', 'FOR SUPPLY REVIEW', 'asdd', '2026-03-22 10:19:09');
 
 -- --------------------------------------------------------
 
@@ -337,6 +507,7 @@ INSERT INTO `transaction_updates` (`id`, `transaction_id`, `stage`, `status`, `r
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `username` varchar(100) NOT NULL,
+  `email` varchar(255) DEFAULT NULL,
   `password_hash` varchar(255) NOT NULL,
   `role_id` int(11) NOT NULL,
   `supplier_id` int(11) DEFAULT NULL,
@@ -352,15 +523,15 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password_hash`, `role_id`, `supplier_id`, `active_session_id`, `active_session_last_seen`, `last_login_at`, `last_login_ip`, `created_at`, `full_name`) VALUES
-(10, 'admin', '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 1, NULL, NULL, NULL, '2026-03-18 16:30:53', '::1', '2026-02-10 06:04:17', NULL),
-(12, 'procurement', '$2y$10$QclzMbbCTh0V3CoawlNNKOKV4SwirQglkHhk6t2DaKyJRsEGKw9Vi', 3, NULL, 'voi1h8b3fqg8kga50qna8i34ko', '2026-03-05 09:51:03', '2026-03-20 12:05:16', '::1', '2026-02-10 06:04:17', NULL),
-(13, 'supply', '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 4, NULL, 'ekrk5vsvck4g5u4qq32hffcp2e', '2026-03-05 09:51:03', '2026-03-20 12:05:24', '::1', '2026-02-10 06:04:17', NULL),
-(14, 'accounting', '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 5, NULL, 'mm7dcl78j23eb67dav77vm290p', '2026-03-05 09:51:03', '2026-03-20 12:05:59', '::1', '2026-02-10 06:04:17', NULL),
-(15, 'budget', '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 6, NULL, 'is20s2gsenns7n8dgjp437e4mg', '2026-03-05 09:05:49', '2026-03-20 12:05:44', '::1', '2026-02-10 06:04:17', NULL),
-(16, 'cashier', '$2y$10$dyGEN9guUrlc2mUANfKlouzI7yx2gdG5SOyfsCgKPBuJwMrjwgp6S', 7, NULL, 'oiv0qv5qvmjf84o4co8334ghap', '2026-03-05 09:51:03', '2026-03-20 12:11:29', '::1', '2026-02-10 06:04:17', NULL),
-(23, 'sample cashier', '$2y$10$FWnyLpEBowxNhXNpBcYpm..0XLNQCJK0NjkUtAEdVsb0kVpK2e.0G', 7, NULL, NULL, NULL, NULL, NULL, '2026-03-03 00:47:47', NULL),
-(26, 'alphanum0002', '$2y$10$J0BaAVz6x9kQLugvk5ZOr.EVZ1UjYgcchaPDeRkuXKVKOls033.wS', 2, 8, NULL, NULL, '2026-03-18 11:13:35', '::1', '2026-03-18 02:09:09', NULL);
+INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `role_id`, `supplier_id`, `active_session_id`, `active_session_last_seen`, `last_login_at`, `last_login_ip`, `created_at`, `full_name`) VALUES
+(10, 'admin', NULL, '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 1, NULL, NULL, NULL, '2026-03-22 17:44:13', '::1', '2026-02-10 06:04:17', NULL),
+(12, 'procurement', 'rioverosjustine92@gmail.com', '$2y$10$QclzMbbCTh0V3CoawlNNKOKV4SwirQglkHhk6t2DaKyJRsEGKw9Vi', 3, NULL, 'voi1h8b3fqg8kga50qna8i34ko', '2026-03-05 09:51:03', '2026-03-21 20:41:07', '::1', '2026-02-10 06:04:17', NULL),
+(13, 'supply', 'jkrioveros@gmail.com', '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 4, NULL, 'ekrk5vsvck4g5u4qq32hffcp2e', '2026-03-05 09:51:03', '2026-03-22 08:33:15', '::1', '2026-02-10 06:04:17', NULL),
+(14, 'accounting', NULL, '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 5, NULL, 'mm7dcl78j23eb67dav77vm290p', '2026-03-05 09:51:03', '2026-03-22 08:33:30', '::1', '2026-02-10 06:04:17', NULL),
+(15, 'budget', NULL, '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 6, NULL, 'is20s2gsenns7n8dgjp437e4mg', '2026-03-05 09:05:49', '2026-03-23 09:19:36', '::1', '2026-02-10 06:04:17', NULL),
+(16, 'erica', '', '$2y$10$bikOPzugs3ObkP49dIpcHurKtYEbNoSvcJBIyjWMq5aNSGXeD9RBO', 7, NULL, 'oiv0qv5qvmjf84o4co8334ghap', '2026-03-05 09:51:03', '2026-03-23 16:19:55', '::1', '2026-02-10 06:04:17', NULL),
+(23, 'sample cashier', NULL, '$2y$10$FWnyLpEBowxNhXNpBcYpm..0XLNQCJK0NjkUtAEdVsb0kVpK2e.0G', 7, NULL, NULL, NULL, NULL, NULL, '2026-03-03 00:47:47', NULL),
+(26, 'alphanum0002', NULL, '$2y$10$J0BaAVz6x9kQLugvk5ZOr.EVZ1UjYgcchaPDeRkuXKVKOls033.wS', 2, 8, NULL, NULL, '2026-03-18 11:13:35', '::1', '2026-03-18 02:09:09', NULL);
 
 -- --------------------------------------------------------
 
@@ -373,6 +544,16 @@ CREATE TABLE `user_preferences` (
   `smart_polling_enabled` tinyint(1) NOT NULL DEFAULT 1,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user_preferences`
+--
+
+INSERT INTO `user_preferences` (`user_id`, `smart_polling_enabled`, `updated_at`) VALUES
+(12, 0, '2026-03-21 12:52:07'),
+(13, 0, '2026-03-21 12:52:01'),
+(14, 0, '2026-03-21 12:51:53'),
+(15, 0, '2026-03-21 12:51:46');
 
 -- --------------------------------------------------------
 
@@ -401,19 +582,39 @@ INSERT INTO `user_sessions` (`id`, `user_id`, `session_id`, `device_label`, `ip`
 (58, 15, 'nv0u80eh5cd5n1b3fnbacqksb7', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-18 01:16:27', '2026-03-18 12:14:23', NULL),
 (59, 12, 'pjqdq2ojg127d9qi0jntvg28rd', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-18 01:16:27', '2026-03-18 12:14:54', NULL),
 (68, 14, '4ddrbe94km28vtimi5u7p00jqs', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-18 01:16:27', '2026-03-18 05:16:28', NULL),
-(871, 10, 't669qqh4na914lp2avhcqkg81j', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-18 01:26:53', '2026-03-18 01:46:35', NULL),
+(871, 10, 't669qqh4na914lp2avhcqkg81j', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-18 01:26:53', '2026-03-18 01:46:35', '2026-03-22 09:44:39'),
 (2391, 13, 'g2km1m3e5meroemk0u6eca2n94', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-18 01:51:15', '2026-03-18 02:18:41', NULL),
 (5495, 26, '1jtobovb8e8155qsvqn175hp8c', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-18 02:09:09', '2026-03-18 02:45:13', NULL),
 (12170, 10, 'bil15tl1ft8oa03c40lhlosvc6', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-18 02:46:10', '2026-03-18 08:30:34', '2026-03-18 08:30:36'),
 (14570, 26, 'p3chp65t33b1mtae04457cosg4', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-18 03:13:35', '2026-03-18 03:20:06', '2026-03-18 03:20:06'),
-(16520, 10, 'coo2uijniab67s14d2mqjp1sci', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-18 08:30:53', '2026-03-18 11:31:29', NULL),
+(16520, 10, 'coo2uijniab67s14d2mqjp1sci', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', '2026-03-18 08:30:53', '2026-03-18 11:31:29', '2026-03-22 09:43:45'),
 (18908, 13, 'ct9vgj6facmaa2iaf34csfc2oh', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-18 10:28:23', '2026-03-18 10:33:53', NULL),
 (18934, 14, 'vk44lt3aa8icln3945u9njfmtu', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-18 10:28:30', '2026-03-18 10:33:55', NULL),
 (27007, 12, 'pbb048semktj1igqdrpfcuf92l', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-20 04:05:16', '2026-03-20 04:24:38', NULL),
 (27015, 13, '269feejn9vsu2569i4gc1dh574', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-20 04:05:24', '2026-03-20 04:11:39', NULL),
 (27026, 15, 'fn6naqbk2u6o798neoubgijst5', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-20 04:05:44', '2026-03-20 06:34:21', NULL),
-(27030, 14, '4flqrrfs9h8t702ucckrkh8bgk', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-20 04:05:59', '2026-03-20 06:34:15', NULL),
-(27325, 16, 'j1uica1h9jfh1r1p7fqt8upf48', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-20 04:11:29', '2026-03-20 06:26:43', NULL);
+(27030, 14, '4flqrrfs9h8t702ucckrkh8bgk', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-20 04:05:59', '2026-03-21 15:57:34', NULL),
+(27325, 16, 'j1uica1h9jfh1r1p7fqt8upf48', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-20 04:11:29', '2026-03-20 06:26:43', NULL),
+(28379, 13, 'n5r92h320t52sak0pibiit9dpi', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-21 12:36:19', '2026-03-21 15:57:34', NULL),
+(28453, 12, 'abkfmgnmocf57ov6efqkobcv35', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-21 12:41:07', '2026-03-23 10:23:19', NULL),
+(29625, 15, 'k9m2kpnkhlip04qvnd95dpp4jc', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-21 12:51:13', '2026-03-21 22:45:19', NULL),
+(47096, 16, 'qr2n55c3p7fnour1d8n67ge0tk', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-21 13:59:55', '2026-03-21 14:39:13', NULL),
+(80620, 16, '8vhh1ra0eq0id8vgb4u8ctnqr6', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-21 21:45:47', '2026-03-22 00:34:08', NULL),
+(88085, 15, '0usr573sbakronqi8v5u80n57u', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-22 00:31:14', '2026-03-22 06:57:19', NULL),
+(88398, 13, 'n3una7b1g8ndgufkdlg9l0qcbb', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-22 00:33:15', '2026-03-23 10:23:19', NULL),
+(88454, 14, 'md1kgl0h52m554nqs6cfi8vkev', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-22 00:33:30', '2026-03-23 00:47:20', NULL),
+(95159, 16, 'odfbc9funbrullnjpbmbjs8old', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-22 01:10:53', '2026-03-22 01:13:18', NULL),
+(99945, 16, '98qmqaijsv729tr6t49rq4cdce', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-22 04:16:01', '2026-03-22 04:18:58', NULL),
+(108427, 16, 'neftcjnldpskjdo4bcrplmgtkb', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-22 04:50:09', '2026-03-22 05:16:08', NULL),
+(125819, 15, '1fsv920155sodfe4uj4n0dckp7', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-22 08:22:15', '2026-03-22 09:57:20', NULL),
+(132488, 10, 'q0fcbl32pkrov3c6qgf53ses4o', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-22 09:42:39', '2026-03-22 10:32:26', NULL),
+(132545, 10, 'sbvjt5rl59a5tiue251s9p5953', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-22 09:43:05', '2026-03-22 09:43:39', '2026-03-22 09:43:40'),
+(132673, 10, '5c17fc04mokovanslnipm7ot95', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-22 09:44:13', '2026-03-22 09:44:34', '2026-03-22 09:44:37'),
+(133845, 16, '16av97toi8r4qvk8rg4qpdhi57', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-22 10:01:05', '2026-03-22 10:05:05', '2026-03-22 10:05:08'),
+(134434, 16, '2to0hgjojh8dpsaof9bvkb1apd', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-22 10:05:13', '2026-03-22 10:30:09', '2026-03-22 10:30:11'),
+(137293, 16, 'e16vdhcpringc8up9fthvmm0ei', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-22 10:30:22', '2026-03-22 10:32:28', NULL),
+(148986, 15, 'od1gl1h15057rog7fcrcecoqd3', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-23 01:19:36', '2026-03-23 10:23:19', NULL),
+(164279, 16, 'sgr1f50rrvld9bp7mbcm0s3257', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-23 08:19:55', '2026-03-23 09:52:06', NULL);
 
 --
 -- Indexes for dumped tables
@@ -522,13 +723,13 @@ ALTER TABLE `user_sessions`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=148;
 
 --
 -- AUTO_INCREMENT for table `department_notifications`
 --
 ALTER TABLE `department_notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `feedback`
@@ -540,7 +741,7 @@ ALTER TABLE `feedback`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `roles`
@@ -558,19 +759,19 @@ ALTER TABLE `suppliers`
 -- AUTO_INCREMENT for table `transactions`
 --
 ALTER TABLE `transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
 
 --
 -- AUTO_INCREMENT for table `transaction_handoffs`
 --
 ALTER TABLE `transaction_handoffs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `transaction_updates`
 --
 ALTER TABLE `transaction_updates`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -582,7 +783,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `user_sessions`
 --
 ALTER TABLE `user_sessions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28379;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=172305;
 
 --
 -- Constraints for dumped tables
