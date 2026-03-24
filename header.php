@@ -938,7 +938,7 @@ if (session_status() === PHP_SESSION_NONE) {
             <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
                 <img src="assets/images/sdo-logo.png" alt="SDO logo" class="site-logo" />
                 <div class="brand-text">
-                    <span class="main-title">DepEd Division Office</span>
+                    <span class="main-title">DEPED CABUYAO CITY</span>
                     <small>Supplier Transaction Monitoring System</small>
                 </div>
             </a>
@@ -1169,9 +1169,17 @@ if (session_status() === PHP_SESSION_NONE) {
                     <!-- Proponent -->
                     <div class="mb-3">
                         <label class="form-label" style="font-weight: 600; color: #333; font-size: 0.9rem;">Proponent <span style="color: #dc2626;">*</span></label>
-                        <input type="text" name="proponent" class="form-control" required
-                               placeholder="Enter proponent name"
-                               style="border-radius: 6px; border: 1px solid #ddd; padding: 0.6rem 0.8rem; font-size: 0.9rem;">
+                        <select name="proponent" class="form-control" required
+                                style="border-radius: 6px; border: 1px solid #ddd; padding: 0.6rem 0.8rem; font-size: 0.9rem;">
+                            <option value="">-- Select proponent --</option>
+                            <?php
+                            $proponentsStmt = $db->query('SELECT id, name FROM proponents ORDER BY name ASC');
+                            $proponents = $proponentsStmt->fetchAll(PDO::FETCH_ASSOC);
+                            foreach ($proponents as $p):
+                                ?>
+                                <option value="<?php echo (int)$p['id']; ?>"><?php echo htmlspecialchars($p['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
 
                     <!-- Supplier -->

@@ -19,9 +19,10 @@ if ($id <= 0) {
 }
 
 // Load transaction
-$stmt = $db->prepare('SELECT t.*, s.name AS supplier_name 
+$stmt = $db->prepare('SELECT t.*, s.name AS supplier_name, p.name AS proponent_name, p.email AS proponent_email
                       FROM transactions t 
                       JOIN suppliers s ON t.supplier_id = s.id 
+                      LEFT JOIN proponents p ON t.proponent_id = p.id
                       WHERE t.id = ?');
 $stmt->execute([$id]);
 $transaction = $stmt->fetch();
@@ -76,6 +77,33 @@ try {
     $stmtUser->execute([$_SESSION['user_id']]);
     $currentUserEmail = $stmtUser->fetchColumn() ?: '';
 } catch (Exception $e) {
+}
+
+// Department key for per-dept proponent defaults
+$roleDeptForDefaults = '';
+if ($role === 'procurement') $roleDeptForDefaults = 'procurement';
+elseif ($role === 'supply') $roleDeptForDefaults = 'supply';
+elseif ($role === 'accounting') $roleDeptForDefaults = 'accounting';
+elseif ($role === 'budget') $roleDeptForDefaults = 'budget';
+elseif ($role === 'cashier') $roleDeptForDefaults = 'cashier';
+
+// Load per-department proponent defaults from settings
+$proponentTitleKey = $roleDeptForDefaults !== '' ? "proponent_default_title_{$roleDeptForDefaults}" : '';
+$proponentMessageKey = $roleDeptForDefaults !== '' ? "proponent_default_message_{$roleDeptForDefaults}" : '';
+$proponentCcKey = $roleDeptForDefaults !== '' ? "proponent_default_cc_{$roleDeptForDefaults}" : '';
+
+$proponentDefaultTitle = ($proponentTitleKey !== '' && isset($settings[$proponentTitleKey])) ? $settings[$proponentTitleKey] : '';
+$proponentDefaultMessage = ($proponentMessageKey !== '' && isset($settings[$proponentMessageKey])) ? $settings[$proponentMessageKey] : '';
+$proponentDefaultCc = ($proponentCcKey !== '' && isset($settings[$proponentCcKey])) ? $settings[$proponentCcKey] : '';
+
+if ($proponentDefaultTitle === '') {
+    $proponentDefaultTitle = 'PO Forwarded for Review';
+}
+if ($proponentDefaultMessage === '') {
+    $proponentDefaultMessage = 'Your PO ' . ($transaction['po_number'] ?? '') . ' has been forwarded to you for review. Please check the portal for details.';
+}
+if ($proponentDefaultCc === '' && $currentUserEmail !== '') {
+    $proponentDefaultCc = $currentUserEmail;
 }
 
 $updatesByStage = [
@@ -188,6 +216,18 @@ $canEditUpdatesUi = (
     && $ownerDeptEdit !== ''
     && $roleDeptEdit === $ownerDeptEdit
 );
+
+// Prepare current user email for default CC
+$userEmail = '';
+if (!empty($_SESSION['user_id'])) {
+    $stmtUser = $db->prepare('SELECT email FROM users WHERE id = ? LIMIT 1');
+    $stmtUser->execute([$_SESSION['user_id']]);
+    $user = $stmtUser->fetch();
+    if ($user && !empty($user['email'])) {
+        $userEmail = strtolower(trim($user['email']));
+    }
+}
+$defaultCc = $userEmail;
 
 if (isset($_GET['updated']) && $_GET['updated'] === '1') {
     $success = 'Transaction updated successfully.';
@@ -581,6 +621,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Redirect back so refresh does not re-send notification
         header('Location: transaction_view.php?id=' . $id . '&notified=1');
         exit;
+    }
+
+    // Special action: Forward to Proponent
+    if (isset($_POST['proponent_title']) && isset($_POST['proponent_message']) && !isset($_POST['save_updates'])) {
+        try {
+            $title = trim((string)($_POST['proponent_title'] ?? ''));
+            $message = trim((string)($_POST['proponent_message'] ?? ''));
+            $ccRaw = trim((string)($_POST['proponent_cc'] ?? ''));
+            $bccRaw = trim((string)($_POST['proponent_bcc'] ?? ''));
+            $ccEmails = [];
+            $bccEmails = [];
+            if ($ccRaw !== '') {
+                $parts = preg_split('/[\s,;]+/', $ccRaw, -1, PREG_SPLIT_NO_EMPTY);
+                if (is_array($parts)) {
+                    foreach ($parts as $p) {
+                        $p = strtolower(trim((string)$p));
+                        if ($p === '' || !filter_var($p, FILTER_VALIDATE_EMAIL)) continue;
+                        $ccEmails[] = $p;
+                    }
+                }
+            }
+            if ($bccRaw !== '') {
+                $parts = preg_split('/[\s,;]+/', $bccRaw, -1, PREG_SPLIT_NO_EMPTY);
+                if (is_array($parts)) {
+                    foreach ($parts as $p) {
+                        $p = strtolower(trim((string)$p));
+                        if ($p === '' || !filter_var($p, FILTER_VALIDATE_EMAIL)) continue;
+                        $bccEmails[] = $p;
+                    }
+                }
+            }
+
+            if ($title === '' || $message === '') {
+                $error = 'Title and message are required.';
+            } elseif (empty($transaction['proponent_email'])) {
+                $error = 'Proponent email not found for this transaction.';
+            } else {
+                $link = 'transaction_view.php?id=' . $transaction['id'];
+                $emailSubject = $title;
+                $emailBody = '<p>' . htmlspecialchars($message) . '</p>' .
+                    '<p><a href="' . htmlspecialchars(BASE_URL . $link) . '">View details in the STMS portal</a></p>';
+
+                $toEmail = strtolower(trim($transaction['proponent_email']));
+                send_supplier_email($toEmail, $emailSubject, $emailBody, $ccEmails, $bccEmails);
+
+                // Persist per-department defaults for proponent email
+                $stmtSetTitle = $db->prepare('INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?) 
+                                             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
+                $stmtSetTitle->execute(["proponent_default_title_{$roleDeptForDefaults}", $title]);
+                $stmtSetMsg = $db->prepare('INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?) 
+                                            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
+                $stmtSetMsg->execute(["proponent_default_message_{$roleDeptForDefaults}", $message]);
+                $stmtSetCc = $db->prepare('INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?) 
+                                           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
+                $stmtSetCc->execute(["proponent_default_cc_{$roleDeptForDefaults}", $ccRaw]);
+
+                // Ensure updated values are shown immediately after POST without requiring a manual refresh
+                $proponentDefaultTitle = $title;
+                $proponentDefaultMessage = $message;
+                $proponentDefaultCc = $ccRaw;
+
+                $success = 'Email sent to proponent.';
+            }
+        } catch (Exception $e) {
+            $error = 'Failed to send email to proponent.';
+        }
     }
 
     if (isset($_POST['handoff_action']) && $role !== 'supplier' && $role !== 'admin') {
@@ -993,7 +1099,8 @@ include __DIR__ . '/header.php';
         <h5>Transaction Details</h5>
         <small class="text-muted">
             PO # <?php echo htmlspecialchars($transaction['po_number']); ?> |
-            Supplier: <?php echo htmlspecialchars($transaction['supplier_name']); ?>
+            Supplier: <?php echo htmlspecialchars($transaction['supplier_name']); ?> |
+            Proponent: <?php echo htmlspecialchars($transaction['proponent_name'] ?? 'N/A'); ?>
         </small>
     </div>
     <div class="col-md-4 text-md-end mt-2 mt-md-0">
@@ -1317,21 +1424,27 @@ include __DIR__ . '/header.php';
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="forwardDropdownBtn">
                                     <li class="dropdown-header small text-muted">Forward PO to:</li>
                                     <?php
-                                    $allDepts = ['procurement', 'supply', 'accounting', 'budget', 'cashier'];
+                                    $allDepts = ['procurement', 'supply', 'accounting', 'budget', 'cashier', 'proponent'];
                                     foreach ($allDepts as $d) {
                                         if ($d === $fromDeptUi) {
                                             continue;
                                         }
+                                        $isProponent = ($d === 'proponent');
                                         ?>
                                         <li>
-                                            <form method="post" class="m-0" id="forwardForm_<?php echo htmlspecialchars($d); ?>">
-                                                <input type="hidden" name="handoff_action" value="forward">
-                                                <input type="hidden" name="handoff_to_dept" value="<?php echo htmlspecialchars($d); ?>">
-                                                <button type="submit" class="dropdown-item py-1" onclick="this.disabled=true; this.form.submit();">
-                                                    <i class="fas fa-arrow-right me-2 small text-primary"></i>
-                                                    <?php echo strtoupper(htmlspecialchars($d)); ?>
+                                            <?php if ($isProponent): ?>
+                                                <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#forwardProponentModal">
+                                                    <i class="fas fa-arrow-right me-1"></i>Proponent
                                                 </button>
-                                            </form>
+                                            <?php else: ?>
+                                                <form method="post" class="m-0" id="forwardForm_<?php echo htmlspecialchars($d); ?>">
+                                                    <input type="hidden" name="handoff_action" value="forward">
+                                                    <input type="hidden" name="handoff_to_dept" value="<?php echo htmlspecialchars($d); ?>">
+                                                    <button type="submit" class="dropdown-item">
+                                                        <i class="fas fa-arrow-right me-1"></i><?php echo ucfirst(htmlspecialchars($d)); ?>
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
                                         </li>
                                         <?php
                                     }
@@ -2588,4 +2701,48 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-<?php include __DIR__ . '/footer.php'; ?>
+<!-- Modal: Forward to Proponent -->
+<div class="modal fade" id="forwardProponentModal" tabindex="-1" aria-labelledby="forwardProponentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="forwardProponentModalLabel">
+                    <i class="fas fa-user-tie me-1"></i>Forward to Proponent
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="forwardProponentForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="proponentTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="proponentTitle" name="proponent_title" required
+                               placeholder="Enter notification title" value="<?php echo htmlspecialchars($proponentDefaultTitle); ?>">
+                    </div>
+                    <div class="mb-3">
+                        <label for="proponentMessage" class="form-label">Message</label>
+                        <textarea class="form-control" id="proponentMessage" name="proponent_message" rows="4" required
+                                  placeholder="Enter your message"><?php echo htmlspecialchars($proponentDefaultMessage); ?></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="proponentCc" class="form-label">CC (comma-separated)</label>
+                        <input type="text" class="form-control" id="proponentCc" name="proponent_cc"
+                               placeholder="email1@example.com, email2@example.com" value="<?php echo htmlspecialchars($proponentDefaultCc); ?>">
+                    </div>
+                    <div class="mb-3">
+                        <label for="proponentBcc" class="form-label">BCC (comma-separated)</label>
+                        <input type="text" class="form-control" id="proponentBcc" name="proponent_bcc"
+                               placeholder="email1@example.com, email2@example.com">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-1"></i>Send to Proponent
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<?php require_once __DIR__ . '/footer.php'; ?>

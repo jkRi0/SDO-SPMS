@@ -12,13 +12,30 @@ $db = get_db();
 
 // Determine display name for welcome message
 $welcomeName = $user['username'] ?? ucfirst($role);
-if ($role === 'supplier' && !empty($user['supplier_id'])) {
+
+$idColumn = match($role) {
+    'supplier' => 'supplier_id',
+    'proponent' => 'proponent_id',
+    'school_head' => 'school_head_id',
+    default => null
+};
+
+if ($idColumn && !empty($user[$idColumn])) {
     try {
-        $stmtName = $db->prepare('SELECT name FROM suppliers WHERE id = ? LIMIT 1');
-        $stmtName->execute([$user['supplier_id']]);
-        $rowName = $stmtName->fetch();
-        if ($rowName && !empty($rowName['name'])) {
-            $welcomeName = $rowName['name'];
+        $tableName = match($role) {
+            'supplier' => 'suppliers',
+            'proponent' => 'proponents', 
+            'school_head' => 'school_heads',
+            default => null
+        };
+        
+        if ($tableName) {
+            $stmtName = $db->prepare("SELECT name FROM {$tableName} WHERE id = ? LIMIT 1");
+            $stmtName->execute([$user[$idColumn]]);
+            $rowName = $stmtName->fetch();
+            if ($rowName && !empty($rowName['name'])) {
+                $welcomeName = $rowName['name'];
+            }
         }
     } catch (Exception $e) {
         // Fallback to username if lookup fails
@@ -26,15 +43,17 @@ if ($role === 'supplier' && !empty($user['supplier_id'])) {
 }
 
 // Subtitle text
-$subtitle = ucfirst($role) . ' Dashboard';
-if ($role === 'supplier') {
-    $subtitle = 'Supplier Dashboard';
-}
+$subtitle = match($role) {
+    'supplier' => 'Supplier Dashboard',
+    'proponent' => 'Proponent Dashboard',
+    'school_head' => 'School Head Dashboard',
+    default => ucfirst($role) . ' Dashboard'
+};
 
-$pageTitle = $subtitle . ' - ' . strtoupper((string)$role) . ' - STMS';
-if ($role === 'supplier') {
-    $pageTitle = $subtitle . ' - STMS';
-}
+$pageTitle = match($role) {
+    'supplier' => $subtitle . ' - STMS',
+    default => $subtitle . ' - ' . strtoupper((string)$role) . ' - STMS'
+};
 
 include __DIR__ . '/header.php';
 ?>

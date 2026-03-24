@@ -19,7 +19,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 if (!function_exists('send_supplier_email')) {
-    function send_supplier_email($toEmail, $subject, $htmlBody, $ccEmails = null, $replyToEmail = null, $replyToName = null)
+    function send_supplier_email($toEmail, $subject, $htmlBody, $ccEmails = null, $bccEmails = null, $replyToEmail = null, $replyToName = null)
     {
         if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
             return false;
@@ -56,6 +56,7 @@ if (!function_exists('send_supplier_email')) {
             
             $mail->addAddress($toEmail);
 
+            // Handle CC
             $ccList = [];
             if (is_string($ccEmails)) {
                 $parts = preg_split('/[\s,;]+/', $ccEmails, -1, PREG_SPLIT_NO_EMPTY);
@@ -75,6 +76,29 @@ if (!function_exists('send_supplier_email')) {
                         return false;
                     }
                     $mail->addCC($cc);
+                }
+            }
+
+            // Handle BCC
+            $bccList = [];
+            if (is_string($bccEmails)) {
+                $parts = preg_split('/[\s,;]+/', $bccEmails, -1, PREG_SPLIT_NO_EMPTY);
+                if (is_array($parts)) {
+                    $bccList = $parts;
+                }
+            } elseif (is_array($bccEmails)) {
+                $bccList = $bccEmails;
+            }
+            if (!empty($bccList)) {
+                foreach ($bccList as $bcc) {
+                    $bcc = trim((string)$bcc);
+                    if ($bcc === '') {
+                        continue;
+                    }
+                    if (!filter_var($bcc, FILTER_VALIDATE_EMAIL)) {
+                        return false;
+                    }
+                    $mail->addBCC($bcc);
                 }
             }
 

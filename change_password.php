@@ -29,6 +29,38 @@ try {
     $smartPollingEnabled = 1;
 }
 
+// Get current name for supplier, proponent, or school_head
+$currentName = '';
+$role = $_SESSION['role'] ?? '';
+$idColumn = match($role) {
+    'supplier' => 'supplier_id',
+    'proponent' => 'proponent_id',
+    'school_head' => 'school_head_id',
+    default => null
+};
+
+if ($idColumn && !empty($user[$idColumn])) {
+    try {
+        $tableName = match($role) {
+            'supplier' => 'suppliers',
+            'proponent' => 'proponents', 
+            'school_head' => 'school_heads',
+            default => null
+        };
+        
+        if ($tableName) {
+            $stmtName = $db->prepare("SELECT name FROM {$tableName} WHERE id = ? LIMIT 1");
+            $stmtName->execute([$user[$idColumn]]);
+            $rowName = $stmtName->fetch();
+            if ($rowName && !empty($rowName['name'])) {
+                $currentName = $rowName['name'];
+            }
+        }
+    } catch (Exception $e) {
+        // Keep empty if lookup fails
+    }
+}
+
 $sessions = [];
 try {
     $db->exec('CREATE TABLE IF NOT EXISTS user_sessions (
@@ -99,6 +131,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errors[] = 'Error deleting session.';
             }
         }
+    } elseif ($action === 'set_name') {
+        $name = trim($_POST['name'] ?? '');
+        $role = $_SESSION['role'] ?? '';
+        
+        if ($name === '') {
+            $errors[] = 'Name cannot be empty.';
+        } else {
+            try {
+                $idColumn = match($role) {
+                    'supplier' => 'supplier_id',
+                    'proponent' => 'proponent_id',
+                    'school_head' => 'school_head_id',
+                    default => null
+                };
+                
+                $tableName = match($role) {
+                    'supplier' => 'suppliers',
+                    'proponent' => 'proponents', 
+                    'school_head' => 'school_heads',
+                    default => null
+                };
+                
+                if ($idColumn && $tableName && !empty($user[$idColumn])) {
+                    $stmt = $db->prepare("UPDATE {$tableName} SET name = ? WHERE id = ?");
+                    $stmt->execute([$name, $user[$idColumn]]);
+                    $success = 'Name updated successfully.';
+                } else {
+                    $errors[] = 'Unable to update name for your role type.';
+                }
+            } catch (Exception $e) {
+                $errors[] = 'Error updating name: ' . $e->getMessage();
+            }
+        }
     } elseif ($action === 'set_email') {
         $email = trim($_POST['email'] ?? '');
         try {
@@ -109,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Exception $e) {
             $errors[] = 'Error updating email: ' . $e->getMessage();
         }
-    } else {
+    } elseif ($action === 'update_account') {
         $username = trim($_POST['username'] ?? '');
         $current = $_POST['current_password'] ?? '';
         $new = $_POST['new_password'] ?? '';
@@ -161,14 +226,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
 
                         $_SESSION['username'] = $username;
-                        $success = 'Your account details have been updated successfully.';
+                        $success = 'Your account details have been updated successfully, please refresh the page.';
                     }
                 }
             } catch (Exception $e) {
                 $errors[] = 'Error updating account: ' . $e->getMessage();
             }
         }
-    }
+}
 }
 
 try {
@@ -232,11 +297,25 @@ include __DIR__ . '/header.php';
                 <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>" placeholder="department@email.com">
                 <button type="submit" class="btn btn-primary">Link Email</button>
             </div>
-            <div class="form-text small">This email will be used for department-level notifications.</div>
         </form>
     </div>
 
+    <?php if (in_array($role, ['supplier', 'proponent', 'school_head'])): ?>
+    <div class="mb-3">
+        <form method="post">
+            <input type="hidden" name="action" value="set_name">
+            <label for="name" class="form-label">Name</label>
+            <div class="input-group">
+                <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($currentName); ?>" required>
+                <button type="submit" class="btn btn-primary">Update Name</button>
+            </div>
+        </form>
+    </div>
+    <?php endif; ?>
+
     <form method="post" autocomplete="off">
+        <input type="hidden" name="action" value="update_account">
+        
         <div class="mb-3">
             <label for="username" class="form-label">Username</label>
             <input type="text" class="form-control" id="username" name="username" value="<?php echo htmlspecialchars($user['username'] ?? ''); ?>" required>

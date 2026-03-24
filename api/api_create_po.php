@@ -107,7 +107,7 @@ try {
 
     // Insert transaction
     $stmt = $db->prepare('INSERT INTO transactions 
-        (supplier_id, po_number, program_title, po_type, proponent, coverage_start, coverage_end, expected_date, amount, proc_status, created_at)
+        (supplier_id, po_number, program_title, po_type, proponent_id, coverage_start, coverage_end, expected_date, amount, proc_status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
     
     $stmt->execute([

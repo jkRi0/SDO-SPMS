@@ -6,39 +6,61 @@ $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $role_type = trim((string)($_POST['role_type'] ?? 'supplier'));
+    $email = trim((string)($_POST['email'] ?? ''));
     $supplier_name = trim($_POST['supplier_name'] ?? '');
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     $password_confirm = $_POST['password_confirm'] ?? '';
 
-    if ($supplier_name === '' || $username === '' || $password === '') {
+    if (!in_array($role_type, ['supplier', 'proponent', 'school_head'], true)) {
+        $role_type = 'supplier';
+    }
+
+    if ($email === '' || $supplier_name === '' || $username === '' || $password === '') {
         $error = 'All fields are required.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Invalid email address.';
     } elseif ($password !== $password_confirm) {
         $error = 'Passwords do not match.';
     } else {
         $db = get_db();
         $db->beginTransaction();
         try {
-            // Create supplier
-            $stmt = $db->prepare('INSERT INTO suppliers (name) VALUES (?)');
-            $stmt->execute([$supplier_name]);
-            $supplier_id = $db->lastInsertId();
+            $profileTable = 'suppliers';
+            $profileFkColumn = 'supplier_id';
 
-            // Get supplier role id
-            $roleStmt = $db->prepare('SELECT id FROM roles WHERE name = ?');
-            $roleStmt->execute(['supplier']);
-            $role = $roleStmt->fetch();
-            if (!$role) {
-                throw new Exception('Supplier role not found. Please import init_db.sql.');
+            if ($role_type === 'proponent') {
+                $profileTable = 'proponents';
+                $profileFkColumn = 'proponent_id';
+            } elseif ($role_type === 'school_head') {
+                $profileTable = 'school_heads';
+                $profileFkColumn = 'school_head_id';
             }
 
-            // Create user
-            $stmt = $db->prepare('INSERT INTO users (username, password_hash, role_id, supplier_id) VALUES (?,?,?,?)');
+            $stmt = $db->prepare('INSERT INTO ' . $profileTable . ' (name, email) VALUES (?, ?)');
+            $stmt->execute([$supplier_name, $email]);
+            $profile_id = $db->lastInsertId();
+
+            $roleStmt = $db->prepare('SELECT id FROM roles WHERE name = ?');
+            $roleStmt->execute([$role_type]);
+            $role = $roleStmt->fetch();
+            if (!$role) {
+                throw new Exception('Role not found. Please update roles table.');
+            }
+
+            $allowedFkCols = ['supplier_id', 'proponent_id', 'school_head_id'];
+            if (!in_array($profileFkColumn, $allowedFkCols, true)) {
+                throw new Exception('Invalid profile mapping.');
+            }
+
+            $stmt = $db->prepare('INSERT INTO users (username, email, password_hash, role_id, ' . $profileFkColumn . ') VALUES (?,?,?,?,?)');
             $stmt->execute([
                 $username,
+                $email,
                 password_hash($password, PASSWORD_DEFAULT),
                 $role['id'],
-                $supplier_id
+                $profile_id
             ]);
 
             $db->commit();
@@ -326,7 +348,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="register-icon">
                     <img src="assets/images/sdo-logo.png" alt="SDO Logo">
                 </div>
-                <div class="deped-name">DEPED DIVISION OFFICE</div>
+                <div class="deped-name">DEPED CABUYAO CITY</div>
                 <h2 class="system-title">Supplier Transaction Monitoring System</h2>
             </div>
 
@@ -349,6 +371,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
 
                 <form method="post" novalidate>
+                    <input type="hidden" name="role_type" value="<?php echo htmlspecialchars($role_type ?? 'supplier'); ?>">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope form-icon"></i>Email
+                        </label>
+                        <input type="email" class="form-control" id="email" name="email" required
+                               placeholder="Enter your active email address" autocomplete="email">
+                    </div>
                     <div class="mb-3">
                         <label for="supplier_name" class="form-label">
                             <i class="fas fa-store form-icon"></i>Supplier Name
@@ -399,4 +429,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </html>
 
 <?php include __DIR__ . '/footer.php'; ?>
-

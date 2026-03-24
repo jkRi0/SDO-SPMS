@@ -322,7 +322,7 @@ if (session_status() === PHP_SESSION_NONE) {
                 <div class="logo-wrapper">
                     <img src="assets/images/sdo-logo.png" alt="SDO Logo">
                 </div>
-                <div class="deped-name">DEPED DIVISION OFFICE</div>
+                <div class="deped-name">DEPED CABUYAO CITY</div>
                 <h2 class="system-title">Supplier Transaction Monitoring System</h2>
             </div>
 
@@ -366,7 +366,69 @@ if (session_status() === PHP_SESSION_NONE) {
                 </form>
 
                 <div class="register-link">
-                    <p>New supplier? <a href="#" id="showRegisterForm">Register here</a></p>
+                    <p>New user? <a href="#" id="showRegisterForm">Register here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ROLE SELECTION (Hidden by default) -->
+<div class="login-wrapper" id="roleSelectWrapper" style="display: none;">
+    <div class="login-card">
+        <div class="login-container">
+            <!-- LEFT SIDE - BRANDING -->
+            <div class="login-branding">
+                <div class="logo-wrapper">
+                    <img src="assets/images/sdo-logo.png" alt="SDO Logo">
+                </div>
+                <div class="deped-name">DEPED CABUYAO CITY</div>
+                <h2 class="system-title">Supplier Transaction Monitoring System</h2>
+            </div>
+
+            <div class="login-form-section">
+                <h5 class="login-form-title">
+                    <i class="fas fa-user-plus"></i> SELECT ACCOUNT TYPE
+                </h5>
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <button type="button" class="btn btn-outline-primary w-100 text-start p-3 role-card" data-role="supplier" data-label="Supplier Name" data-placeholder="Enter your company name">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="fas fa-store" style="font-size: 1.3rem;"></i>
+                                <div>
+                                    <div class="fw-bold">Supplier</div>
+                                    <div class="text-muted" style="font-size: 0.9rem;">Register as a supplier company</div>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="col-12">
+                        <button type="button" class="btn btn-outline-primary w-100 text-start p-3 role-card" data-role="proponent" data-label="Proponent Name" data-placeholder="Enter your full name">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="fas fa-user-tie" style="font-size: 1.3rem;"></i>
+                                <div>
+                                    <div class="fw-bold">Proponent</div>
+                                    <div class="text-muted" style="font-size: 0.9rem;">Register as a proponent</div>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="col-12">
+                        <button type="button" class="btn btn-outline-primary w-100 text-start p-3 role-card" data-role="school_head" data-label="School Head Name" data-placeholder="Enter your full name">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="fas fa-school" style="font-size: 1.3rem;"></i>
+                                <div>
+                                    <div class="fw-bold">School Head</div>
+                                    <div class="text-muted" style="font-size: 0.9rem;">Register as a school head</div>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="register-link">
+                    <p>Already have an account? <a href="#" id="showLoginFromRoleSelect">Login here</a></p>
                 </div>
             </div>
         </div>
@@ -382,7 +444,7 @@ if (session_status() === PHP_SESSION_NONE) {
                 <div class="logo-wrapper">
                     <img src="assets/images/sdo-logo.png" alt="SDO Logo">
                 </div>
-                <div class="deped-name">DEPED DIVISION OFFICE</div>
+                <div class="deped-name">DEPED CABUYAO CITY</div>
                 <h2 class="system-title">Supplier Transaction Monitoring System</h2>
             </div>
 
@@ -395,9 +457,17 @@ if (session_status() === PHP_SESSION_NONE) {
                 <div id="registerSuccessAlert"></div>
 
                 <form id="registerForm" method="post" novalidate>
+                    <input type="hidden" id="reg_role_type" name="role_type" value="supplier">
+                    <div class="mb-3">
+                        <label for="reg_email" class="form-label">
+                            <i class="fas fa-envelope form-icon"></i>Email
+                        </label>
+                        <input type="email" class="form-control" id="reg_email" name="email" required
+                               placeholder="Enter your active email address" autocomplete="email">
+                    </div>
                     <div class="mb-3">
                         <label for="reg_supplier_name" class="form-label">
-                            <i class="fas fa-store form-icon"></i>Supplier Name
+                            <i class="fas fa-store form-icon"></i><span id="regNameLabel">Supplier Name</span>
                         </label>
                         <input type="text" class="form-control" id="reg_supplier_name" name="supplier_name" required
                                placeholder="Enter your company name">
@@ -475,46 +545,95 @@ if (session_status() === PHP_SESSION_NONE) {
     
     // Form switching
     const loginFormWrapper = document.querySelector('.login-wrapper');
+    const roleSelectWrapper = document.getElementById('roleSelectWrapper');
     const registerFormWrapper = document.getElementById('registerFormWrapper');
     const showRegisterForm = document.getElementById('showRegisterForm');
     const showLoginForm = document.getElementById('showLoginForm');
+    const showLoginFromRoleSelect = document.getElementById('showLoginFromRoleSelect');
     const registerForm = document.getElementById('registerForm');
+    const roleCards = document.querySelectorAll('.role-card');
+    const regRoleType = document.getElementById('reg_role_type');
+    const regNameLabel = document.getElementById('regNameLabel');
+    const regNameInput = document.getElementById('reg_supplier_name');
     
-    if (showRegisterForm && showLoginForm && registerFormWrapper) {
+    function showWrapper(wrapperToShow) {
+        const wrappers = [loginFormWrapper, roleSelectWrapper, registerFormWrapper].filter(Boolean);
+        wrappers.forEach((w) => {
+            if (w === wrapperToShow) {
+                w.style.display = 'block';
+                w.style.opacity = '0';
+                setTimeout(() => {
+                    w.style.opacity = '1';
+                }, 50);
+            } else {
+                w.style.opacity = '0';
+                setTimeout(() => {
+                    w.style.display = 'none';
+                }, 300);
+            }
+        });
+
+        const errEl = document.getElementById('registerErrorAlert');
+        const okEl = document.getElementById('registerSuccessAlert');
+        if (errEl) errEl.innerHTML = '';
+        if (okEl) okEl.innerHTML = '';
+    }
+
+    function setRegistrationRole(role) {
+        if (!regRoleType || !regNameLabel || !regNameInput) return;
+
+        const roleMap = {
+            supplier: { label: 'Supplier Name', placeholder: 'Enter your company name' },
+            proponent: { label: 'Proponent Name', placeholder: 'Enter your full name' },
+            school_head: { label: 'School Head Name', placeholder: 'Enter your full name' },
+        };
+
+        const cfg = roleMap[role] || roleMap.supplier;
+        regRoleType.value = role;
+        regNameLabel.textContent = cfg.label;
+        regNameInput.setAttribute('placeholder', cfg.placeholder);
+    }
+
+    if (showRegisterForm && showLoginForm && registerFormWrapper && roleSelectWrapper) {
         showRegisterForm.addEventListener('click', (e) => {
             e.preventDefault();
-            loginFormWrapper.style.opacity = '0';
-            setTimeout(() => {
-                loginFormWrapper.style.display = 'none';
-                registerFormWrapper.style.display = 'block';
-                registerFormWrapper.style.opacity = '0';
-                setTimeout(() => {
-                    registerFormWrapper.style.opacity = '1';
-                }, 50);
-            }, 300);
+            showWrapper(roleSelectWrapper);
         });
         
         showLoginForm.addEventListener('click', (e) => {
             e.preventDefault();
-            registerFormWrapper.style.opacity = '0';
-            setTimeout(() => {
-                registerFormWrapper.style.display = 'none';
-                loginFormWrapper.style.display = 'block';
-                loginFormWrapper.style.opacity = '0';
-                setTimeout(() => {
-                    loginFormWrapper.style.opacity = '1';
-                }, 50);
-            }, 300);
+            showWrapper(loginFormWrapper);
+        });
+
+        if (showLoginFromRoleSelect) {
+            showLoginFromRoleSelect.addEventListener('click', (e) => {
+                e.preventDefault();
+                showWrapper(loginFormWrapper);
+            });
+        }
+
+        roleCards.forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const role = btn.getAttribute('data-role') || 'supplier';
+                setRegistrationRole(role);
+                showWrapper(registerFormWrapper);
+            });
         });
         
         // Handle registration form submission
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            const errEl = document.getElementById('registerErrorAlert');
+            const okEl = document.getElementById('registerSuccessAlert');
+            if (errEl) errEl.innerHTML = '';
+            if (okEl) okEl.innerHTML = '';
             
             const formData = new FormData(registerForm);
             
             try {
-                const response = await fetch('register_supplier.php', {
+                const response = await fetch('register_third_party.php', {
                     method: 'POST',
                     body: formData
                 });
@@ -523,11 +642,13 @@ if (session_status() === PHP_SESSION_NONE) {
                 
                 // Check if registration was successful
                 if (text.includes('Registration successful')) {
+                    if (errEl) errEl.innerHTML = '';
                     document.getElementById('registerSuccessAlert').innerHTML = 
                         '<div class="alert alert-success" role="alert"><i class="fas fa-check-circle"></i> Registration successful. Redirecting to login...</div>';
                     
                     setTimeout(() => {
                         registerForm.reset();
+                        setRegistrationRole('supplier');
                         showLoginForm.click();
                         document.getElementById('registerSuccessAlert').innerHTML = '';
                     }, 2000);
@@ -537,6 +658,9 @@ if (session_status() === PHP_SESSION_NONE) {
                 } else if (text.includes('Passwords do not match')) {
                     document.getElementById('registerErrorAlert').innerHTML = 
                         '<div class="alert alert-danger" role="alert"><i class="fas fa-exclamation-circle"></i> Passwords do not match.</div>';
+                } else if (text.includes('Invalid email')) {
+                    document.getElementById('registerErrorAlert').innerHTML = 
+                        '<div class="alert alert-danger" role="alert"><i class="fas fa-exclamation-circle"></i> Invalid email address.</div>';
                 } else if (text.includes('All fields are required')) {
                     document.getElementById('registerErrorAlert').innerHTML = 
                         '<div class="alert alert-danger" role="alert"><i class="fas fa-exclamation-circle"></i> All fields are required.</div>';

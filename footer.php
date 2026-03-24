@@ -12,6 +12,19 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Auto-dismiss success alerts after 5 seconds, but NOT error alerts
+            setTimeout(function() {
+                const successAlerts = document.querySelectorAll('.alert-success:not(.alert-danger)');
+                successAlerts.forEach(function(alert) {
+                    // Add fade out effect
+                    alert.style.transition = 'opacity 0.5s ease-out';
+                    alert.style.opacity = '0';
+                    setTimeout(function() {
+                        alert.remove();
+                    }, 500);
+                });
+            }, 5000);
+            
             function setConnDot(el, state) {
                 if (!el) return;
                 el.classList.remove('conn-dot--ok');

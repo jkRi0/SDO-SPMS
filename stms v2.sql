@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 23, 2026 at 07:19 PM
+-- Generation Time: Mar 24, 2026 at 07:00 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -64,7 +64,6 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `action`, `target_type`, `target_i
 (20, 16, 'transaction_handoff_receive', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"from_dept\":\"accounting\",\"to_dept\":\"cashier\",\"delay_seconds\":0,\"exceeded_grace\":0}', '2026-03-18 02:39:01'),
 (21, 16, 'transaction_update', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"stage\":\"cashier\",\"status\":\"For ACIC\",\"remarks\":\"Amount: 940288.99\",\"or_number\":\"345654\",\"or_date\":\"2026-04-02\",\"payment_date\":\"2026-04-02\",\"landbank_ref\":\"940288.99\"}', '2026-03-18 02:41:16'),
 (22, 16, 'transaction_notify_supplier', 'transaction', 51, '{\"transaction_id\":51,\"po_number\":\"2025030039\",\"supplier_id\":8,\"message\":\"Your PO 2025030039 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-18 02:42:56'),
-(23, 10, 'login', 'user', 10, 'Successful login', '2026-03-18 02:46:10'),
 (24, 26, 'login', 'user', 26, 'Successful login (Google OAuth)', '2026-03-18 03:13:35'),
 (25, 26, 'logout', 'user', 26, 'User logged out', '2026-03-18 03:20:06'),
 (26, 10, 'logout', 'user', 10, 'User logged out', '2026-03-18 08:30:36'),
@@ -188,7 +187,34 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `action`, `target_type`, `target_i
 (144, 16, 'login', 'user', 16, 'Successful login', '2026-03-22 10:30:22'),
 (145, 10, 'update_user', 'user', 16, '{\"username\":\"erica\",\"role_id\":7,\"supplier_id\":null}', '2026-03-22 10:31:17'),
 (146, 15, 'login', 'user', 15, 'Successful login', '2026-03-23 01:19:36'),
-(147, 16, 'login', 'user', 16, 'Successful login', '2026-03-23 08:19:55');
+(147, 16, 'login', 'user', 16, 'Successful login', '2026-03-23 08:19:55'),
+(149, 26, 'login', 'user', 26, 'Successful login (Google OAuth)', '2026-03-23 19:33:16'),
+(150, 26, 'logout', 'user', 26, 'User logged out', '2026-03-23 20:14:33'),
+(151, 28, 'login', 'user', 28, 'Successful login', '2026-03-23 22:51:17'),
+(152, 12, 'login', 'user', 12, 'Successful login', '2026-03-24 00:11:55'),
+(153, 12, 'logout', 'user', 12, 'User logged out', '2026-03-24 00:16:41'),
+(154, NULL, 'login_failed', 'user', NULL, '{\"attempted_username\":\"cashier\",\"reason\":\"unknown_username\"}', '2026-03-24 00:16:47'),
+(155, 16, 'login', 'user', 16, 'Successful login', '2026-03-24 00:16:53'),
+(156, 12, 'login', 'user', 12, 'Successful login', '2026-03-24 00:59:05'),
+(157, 13, 'login', 'user', 13, 'Successful login', '2026-03-24 00:59:10'),
+(158, 14, 'login', 'user', 14, 'Successful login', '2026-03-24 00:59:18'),
+(159, 16, 'logout', 'user', 16, 'User logged out', '2026-03-24 00:59:24'),
+(160, 15, 'login', 'user', 15, 'Successful login', '2026-03-24 00:59:29'),
+(161, 16, 'login', 'user', 16, 'Successful login', '2026-03-24 00:59:36'),
+(162, 12, 'login', 'user', 12, 'Successful login', '2026-03-24 02:16:30'),
+(163, 28, 'login', 'user', 28, 'Successful login', '2026-03-24 02:53:40'),
+(164, NULL, 'login_failed', 'user', NULL, '{\"attempted_username\":\"cashier\",\"reason\":\"unknown_username\"}', '2026-03-24 02:54:25'),
+(165, 26, 'login', 'user', 26, 'Successful login (Google OAuth)', '2026-03-24 02:55:45'),
+(166, 26, 'login', 'user', 26, 'Successful login (Google OAuth)', '2026-03-24 03:15:39'),
+(167, 26, 'login', 'user', 26, 'Successful login (Google OAuth)', '2026-03-24 05:01:10'),
+(168, 28, 'login', 'user', 28, 'Successful login', '2026-03-24 05:18:32'),
+(169, 28, 'logout', 'user', 28, 'User logged out', '2026-03-24 05:20:19'),
+(170, 26, 'login', 'user', 26, 'Successful login (Google OAuth)', '2026-03-24 05:20:27'),
+(171, 26, 'logout', 'user', 26, 'User logged out', '2026-03-24 05:20:29'),
+(172, 28, 'login', 'user', 28, 'Successful login', '2026-03-24 05:20:37'),
+(173, 28, 'logout', 'user', 28, 'User logged out', '2026-03-24 05:20:43'),
+(176, NULL, 'login_failed', 'user', NULL, '{\"attempted_username\":\"jacob\",\"reason\":\"unknown_username\"}', '2026-03-24 05:41:00'),
+(177, 32, 'login', 'user', 32, 'Successful login', '2026-03-24 05:41:10');
 
 -- --------------------------------------------------------
 
@@ -308,6 +334,27 @@ INSERT INTO `notifications` (`id`, `supplier_id`, `transaction_id`, `title`, `me
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `proponents`
+--
+
+CREATE TABLE `proponents` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `email` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `proponents`
+--
+
+INSERT INTO `proponents` (`id`, `name`, `created_at`, `email`) VALUES
+(1, 'carlo proponent', '2026-03-23 20:32:49', 'proponent@gmail.com'),
+(3, 'jacob', '2026-03-24 05:40:51', 'asd@asd.com');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `roles`
 --
 
@@ -326,8 +373,30 @@ INSERT INTO `roles` (`id`, `name`) VALUES
 (6, 'budget'),
 (7, 'cashier'),
 (3, 'procurement'),
+(8, 'proponent'),
+(9, 'school_head'),
 (2, 'supplier'),
 (4, 'supply');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `school_heads`
+--
+
+CREATE TABLE `school_heads` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `email` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `school_heads`
+--
+
+INSERT INTO `school_heads` (`id`, `name`, `created_at`, `email`) VALUES
+(1, 'school1', '2026-03-23 22:50:59', 'school@gmail.com');
 
 -- --------------------------------------------------------
 
@@ -347,7 +416,8 @@ CREATE TABLE `suppliers` (
 --
 
 INSERT INTO `suppliers` (`id`, `name`, `created_at`, `email`) VALUES
-(8, 'alpha num', '2026-03-18 02:09:09', 'alphanum0002@gmail.com');
+(8, 'alpha num', '2026-03-18 02:09:09', 'alphanum0002@gmail.com'),
+(9, 'supplier1', '2026-03-23 20:27:02', 'supplier@gmail.com');
 
 -- --------------------------------------------------------
 
@@ -393,19 +463,20 @@ CREATE TABLE `transactions` (
   `cashier_landbank_ref` varchar(150) DEFAULT NULL,
   `cashier_payment_date` date DEFAULT NULL,
   `supply_partial_delivery_date` date DEFAULT NULL,
-  `supply_delivery_date` date DEFAULT NULL
+  `supply_delivery_date` date DEFAULT NULL,
+  `proponent_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `transactions`
 --
 
-INSERT INTO `transactions` (`id`, `supplier_id`, `po_number`, `program_title`, `po_type`, `proponent`, `coverage_start`, `coverage_end`, `expected_date`, `amount`, `created_at`, `proc_status`, `proc_remarks`, `proc_date`, `supply_status`, `supply_delivery_receipt`, `supply_sales_invoice`, `supply_remarks`, `supply_date`, `acct_status`, `acct_remarks`, `acct_dv_number`, `acct_dv_date`, `acct_dv_amount`, `acct_date`, `budget_ors_number`, `budget_ors_date`, `budget_status`, `budget_demandability`, `budget_remarks`, `cashier_status`, `cashier_remarks`, `cashier_or_number`, `cashier_or_date`, `cashier_landbank_ref`, `cashier_payment_date`, `supply_partial_delivery_date`, `supply_delivery_date`) VALUES
-(51, 8, '2025030039', 'procurement of supplies', 'Supplies', 'cid', '2026-03-20', '2026-03-31', NULL, 940288.99, '2026-03-18 02:14:59', 'FOR SUPPLY REVIEW', 'for IAR', '2026-03-18', 'COMPLETED', '12314', '98787', 'delivered', '2026-03-18', 'FOR VOUCHER', 'for payment', NULL, NULL, NULL, '2026-03-18', '876', '2026-03-27', 'FOR PAYMENT', 'Not Yet Due and Demandable', 'obligated', 'For ACIC', '', '345654', '2026-04-02', '940288.99', '2026-04-02', NULL, '2026-04-01'),
-(52, 8, '34', '22', 'a', '2', NULL, NULL, '2', 2.00, '2026-03-21 12:43:48', 'FOR SUPPLY REVIEW', '', '2026-03-21', 'PARTIAL DELIVERY', '', '', '', '2026-03-21', 'FOR VOUCHER', 'must be the post-acc', '8789', '2026-03-21', 10000.00, '2026-03-21', '876', '2026-03-21', 'ACCOUNTS PAYABLE', '', '', 'COMPLETED', '', '987', '2026-03-21', '10000.00', '2026-03-21', '2026-03-21', NULL),
-(62, 8, '123456', 'procurementOnly', 'jlkl', 'qy', NULL, NULL, NULL, 121.00, '2026-03-22 08:22:55', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(63, 8, '09090', 'supplyOnly', 'asd', 'qwe', NULL, NULL, NULL, 234.00, '2026-03-22 08:23:19', 'FOR SUPPLY REVIEW', '', '2026-03-22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(65, 8, 'asdfsads', 'sample1', 'asd', 'qwert', NULL, NULL, NULL, 90000.00, '2026-03-22 10:12:23', 'FOR SUPPLY REVIEW', 'asdd', '2026-03-22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `transactions` (`id`, `supplier_id`, `po_number`, `program_title`, `po_type`, `proponent`, `coverage_start`, `coverage_end`, `expected_date`, `amount`, `created_at`, `proc_status`, `proc_remarks`, `proc_date`, `supply_status`, `supply_delivery_receipt`, `supply_sales_invoice`, `supply_remarks`, `supply_date`, `acct_status`, `acct_remarks`, `acct_dv_number`, `acct_dv_date`, `acct_dv_amount`, `acct_date`, `budget_ors_number`, `budget_ors_date`, `budget_status`, `budget_demandability`, `budget_remarks`, `cashier_status`, `cashier_remarks`, `cashier_or_number`, `cashier_or_date`, `cashier_landbank_ref`, `cashier_payment_date`, `supply_partial_delivery_date`, `supply_delivery_date`, `proponent_id`) VALUES
+(51, 8, '2025030039', 'procurement of supplies', 'Supplies', 'cid', '2026-03-20', '2026-03-31', NULL, 940288.99, '2026-03-18 02:14:59', 'FOR SUPPLY REVIEW', 'for IAR', '2026-03-18', 'COMPLETED', '12314', '98787', 'delivered', '2026-03-18', 'FOR VOUCHER', 'for payment', NULL, NULL, NULL, '2026-03-18', '876', '2026-03-27', 'FOR PAYMENT', 'Not Yet Due and Demandable', 'obligated', 'For ACIC', '', '345654', '2026-04-02', '940288.99', '2026-04-02', NULL, '2026-04-01', NULL),
+(52, 8, '34', '22', 'a', '2', NULL, NULL, '2', 2.00, '2026-03-21 12:43:48', 'FOR SUPPLY REVIEW', '', '2026-03-21', 'PARTIAL DELIVERY', '', '', '', '2026-03-21', 'FOR VOUCHER', 'must be the post-acc', '8789', '2026-03-21', 10000.00, '2026-03-21', '876', '2026-03-21', 'ACCOUNTS PAYABLE', '', '', 'COMPLETED', '', '987', '2026-03-21', '10000.00', '2026-03-21', '2026-03-21', NULL, NULL),
+(62, 8, '123456', 'procurementOnly', 'jlkl', 'qy', NULL, NULL, NULL, 121.00, '2026-03-22 08:22:55', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(63, 8, '09090', 'supplyOnly', 'asd', 'qwe', NULL, NULL, NULL, 234.00, '2026-03-22 08:23:19', 'FOR SUPPLY REVIEW', '', '2026-03-22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(65, 8, 'asdfsads', 'sample1', 'asd', 'qwert', NULL, NULL, NULL, 90000.00, '2026-03-22 10:12:23', 'FOR SUPPLY REVIEW', 'asdd', '2026-03-22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -516,22 +587,28 @@ CREATE TABLE `users` (
   `last_login_at` datetime DEFAULT NULL,
   `last_login_ip` varchar(45) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `full_name` varchar(150) DEFAULT NULL
+  `full_name` varchar(150) DEFAULT NULL,
+  `proponent_id` int(11) DEFAULT NULL,
+  `school_head_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `role_id`, `supplier_id`, `active_session_id`, `active_session_last_seen`, `last_login_at`, `last_login_ip`, `created_at`, `full_name`) VALUES
-(10, 'admin', NULL, '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 1, NULL, NULL, NULL, '2026-03-22 17:44:13', '::1', '2026-02-10 06:04:17', NULL),
-(12, 'procurement', 'rioverosjustine92@gmail.com', '$2y$10$QclzMbbCTh0V3CoawlNNKOKV4SwirQglkHhk6t2DaKyJRsEGKw9Vi', 3, NULL, 'voi1h8b3fqg8kga50qna8i34ko', '2026-03-05 09:51:03', '2026-03-21 20:41:07', '::1', '2026-02-10 06:04:17', NULL),
-(13, 'supply', 'jkrioveros@gmail.com', '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 4, NULL, 'ekrk5vsvck4g5u4qq32hffcp2e', '2026-03-05 09:51:03', '2026-03-22 08:33:15', '::1', '2026-02-10 06:04:17', NULL),
-(14, 'accounting', NULL, '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 5, NULL, 'mm7dcl78j23eb67dav77vm290p', '2026-03-05 09:51:03', '2026-03-22 08:33:30', '::1', '2026-02-10 06:04:17', NULL),
-(15, 'budget', NULL, '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 6, NULL, 'is20s2gsenns7n8dgjp437e4mg', '2026-03-05 09:05:49', '2026-03-23 09:19:36', '::1', '2026-02-10 06:04:17', NULL),
-(16, 'erica', '', '$2y$10$bikOPzugs3ObkP49dIpcHurKtYEbNoSvcJBIyjWMq5aNSGXeD9RBO', 7, NULL, 'oiv0qv5qvmjf84o4co8334ghap', '2026-03-05 09:51:03', '2026-03-23 16:19:55', '::1', '2026-02-10 06:04:17', NULL),
-(23, 'sample cashier', NULL, '$2y$10$FWnyLpEBowxNhXNpBcYpm..0XLNQCJK0NjkUtAEdVsb0kVpK2e.0G', 7, NULL, NULL, NULL, NULL, NULL, '2026-03-03 00:47:47', NULL),
-(26, 'alphanum0002', NULL, '$2y$10$J0BaAVz6x9kQLugvk5ZOr.EVZ1UjYgcchaPDeRkuXKVKOls033.wS', 2, 8, NULL, NULL, '2026-03-18 11:13:35', '::1', '2026-03-18 02:09:09', NULL);
+INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `role_id`, `supplier_id`, `active_session_id`, `active_session_last_seen`, `last_login_at`, `last_login_ip`, `created_at`, `full_name`, `proponent_id`, `school_head_id`) VALUES
+(10, 'admin', NULL, '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 1, NULL, NULL, NULL, '2026-03-22 17:44:13', '::1', '2026-02-10 06:04:17', NULL, NULL, NULL),
+(12, 'procurement', 'rioverosjustine92@gmail.com', '$2y$10$QclzMbbCTh0V3CoawlNNKOKV4SwirQglkHhk6t2DaKyJRsEGKw9Vi', 3, NULL, 'voi1h8b3fqg8kga50qna8i34ko', '2026-03-05 09:51:03', '2026-03-24 10:16:30', '::1', '2026-02-10 06:04:17', NULL, NULL, NULL),
+(13, 'supply', 'jkrioveros@gmail.com', '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 4, NULL, 'ekrk5vsvck4g5u4qq32hffcp2e', '2026-03-05 09:51:03', '2026-03-24 08:59:10', '::1', '2026-02-10 06:04:17', NULL, NULL, NULL),
+(14, 'accounting', NULL, '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 5, NULL, 'mm7dcl78j23eb67dav77vm290p', '2026-03-05 09:51:03', '2026-03-24 08:59:18', '::1', '2026-02-10 06:04:17', NULL, NULL, NULL),
+(15, 'budget', NULL, '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 6, NULL, 'is20s2gsenns7n8dgjp437e4mg', '2026-03-05 09:05:49', '2026-03-24 08:59:29', '::1', '2026-02-10 06:04:17', NULL, NULL, NULL),
+(16, 'erica', '', '$2y$10$bikOPzugs3ObkP49dIpcHurKtYEbNoSvcJBIyjWMq5aNSGXeD9RBO', 7, NULL, 'oiv0qv5qvmjf84o4co8334ghap', '2026-03-05 09:51:03', '2026-03-24 08:59:36', '::1', '2026-02-10 06:04:17', NULL, NULL, NULL),
+(23, 'sample cashier', NULL, '$2y$10$FWnyLpEBowxNhXNpBcYpm..0XLNQCJK0NjkUtAEdVsb0kVpK2e.0G', 7, NULL, NULL, NULL, NULL, NULL, '2026-03-03 00:47:47', NULL, NULL, NULL),
+(26, 'alphanum0002', NULL, '$2y$10$J0BaAVz6x9kQLugvk5ZOr.EVZ1UjYgcchaPDeRkuXKVKOls033.wS', 2, 8, NULL, NULL, '2026-03-24 13:20:27', '::1', '2026-03-18 02:09:09', NULL, NULL, NULL),
+(27, 'sup1', 'supplier@gmail.com', '$2y$10$w.PiQjwl29/DMQ2BTcifC.UeJnB4j6Urs.D.jKt2CFL7.E6j7wd8u', 2, 9, NULL, NULL, NULL, NULL, '2026-03-23 20:27:02', NULL, NULL, NULL),
+(28, 'prop1', 'proponent@gmail.com', '$2y$10$XEeOUl/3QDFQz4cG6cRwoO95SjOuG6DBT3K/twL3Gmdv2zmNO6vd6', 8, NULL, NULL, NULL, '2026-03-24 13:20:37', '::1', '2026-03-23 20:32:49', NULL, 1, NULL),
+(29, 'sch1', 'school@gmail.com', '$2y$10$Af7ioW/BxM3RR3ytwEedN.2jhJE0b91p..QznKWR69lmZCIKSzZAy', 9, NULL, NULL, NULL, NULL, NULL, '2026-03-23 22:50:59', NULL, NULL, 1),
+(32, 'prop2', 'asd@asd.com', '$2y$10$FohZ7I97EMD48FUsszWmuOGrc9LE4JwPmi47PAla09Sak3jsTQGTa', 8, NULL, NULL, NULL, '2026-03-24 13:41:10', '::1', '2026-03-24 05:40:51', NULL, 3, NULL);
 
 -- --------------------------------------------------------
 
@@ -614,7 +691,27 @@ INSERT INTO `user_sessions` (`id`, `user_id`, `session_id`, `device_label`, `ip`
 (134434, 16, '2to0hgjojh8dpsaof9bvkb1apd', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-22 10:05:13', '2026-03-22 10:30:09', '2026-03-22 10:30:11'),
 (137293, 16, 'e16vdhcpringc8up9fthvmm0ei', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-22 10:30:22', '2026-03-22 10:32:28', NULL),
 (148986, 15, 'od1gl1h15057rog7fcrcecoqd3', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-23 01:19:36', '2026-03-23 10:23:19', NULL),
-(164279, 16, 'sgr1f50rrvld9bp7mbcm0s3257', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-23 08:19:55', '2026-03-23 09:52:06', NULL);
+(164279, 16, 'sgr1f50rrvld9bp7mbcm0s3257', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-23 08:19:55', '2026-03-23 09:52:06', NULL),
+(172305, 27, 'c77qrsq99sgrrnfq5mo6u9nfea', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-23 19:32:35', '2026-03-23 19:32:39', '2026-03-23 19:32:39'),
+(172310, 26, '6mdd98haphbari9c9fuutdfsq3', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-23 19:33:16', '2026-03-23 20:14:32', '2026-03-23 20:14:33'),
+(172329, 28, 'k57dh2hs87anvp7ji0q655iseh', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-23 22:51:17', '2026-03-23 22:51:40', NULL),
+(172333, 12, 'cvh8s1mop5cstj8kb1oat4sfp6', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 00:11:55', '2026-03-24 00:16:41', '2026-03-24 00:16:41'),
+(172624, 16, 'arbre8h64oajpl4udnnv59iovm', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 00:16:53', '2026-03-24 00:59:24', '2026-03-24 00:59:24'),
+(173935, 12, 'kvklshluhantuvmgmd7mqef2kl', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 00:59:05', '2026-03-24 02:16:15', NULL),
+(173946, 13, 'b0js4fn53mqide86m7k7b3ufqq', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-24 00:59:10', '2026-03-24 03:23:59', NULL),
+(173957, 14, '7fd3sfe9mv25asl1il5aiu90a4', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-24 00:59:18', '2026-03-24 04:57:00', NULL),
+(173993, 15, '3p05nq4adu7of6s37t57040fn8', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 00:59:29', '2026-03-24 03:24:00', NULL),
+(174013, 16, 'fqnpj3uqj9emof3em1j43i41sl', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 00:59:36', '2026-03-24 02:10:01', NULL),
+(180904, 12, 'kioi4c64ac2l0ufofnrr6sjsas', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 02:16:30', '2026-03-24 06:00:53', NULL),
+(184611, 28, 'ndah05k64jc26nne352q4goceq', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 02:53:40', '2026-03-24 03:16:30', NULL),
+(184861, 26, 'uvo9t1fcvom7st179v7q66oan2', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 02:55:45', '2026-03-24 03:15:12', NULL),
+(187340, 26, '08atkuuv3t868me9baohju6rcg', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 03:15:39', '2026-03-24 03:18:13', NULL),
+(188640, 26, '53jgiavfgcg79a672198i7d791', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 05:01:10', '2026-03-24 05:20:27', '2026-03-24 05:20:29'),
+(189314, 28, '9j991v8esb5ba6223a3qnbjrd8', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 05:18:32', '2026-03-24 05:18:32', '2026-03-24 05:20:19'),
+(189390, 26, 'b0mnrbjcfvagg37j8jrphm4p72', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 05:20:27', '2026-03-24 05:42:04', NULL),
+(189398, 28, '374i2lodufsavfcgj7ktlkmjnt', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 05:20:37', '2026-03-24 05:20:37', '2026-03-24 05:20:43'),
+(189426, 30, 'b9n2qc2i1vdkbfqjaugoof9350', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 05:22:11', '2026-03-24 05:22:59', '2026-03-24 05:23:00'),
+(189660, 32, 'oge537st6g4gi525qu3p8mkfbt', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 05:41:10', '2026-03-24 05:41:43', NULL);
 
 --
 -- Indexes for dumped tables
@@ -657,11 +754,23 @@ ALTER TABLE `notifications`
   ADD KEY `supplier_id` (`supplier_id`);
 
 --
+-- Indexes for table `proponents`
+--
+ALTER TABLE `proponents`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `roles`
 --
 ALTER TABLE `roles`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `name` (`name`);
+
+--
+-- Indexes for table `school_heads`
+--
+ALTER TABLE `school_heads`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `suppliers`
@@ -674,7 +783,8 @@ ALTER TABLE `suppliers`
 --
 ALTER TABLE `transactions`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `supplier_id` (`supplier_id`);
+  ADD KEY `supplier_id` (`supplier_id`),
+  ADD KEY `proponent_id` (`proponent_id`);
 
 --
 -- Indexes for table `transaction_handoffs`
@@ -699,7 +809,9 @@ ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `username` (`username`),
   ADD KEY `role_id` (`role_id`),
-  ADD KEY `supplier_id` (`supplier_id`);
+  ADD KEY `supplier_id` (`supplier_id`),
+  ADD KEY `users_proponent_fk` (`proponent_id`),
+  ADD KEY `users_school_head_fk` (`school_head_id`);
 
 --
 -- Indexes for table `user_preferences`
@@ -723,7 +835,7 @@ ALTER TABLE `user_sessions`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=148;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=178;
 
 --
 -- AUTO_INCREMENT for table `department_notifications`
@@ -744,16 +856,28 @@ ALTER TABLE `notifications`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
+-- AUTO_INCREMENT for table `proponents`
+--
+ALTER TABLE `proponents`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
 -- AUTO_INCREMENT for table `roles`
 --
 ALTER TABLE `roles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT for table `school_heads`
+--
+ALTER TABLE `school_heads`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `suppliers`
 --
 ALTER TABLE `suppliers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `transactions`
@@ -777,13 +901,13 @@ ALTER TABLE `transaction_updates`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- AUTO_INCREMENT for table `user_sessions`
 --
 ALTER TABLE `user_sessions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=172305;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=189916;
 
 --
 -- Constraints for dumped tables
@@ -811,7 +935,8 @@ ALTER TABLE `notifications`
 -- Constraints for table `transactions`
 --
 ALTER TABLE `transactions`
-  ADD CONSTRAINT `transactions_ibfk_1` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`);
+  ADD CONSTRAINT `transactions_ibfk_1` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`),
+  ADD CONSTRAINT `transactions_ibfk_2` FOREIGN KEY (`proponent_id`) REFERENCES `proponents` (`id`);
 
 --
 -- Constraints for table `transaction_updates`
@@ -824,7 +949,9 @@ ALTER TABLE `transaction_updates`
 --
 ALTER TABLE `users`
   ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`),
-  ADD CONSTRAINT `users_ibfk_2` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`);
+  ADD CONSTRAINT `users_ibfk_2` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`),
+  ADD CONSTRAINT `users_proponent_fk` FOREIGN KEY (`proponent_id`) REFERENCES `proponents` (`id`),
+  ADD CONSTRAINT `users_school_head_fk` FOREIGN KEY (`school_head_id`) REFERENCES `school_heads` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
