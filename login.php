@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             create_log($db, $user['id'], 'login', 'user', $user['id'], 'Successful login');
 
-            header('Location: dashboard.php');
+            header('Location: portal_selection.php');
             exit;
         } else {
             $error = 'Invalid username or password.';

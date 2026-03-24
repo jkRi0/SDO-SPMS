@@ -8,6 +8,14 @@ require_login();
 $user = current_user();
 $role = $_SESSION['role'] ?? '';
 
+// Check if user has access to STMS
+$stmsRoles = ['admin', 'supplier', 'proponent', 'procurement', 'supply', 'accounting', 'budget', 'cashier'];
+if (!in_array(strtolower($role), $stmsRoles)) {
+    // Redirect to portal selection if user doesn't have STMS access
+    header('Location: portal_selection.php');
+    exit;
+}
+
 $db = get_db();
 
 // Determine display name for welcome message

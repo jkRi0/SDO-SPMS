@@ -227,5 +227,5 @@ $_SESSION['session_id']   = $sid;
 
 create_log($db, $user['id'], 'login', 'user', $user['id'], 'Successful login (Google OAuth)');
 
-header('Location: dashboard.php');
+header('Location: portal_selection.php');
 exit;
