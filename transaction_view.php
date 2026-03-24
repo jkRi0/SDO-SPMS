@@ -1814,34 +1814,6 @@ include __DIR__ . '/header.php';
             </h6>
             <div class="timeline-scroll" style="padding-right: 8px;">
             <div class="timeline">
-                <?php if (!empty($handoffHistory)): ?>
-                    <div class="card border-primary mb-3 bg-light bg-opacity-10">
-                        <div class="card-header bg-primary text-white py-1 px-2 small fw-bold">
-                            <i class="fas fa-exchange-alt me-1"></i> Recent Handoffs
-                        </div>
-                        <ul class="list-group list-group-flush small">
-                            <?php foreach (array_reverse($handoffHistory) as $h): ?>
-                                <li class="list-group-item d-flex justify-content-between align-items-center py-1 px-2">
-                                    <div>
-                                        <span class="badge bg-secondary"><?php echo htmlspecialchars(strtoupper($h['from_dept'])); ?></span>
-                                        <i class="fas fa-long-arrow-alt-right mx-1 text-primary"></i>
-                                        <span class="badge bg-primary"><?php echo htmlspecialchars(strtoupper($h['to_dept'])); ?></span>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="text-muted" style="font-size: 0.75rem;">
-                                            <?php if ($h['forwarded_at']): ?>
-                                                Fwd: <?php echo date('m/d H:i', strtotime($h['forwarded_at'])); ?>
-                                            <?php endif; ?>
-                                            <?php if ($h['received_at']): ?>
-                                                <br>Rec: <?php echo date('m/d H:i', strtotime($h['received_at'])); ?>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
-                <?php endif; ?>
 
                 <?php
                 // Handover delay display between stages (now based on next meaningful received handoff)
@@ -2715,6 +2687,48 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(tickHandoffCountdown, 1000);
     setInterval(refreshBasicInfo, refreshIntervalMs);
 
+    // Recent Handoffs polling
+    var recentHandoffsRequestInProgress = false;
+    
+    function refreshRecentHandoffs() {
+        if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
+            return;
+        }
+        const currentContainer = document.getElementById('recentHandoffsContainer');
+        if (!currentContainer) return;
+        
+        // Prevent multiple simultaneous requests
+        if (recentHandoffsRequestInProgress) {
+            return;
+        }
+        
+        recentHandoffsRequestInProgress = true;
+
+        fetch(window.location.href, { cache: 'no-store' })
+            .then(function (response) { 
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.text(); 
+            })
+            .then(function (html) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newContainer = doc.getElementById('recentHandoffsContainer');
+                if (newContainer) {
+                    currentContainer.innerHTML = newContainer.innerHTML;
+                }
+            })
+            .catch(function () {
+                // Fail silently if refresh fails
+            })
+            .finally(function () {
+                recentHandoffsRequestInProgress = false;
+            });
+    }
+
+    setInterval(refreshRecentHandoffs, window.POLL_INTERVALS.RECENT_HANDOFFS);
+
     // Accounting: keep a notion of which stage (pre vs post) was last edited for logging,
     // but allow editing of both sections at the same time.
     function setAccountingStage(stage) {
@@ -2790,5 +2804,65 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
     </div>
 </div>
+
+<!-- Recent Handoffs Section -->
+<?php if (!empty($handoffHistory)): ?>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-primary" id="recentHandoffsContainer">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exchange-alt me-2"></i>Recent Handoffs
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <?php foreach (array_reverse($handoffHistory) as $h): ?>
+                                <?php
+                                // Calculate overdue time for this handoff
+                                $overdueTime = '';
+                                if (!empty($h['forwarded_at']) && !empty($h['received_at'])) {
+                                    $forwardTs = strtotime($h['forwarded_at']);
+                                    $receivedTs = strtotime($h['received_at']);
+                                    $delaySecs = max(0, $receivedTs - $forwardTs);
+                                    $overdueSecs = max(0, $delaySecs - $handoffGraceSeconds);
+                                    if ($overdueSecs > 0) {
+                                        $overdueTime = format_elapsed_time($overdueSecs);
+                                    }
+                                }
+                                ?>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge bg-secondary"><?php echo htmlspecialchars(strtoupper($h['from_dept'])); ?></span>
+                                        <i class="fas fa-long-arrow-alt-right mx-2 text-primary"></i>
+                                        <span class="badge bg-primary"><?php echo htmlspecialchars(strtoupper($h['to_dept'])); ?></span>
+                                    </div>
+                                    <div class="text-center">
+                                        <?php if ($overdueTime): ?>
+                                            <span class="badge bg-danger text-white"><?php echo htmlspecialchars($overdueTime); ?> overdue</span>
+                                        <?php else: ?>
+                                            <span class="text-muted small">On time</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="text-muted">
+                                            <?php if ($h['forwarded_at']): ?>
+                                                <small>Fwd: <?php echo date('m/d H:i', strtotime($h['forwarded_at'])); ?></small>
+                                            <?php endif; ?>
+                                            <?php if ($h['received_at']): ?>
+                                                <br><small>Rec: <?php echo date('m/d H:i', strtotime($h['received_at'])); ?></small>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
 
 <?php require_once __DIR__ . '/footer.php'; ?>

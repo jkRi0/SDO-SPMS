@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 24, 2026 at 08:27 PM
+-- Generation Time: Mar 24, 2026 at 08:59 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -260,7 +260,21 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `action`, `target_type`, `target_i
 (220, 12, 'login', 'user', 12, 'Successful login (Google OAuth)', '2026-03-24 19:15:19'),
 (221, 12, 'logout', 'user', 12, 'User logged out', '2026-03-24 19:15:30'),
 (222, 26, 'login', 'user', 26, 'Successful login (Google OAuth)', '2026-03-24 19:16:52'),
-(223, 16, 'login', 'user', 16, 'Successful login', '2026-03-24 19:20:02');
+(223, 16, 'login', 'user', 16, 'Successful login', '2026-03-24 19:20:02'),
+(224, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-24 19:31:30'),
+(225, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-24 19:31:59'),
+(226, 16, 'transaction_notify_supplier', 'transaction', 52, '{\"transaction_id\":52,\"po_number\":\"34\",\"supplier_id\":8,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-24 19:36:00'),
+(227, 26, 'logout', 'user', 26, 'User logged out', '2026-03-24 19:38:04'),
+(228, 27, 'login', 'user', 27, 'Successful login', '2026-03-24 19:38:11'),
+(229, 14, 'login', 'user', 14, 'Successful login', '2026-03-24 19:39:49'),
+(230, 15, 'login', 'user', 15, 'Successful login', '2026-03-24 19:39:54'),
+(231, 12, 'transaction_update', 'transaction', 69, '{\"transaction_id\":69,\"po_number\":\"234\",\"stage\":\"procurement\",\"status\":\"FOR SUPPLY REVIEW\",\"remarks\":\"\"}', '2026-03-24 19:40:01'),
+(232, 12, 'transaction_update', 'transaction', 69, '{\"transaction_id\":69,\"po_number\":\"234\",\"stage\":\"procurement\",\"status\":\"FOR SUPPLY REVIEW\",\"remarks\":\"\"}', '2026-03-24 19:40:07'),
+(233, 12, 'transaction_handoff_forward', 'transaction', 69, '{\"transaction_id\":69,\"po_number\":\"234\",\"from_dept\":\"procurement\",\"to_dept\":\"cashier\"}', '2026-03-24 19:40:14'),
+(234, 16, 'transaction_handoff_receive', 'transaction', 69, '{\"transaction_id\":69,\"po_number\":\"234\",\"from_dept\":\"procurement\",\"to_dept\":\"cashier\"}', '2026-03-24 19:41:28'),
+(235, 16, 'transaction_notify_supplier', 'transaction', 69, '{\"transaction_id\":69,\"po_number\":\"234\",\"supplier_id\":9,\"message\":\"Your PO 34 is now marked as COMPLETED. Please check the portal for details.\"}', '2026-03-24 19:42:00'),
+(236, 16, 'transaction_update', 'transaction', 69, '{\"transaction_id\":69,\"po_number\":\"234\",\"stage\":\"cashier\",\"status\":\"For ACIC\",\"remarks\":\"Amount: 2000.00\",\"or_number\":\"\",\"or_date\":\"\",\"payment_date\":\"\",\"landbank_ref\":\"2000.00\"}', '2026-03-24 19:45:00'),
+(237, 32, 'login', 'user', 32, 'Successful login', '2026-03-24 19:53:15');
 
 -- --------------------------------------------------------
 
@@ -282,7 +296,7 @@ INSERT INTO `app_settings` (`setting_key`, `setting_value`, `updated_at`) VALUES
 ('last_notify_message', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', '2026-03-21 22:59:20'),
 ('last_notify_title', 'Payment status update', '2026-03-21 22:59:20'),
 ('proponent_default_cc', 'rioverosjustine92@gmail.com', '2026-03-24 06:58:40'),
-('proponent_default_cc_cashier', '', '2026-03-24 17:40:43'),
+('proponent_default_cc_cashier', 'rioverosjustine92@gmail.com', '2026-03-24 19:45:28'),
 ('proponent_default_cc_procurement', 'rioverosjustine92@gmail.com', '2026-03-24 06:55:47'),
 ('proponent_default_message', '2', '2026-03-24 07:11:39'),
 ('proponent_default_message_cashier', 'cashier', '2026-03-24 07:21:07'),
@@ -324,7 +338,9 @@ INSERT INTO `department_notifications` (`id`, `role`, `transaction_id`, `title`,
 (9, 'accounting', 64, 'Handoff Forwarded', 'SUPPLY forwarded PO 123 to ACCOUNTING. Please receive it.', 'transaction_view.php?id=64', 0, '2026-03-22 16:26:21'),
 (10, 'supply', 64, 'Handoff Received', 'ACCOUNTING has received PO 123 from SUPPLY.', 'transaction_view.php?id=64', 0, '2026-03-22 16:26:31'),
 (11, 'budget', 64, 'Handoff Forwarded', 'ACCOUNTING forwarded PO 123 to BUDGET. Please receive it.', 'transaction_view.php?id=64', 1, '2026-03-22 16:27:25'),
-(12, 'accounting', 64, 'Handoff Received', 'BUDGET has received PO 123 from ACCOUNTING.', 'transaction_view.php?id=64', 0, '2026-03-22 16:27:35');
+(12, 'accounting', 64, 'Handoff Received', 'BUDGET has received PO 123 from ACCOUNTING.', 'transaction_view.php?id=64', 0, '2026-03-22 16:27:35'),
+(13, 'cashier', 69, 'Handoff Forwarded', 'PROCUREMENT forwarded PO 234 to CASHIER. Please receive it.', 'transaction_view.php?id=69', 1, '2026-03-25 03:40:14'),
+(14, 'procurement', 69, 'Handoff Received', 'CASHIER has received PO 234 from PROCUREMENT.', 'transaction_view.php?id=69', 0, '2026-03-25 03:41:28');
 
 -- --------------------------------------------------------
 
@@ -386,7 +402,11 @@ INSERT INTO `notifications` (`id`, `supplier_id`, `transaction_id`, `title`, `me
 (19, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-22 06:59:20'),
 (20, 8, 52, 'Transaction completed', 'Your PO 34 has been completed.', 'transaction_view.php?id=52', 0, 0, '2026-03-22 13:16:00'),
 (21, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-24 15:22:50'),
-(22, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-24 15:23:15');
+(22, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-24 15:23:15'),
+(23, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-25 03:31:30'),
+(24, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 1, 0, '2026-03-25 03:31:59'),
+(25, 8, 52, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=52', 0, 0, '2026-03-25 03:35:55'),
+(26, 9, 69, 'Payment status update', 'Your PO 34 is now marked as COMPLETED. Please check the portal for details.', 'transaction_view.php?id=69', 0, 0, '2026-03-25 03:41:55');
 
 -- --------------------------------------------------------
 
@@ -531,7 +551,8 @@ INSERT INTO `transactions` (`id`, `supplier_id`, `po_number`, `program_title`, `
 (62, 8, '123456', 'procurementOnly', 'jlkl', 'qy', NULL, NULL, NULL, 121.00, '2026-03-22 08:22:55', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (63, 8, '09090', 'supplyOnly', 'asd', 'qwe', NULL, NULL, NULL, 234.00, '2026-03-22 08:23:19', 'FOR SUPPLY REVIEW', '', '2026-03-22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (65, 8, 'asdfsads', 'sample1', 'asd', 'qwert', NULL, NULL, NULL, 90000.00, '2026-03-22 10:12:23', 'FOR SUPPLY REVIEW', 'asdd', '2026-03-22', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(68, 8, '87', 'hgfd', 'j', NULL, NULL, NULL, NULL, 789.00, '2026-03-24 06:55:03', 'FOR SUPPLY REVIEW', '', '2026-03-24', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3);
+(68, 8, '87', 'hgfd', 'j', NULL, NULL, NULL, NULL, 789.00, '2026-03-24 06:55:03', 'FOR SUPPLY REVIEW', '', '2026-03-24', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3),
+(69, 9, '234', 'testing for sup1', 'sd', NULL, NULL, NULL, NULL, 2000.00, '2026-03-24 19:39:34', 'FOR SUPPLY REVIEW', '', '2026-03-25', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'For ACIC', '', '', '0000-00-00', '2000.00', '0000-00-00', NULL, NULL, 3);
 
 -- --------------------------------------------------------
 
@@ -577,7 +598,8 @@ INSERT INTO `transaction_handoffs` (`id`, `transaction_id`, `from_dept`, `to_dep
 (18, 63, 'procurement', 'supply', '2026-03-22 16:23:36', '2026-03-22 16:23:54', NULL, 0, 12, NULL),
 (19, 64, 'procurement', 'supply', '2026-03-22 16:25:29', '2026-03-22 16:25:46', NULL, 0, 12, NULL),
 (20, 64, 'supply', 'accounting', '2026-03-22 16:26:21', '2026-03-22 16:26:31', NULL, 0, 13, NULL),
-(21, 64, 'accounting', 'budget', '2026-03-22 16:27:25', '2026-03-22 16:27:35', NULL, 0, 14, NULL);
+(21, 64, 'accounting', 'budget', '2026-03-22 16:27:25', '2026-03-22 16:27:35', NULL, 0, 14, NULL),
+(22, 69, 'procurement', 'cashier', '2026-03-25 03:40:14', '2026-03-25 03:41:28', NULL, 0, 12, NULL);
 
 -- --------------------------------------------------------
 
@@ -623,7 +645,10 @@ INSERT INTO `transaction_updates` (`id`, `transaction_id`, `stage`, `status`, `r
 (28, 63, 'procurement', 'FOR SUPPLY REVIEW', '', '2026-03-22 08:23:29'),
 (32, 65, 'procurement', 'FOR SUPPLY REVIEW', '', '2026-03-22 10:13:10'),
 (33, 65, 'procurement', 'FOR SUPPLY REVIEW', 'asdd', '2026-03-22 10:19:09'),
-(35, 68, 'procurement', 'FOR SUPPLY REVIEW', '', '2026-03-24 06:55:13');
+(35, 68, 'procurement', 'FOR SUPPLY REVIEW', '', '2026-03-24 06:55:13'),
+(36, 69, 'procurement', 'FOR SUPPLY REVIEW', '', '2026-03-24 19:40:01'),
+(37, 69, 'procurement', 'FOR SUPPLY REVIEW', '', '2026-03-24 19:40:07'),
+(38, 69, 'cashier', 'For ACIC', 'Amount: 2000.00', '2026-03-24 19:45:00');
 
 -- --------------------------------------------------------
 
@@ -656,15 +681,15 @@ INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `role_id`, `sup
 (10, 'admin', NULL, '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 1, NULL, NULL, NULL, '2026-03-25 02:17:51', '::1', '2026-02-10 06:04:17', NULL, NULL, NULL),
 (12, 'procurement', NULL, '$2y$10$QclzMbbCTh0V3CoawlNNKOKV4SwirQglkHhk6t2DaKyJRsEGKw9Vi', 3, NULL, 'voi1h8b3fqg8kga50qna8i34ko', '2026-03-05 09:51:03', '2026-03-25 03:15:19', '::1', '2026-02-10 06:04:17', NULL, NULL, NULL),
 (13, 'supply', 'jkrioveros@gmail.com', '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 4, NULL, 'ekrk5vsvck4g5u4qq32hffcp2e', '2026-03-05 09:51:03', '2026-03-25 01:53:12', '::1', '2026-02-10 06:04:17', NULL, NULL, NULL),
-(14, 'accounting', NULL, '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 5, NULL, 'mm7dcl78j23eb67dav77vm290p', '2026-03-05 09:51:03', '2026-03-24 08:59:18', '::1', '2026-02-10 06:04:17', NULL, NULL, NULL),
-(15, 'budget', NULL, '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 6, NULL, 'is20s2gsenns7n8dgjp437e4mg', '2026-03-05 09:05:49', '2026-03-24 08:59:29', '::1', '2026-02-10 06:04:17', NULL, NULL, NULL),
+(14, 'accounting', NULL, '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 5, NULL, 'mm7dcl78j23eb67dav77vm290p', '2026-03-05 09:51:03', '2026-03-25 03:39:49', '::1', '2026-02-10 06:04:17', NULL, NULL, NULL),
+(15, 'budget', NULL, '$2a$12$XhSdO3SPRj0NL2b2Ln1v8uzgYAQEopTZbNSEl/z7BQvud/YtrqWeS', 6, NULL, 'is20s2gsenns7n8dgjp437e4mg', '2026-03-05 09:05:49', '2026-03-25 03:39:54', '::1', '2026-02-10 06:04:17', NULL, NULL, NULL),
 (16, 'erica', 'rioverosjustine92@gmail.com', '$2y$10$bikOPzugs3ObkP49dIpcHurKtYEbNoSvcJBIyjWMq5aNSGXeD9RBO', 7, NULL, 'oiv0qv5qvmjf84o4co8334ghap', '2026-03-05 09:51:03', '2026-03-25 03:20:02', '::1', '2026-02-10 06:04:17', NULL, NULL, NULL),
 (23, 'sample cashier', NULL, '$2y$10$FWnyLpEBowxNhXNpBcYpm..0XLNQCJK0NjkUtAEdVsb0kVpK2e.0G', 7, NULL, NULL, NULL, NULL, NULL, '2026-03-03 00:47:47', NULL, NULL, NULL),
 (26, 'alphanum0002', 'alphanum0002@gmail.com', '$2y$10$J0BaAVz6x9kQLugvk5ZOr.EVZ1UjYgcchaPDeRkuXKVKOls033.wS', 2, 8, NULL, NULL, '2026-03-25 03:16:52', '::1', '2026-03-18 02:09:09', NULL, NULL, NULL),
-(27, 'sup1', 'forsample.anatomist456@aleeas.com', '$2y$10$w.PiQjwl29/DMQ2BTcifC.UeJnB4j6Urs.D.jKt2CFL7.E6j7wd8u', 2, 9, NULL, NULL, '2026-03-25 02:18:36', '::1', '2026-03-23 20:27:02', NULL, NULL, NULL),
+(27, 'sup1', 'forsample.anatomist456@aleeas.com', '$2y$10$w.PiQjwl29/DMQ2BTcifC.UeJnB4j6Urs.D.jKt2CFL7.E6j7wd8u', 2, 9, NULL, NULL, '2026-03-25 03:38:11', '::1', '2026-03-23 20:27:02', NULL, NULL, NULL),
 (28, 'prop1', NULL, '$2y$10$XEeOUl/3QDFQz4cG6cRwoO95SjOuG6DBT3K/twL3Gmdv2zmNO6vd6', 8, NULL, NULL, NULL, '2026-03-25 01:46:22', '::1', '2026-03-23 20:32:49', NULL, 1, NULL),
 (29, 'sch1', NULL, '$2y$10$Af7ioW/BxM3RR3ytwEedN.2jhJE0b91p..QznKWR69lmZCIKSzZAy', 9, NULL, NULL, NULL, NULL, NULL, '2026-03-23 22:50:59', NULL, NULL, 1),
-(32, 'prop2', 'proponent@gmail.com', '$2y$10$FohZ7I97EMD48FUsszWmuOGrc9LE4JwPmi47PAla09Sak3jsTQGTa', 8, NULL, NULL, NULL, '2026-03-25 02:21:22', '::1', '2026-03-24 05:40:51', NULL, 3, NULL);
+(32, 'prop2', 'jkrioveros@gmail.com', '$2y$10$FohZ7I97EMD48FUsszWmuOGrc9LE4JwPmi47PAla09Sak3jsTQGTa', 8, NULL, NULL, NULL, '2026-03-25 03:53:15', '::1', '2026-03-24 05:40:51', NULL, 3, NULL);
 
 -- --------------------------------------------------------
 
@@ -758,7 +783,7 @@ INSERT INTO `user_sessions` (`id`, `user_id`, `session_id`, `device_label`, `ip`
 (173957, 14, '7fd3sfe9mv25asl1il5aiu90a4', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-24 00:59:18', '2026-03-24 04:57:00', NULL),
 (173993, 5, '3p05nq4adu7of6s37t57040fn8', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 00:59:29', '2026-03-24 09:52:47', NULL),
 (174013, 16, 'fqnpj3uqj9emof3em1j43i41sl', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 00:59:36', '2026-03-24 02:10:01', NULL),
-(180904, 12, 'kioi4c64ac2l0ufofnrr6sjsas', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 02:16:30', '2026-03-24 19:27:16', NULL),
+(180904, 12, 'kioi4c64ac2l0ufofnrr6sjsas', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 02:16:30', '2026-03-24 19:59:54', NULL),
 (184611, 28, 'ndah05k64jc26nne352q4goceq', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 02:53:40', '2026-03-24 03:16:30', NULL),
 (184861, 26, 'uvo9t1fcvom7st179v7q66oan2', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 02:55:45', '2026-03-24 03:15:12', NULL),
 (187340, 26, '08atkuuv3t868me9baohju6rcg', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 03:15:39', '2026-03-24 03:18:13', NULL),
@@ -777,7 +802,7 @@ INSERT INTO `user_sessions` (`id`, `user_id`, `session_id`, `device_label`, `ip`
 (200203, 32, '4eb9aoune3cibldmeirigbkqnp', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 17:46:01', '2026-03-24 17:46:12', '2026-03-24 17:46:16'),
 (200207, 28, 'jjmr8trigjoorto14kk5v6r7cu', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 17:46:22', '2026-03-24 17:46:25', '2026-03-24 17:46:50'),
 (200232, 32, 'h0uqpcikl4vh67rd8cofuf5euv', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 17:46:58', '2026-03-24 17:48:46', NULL),
-(200503, 13, 'vlisrthvls6ir4ja2dogrm0e3t', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-24 17:53:12', '2026-03-24 19:27:16', NULL),
+(200503, 13, 'vlisrthvls6ir4ja2dogrm0e3t', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-24 17:53:12', '2026-03-24 19:59:55', NULL),
 (202576, 10, 'a88j85mlljk46ip0j8du8s5ls4', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 18:17:51', '2026-03-24 18:18:32', '2026-03-24 18:18:32'),
 (202677, 27, 'sfamvhn3pfu1i5e78pq2p5q07g', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 18:18:36', '2026-03-24 18:40:04', '2026-03-24 18:40:05'),
 (202898, 32, 'gdadftdnso6vet40ibr4r0uelu', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 18:21:22', '2026-03-24 18:22:25', NULL),
@@ -786,8 +811,12 @@ INSERT INTO `user_sessions` (`id`, `user_id`, `session_id`, `device_label`, `ip`
 (204501, 12, 'tubbab5brr8f3mcm00dq7stahp', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 18:54:17', '2026-03-24 18:54:17', '2026-03-24 18:54:23'),
 (204528, 12, 'th9dp9e0e430oc3itri7742k8d', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 18:54:33', '2026-03-24 18:54:33', '2026-03-24 18:54:37'),
 (205045, 12, 'g69vnkch1lj1be5f4r4ffc1qm0', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 19:15:19', '2026-03-24 19:15:29', '2026-03-24 19:15:30'),
-(205061, 26, 'h2mmlbksfn7mm9f3utr4cd8egb', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 19:16:52', '2026-03-24 19:17:14', NULL),
-(205266, 16, '91cv1ot3oi6hm4abr4gtubiejo', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 19:20:02', '2026-03-24 19:21:32', NULL);
+(205061, 26, 'h2mmlbksfn7mm9f3utr4cd8egb', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 19:16:52', '2026-03-24 19:38:04', '2026-03-24 19:38:04'),
+(205266, 16, '91cv1ot3oi6hm4abr4gtubiejo', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 19:20:02', '2026-03-24 19:58:47', NULL),
+(206543, 27, 'd37anvjugt4k9pimbtl9acjafb', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 19:38:11', '2026-03-24 19:42:16', NULL),
+(206691, 14, '34j0q6hs3oljidt341gvepp58m', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0', '2026-03-24 19:39:49', '2026-03-24 19:59:56', NULL),
+(206706, 15, 'o4rvq8t2dom6fqha0diun6l3jf', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 19:39:54', '2026-03-24 19:59:56', NULL),
+(208560, 32, 'ms1bfr8pf5272i62iof1rqq7fl', NULL, NULL, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36', '2026-03-24 19:53:15', '2026-03-24 19:57:35', NULL);
 
 --
 -- Indexes for dumped tables
@@ -911,13 +940,13 @@ ALTER TABLE `user_sessions`
 -- AUTO_INCREMENT for table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=224;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=238;
 
 --
 -- AUTO_INCREMENT for table `department_notifications`
 --
 ALTER TABLE `department_notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `feedback`
@@ -929,7 +958,7 @@ ALTER TABLE `feedback`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `proponents`
@@ -959,19 +988,19 @@ ALTER TABLE `suppliers`
 -- AUTO_INCREMENT for table `transactions`
 --
 ALTER TABLE `transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
 
 --
 -- AUTO_INCREMENT for table `transaction_handoffs`
 --
 ALTER TABLE `transaction_handoffs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `transaction_updates`
 --
 ALTER TABLE `transaction_updates`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -983,7 +1012,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `user_sessions`
 --
 ALTER TABLE `user_sessions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=205576;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=209605;
 
 --
 -- Constraints for dumped tables
