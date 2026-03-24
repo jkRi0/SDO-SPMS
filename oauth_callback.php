@@ -68,7 +68,6 @@ $optsUser = [
 ];
 $contextUser = stream_context_create($optsUser);
 $userJson    = @file_get_contents($userInfoEndpoint, false, $contextUser);
-
 if ($userJson === false) {
     header('Location: login.php?oauth_error=userinfo');
     exit;
@@ -89,42 +88,47 @@ $db = get_db();
 try {
     $db->beginTransaction();
 
-    // 1) Find or create supplier by email (assumes suppliers.email exists)
-    $stmt = $db->prepare('SELECT id, name FROM suppliers WHERE LOWER(email) = ? LIMIT 1');
-    $stmt->execute([$email]);
-    $supplier = $stmt->fetch();
-
-    if (!$supplier) {
-        // Create new supplier record
-        $supplierName = $googleName !== '' ? $googleName : $email;
-        $insertSup = $db->prepare('INSERT INTO suppliers (name, email) VALUES (?, ?)');
-        $insertSup->execute([$supplierName, $email]);
-        $supplierId = (int)$db->lastInsertId();
-    } else {
-        $supplierId = (int)$supplier['id'];
-    }
-
-    // 2) Find or create user account linked to this supplier with supplier role
-    // Get role_id for supplier
-    $roleStmt = $db->prepare('SELECT id FROM roles WHERE name = ? LIMIT 1');
-    $roleStmt->execute(['supplier']);
-    $role = $roleStmt->fetch();
-    if (!$role) {
-        // No supplier role configured
-        $db->rollBack();
-        header('Location: login.php?oauth_error=norole');
-        exit;
-    }
-    $supplierRoleId = (int)$role['id'];
-
-    // Try to find an existing user for this supplier_id with supplier role
-    $userStmt = $db->prepare('SELECT u.*, r.name AS role_name
+    // 1) Find user by email (primary lookup in users table)
+    $userStmt = $db->prepare('SELECT u.*, r.name AS role_name, s.name AS supplier_name
                               FROM users u
-                              JOIN roles r ON u.role_id = r.id
-                              WHERE u.supplier_id = ? AND u.role_id = ?
-                              LIMIT 1');
-    $userStmt->execute([$supplierId, $supplierRoleId]);
+                              LEFT JOIN roles r ON u.role_id = r.id
+                              LEFT JOIN suppliers s ON u.supplier_id = s.id
+                              WHERE LOWER(u.email) = ? LIMIT 1');
+    $userStmt->execute([$email]);
     $user = $userStmt->fetch();
+
+    if ($user) {
+        // Found existing user, get supplier_id
+        $supplierId = (int)$user['supplier_id'];
+        $supplierRoleId = (int)$user['role_id'];
+    } else {
+        // 2) Find or create supplier for new user
+        $supplierStmt = $db->prepare('SELECT id, name FROM suppliers WHERE LOWER(email) = ? LIMIT 1');
+        $supplierStmt->execute([$email]);
+        $supplier = $supplierStmt->fetch();
+
+        if (!$supplier) {
+            // Create new supplier record
+            $supplierName = $googleName !== '' ? $googleName : $email;
+            $insertSup = $db->prepare('INSERT INTO suppliers (name, email) VALUES (?, ?)');
+            $insertSup->execute([$supplierName, $email]);
+            $supplierId = (int)$db->lastInsertId();
+        } else {
+            $supplierId = (int)$supplier['id'];
+        }
+
+        // 3) Get role_id for supplier
+        $roleStmt = $db->prepare('SELECT id FROM roles WHERE name = ? LIMIT 1');
+        $roleStmt->execute(['supplier']);
+        $role = $roleStmt->fetch();
+        if (!$role) {
+            // No supplier role configured
+            $db->rollBack();
+            header('Location: login.php?oauth_error=norole');
+            exit;
+        }
+        $supplierRoleId = (int)$role['id'];
+    }
 
     if (!$user) {
         // Auto-create a user tied to this supplier
@@ -147,8 +151,8 @@ try {
         $randomPassword = bin2hex(random_bytes(16));
         $passwordHash = password_hash($randomPassword, PASSWORD_DEFAULT);
 
-        $insertUser = $db->prepare('INSERT INTO users (username, password_hash, role_id, supplier_id) VALUES (?, ?, ?, ?)');
-        $insertUser->execute([$username, $passwordHash, $supplierRoleId, $supplierId]);
+        $insertUser = $db->prepare('INSERT INTO users (username, email, password_hash, role_id, supplier_id) VALUES (?, ?, ?, ?, ?)');
+        $insertUser->execute([$username, $email, $passwordHash, $supplierRoleId, $supplierId]);
 
         $userId = (int)$db->lastInsertId();
 

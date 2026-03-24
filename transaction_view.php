@@ -19,10 +19,11 @@ if ($id <= 0) {
 }
 
 // Load transaction
-$stmt = $db->prepare('SELECT t.*, s.name AS supplier_name, p.name AS proponent_name, p.email AS proponent_email
+$stmt = $db->prepare('SELECT t.*, s.name AS supplier_name, p.name AS proponent_name, u.email AS proponent_email
                       FROM transactions t 
                       JOIN suppliers s ON t.supplier_id = s.id 
                       LEFT JOIN proponents p ON t.proponent_id = p.id
+                      LEFT JOIN users u ON u.proponent_id = p.id AND u.email IS NOT NULL
                       WHERE t.id = ?');
 $stmt->execute([$id]);
 $transaction = $stmt->fetch();
@@ -188,6 +189,7 @@ try {
 
 $error = '';
 $success = '';
+$warning = '';
 
 $deptForRoleEdit = [
     'procurement' => 'procurement',
@@ -548,6 +550,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $defaultMessage = 'Your PO ' . ($transaction['po_number'] ?? '') . ' is now marked as COMPLETED. Please check the portal for details.';
             $message = trim((string)($_POST['notify_message'] ?? ''));
             $ccRaw = trim((string)($_POST['notify_cc'] ?? ''));
+            $replyToRaw = trim((string)($_POST['notify_reply_to'] ?? ''));
+            
+            // Validate reply-to email
+            $replyToEmail = '';
+            if ($replyToRaw !== '') {
+                if (filter_var($replyToRaw, FILTER_VALIDATE_EMAIL)) {
+                    $replyToEmail = $replyToRaw;
+                } else {
+                    $error = 'Invalid Reply-To email address: ' . $replyToRaw;
+                }
+            }
+            
             $ccEmails = [];
             if ($ccRaw !== '') {
                 $parts = preg_split('/[\s,;]+/', $ccRaw, -1, PREG_SPLIT_NO_EMPTY);
@@ -590,7 +604,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmtSetMsg->execute(['last_notify_message', $message]);
 
             // Also email supplier if an email address is available (e.g. Google OAuth suppliers)
-            $emailStmt = $db->prepare('SELECT email FROM suppliers WHERE id = ? LIMIT 1');
+            $emailStmt = $db->prepare('SELECT email FROM users WHERE supplier_id = ? AND email IS NOT NULL LIMIT 1');
             $emailStmt->execute([$transaction['supplier_id']]);
             $supplierRow = $emailStmt->fetch();
 
@@ -602,7 +616,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 $ccParam = !empty($ccEmails) ? $ccEmails : null;
                 
-                send_supplier_email($toEmail, $emailSubject, $emailBody, $ccParam);
+                send_supplier_email($toEmail, $emailSubject, $emailBody, $ccParam, null, $replyToEmail);
             }
         } catch (Exception $e) {
             // If notification insert fails, do not break the main page
@@ -630,6 +644,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = trim((string)($_POST['proponent_message'] ?? ''));
             $ccRaw = trim((string)($_POST['proponent_cc'] ?? ''));
             $bccRaw = trim((string)($_POST['proponent_bcc'] ?? ''));
+            $replyToRaw = trim((string)($_POST['proponent_reply_to'] ?? ''));
+            
+            // Validate reply-to email
+            $replyToEmail = '';
+            if ($replyToRaw !== '') {
+                if (filter_var($replyToRaw, FILTER_VALIDATE_EMAIL)) {
+                    $replyToEmail = $replyToRaw;
+                } else {
+                    $error = 'Invalid Reply-To email address: ' . $replyToRaw;
+                }
+            }
+            
             $ccEmails = [];
             $bccEmails = [];
             if ($ccRaw !== '') {
@@ -655,16 +681,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($title === '' || $message === '') {
                 $error = 'Title and message are required.';
-            } elseif (empty($transaction['proponent_email'])) {
-                $error = 'Proponent email not found for this transaction.';
             } else {
                 $link = 'transaction_view.php?id=' . $transaction['id'];
                 $emailSubject = $title;
                 $emailBody = '<p>' . htmlspecialchars($message) . '</p>' .
                     '<p><a href="' . htmlspecialchars(BASE_URL . $link) . '">View details in the STMS portal</a></p>';
 
-                $toEmail = strtolower(trim($transaction['proponent_email']));
-                send_supplier_email($toEmail, $emailSubject, $emailBody, $ccEmails, $bccEmails);
+                // Send to proponent if email available, otherwise show warning
+                if (!empty($transaction['proponent_email'])) {
+                    $toEmail = strtolower(trim($transaction['proponent_email']));
+                    send_supplier_email($toEmail, $emailSubject, $emailBody, $ccEmails, $bccEmails, $replyToEmail);
+                    $success = 'Proponent notification sent successfully.';
+                } else {
+                    $warning = 'Proponent email not found - notification not sent to proponent.';
+                }
 
                 // Persist per-department defaults for proponent email
                 $stmtSetTitle = $db->prepare('INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?) 
@@ -1111,6 +1141,12 @@ include __DIR__ . '/header.php';
     <?php if ($error): ?>
         <div class="alert alert-danger py-2 alert-dismissible fade show auto-dismiss" role="alert">
             <?php echo htmlspecialchars($error); ?>
+            <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endif; ?>
+    <?php if ($warning): ?>
+        <div class="alert alert-warning py-2 alert-dismissible fade show auto-dismiss" role="alert">
+            <?php echo htmlspecialchars($warning); ?>
             <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
@@ -1749,6 +1785,11 @@ include __DIR__ . '/header.php';
                         <div class="mb-2">
                             <label class="form-label small mb-1">Message</label>
                             <textarea class="form-control" name="notify_message" id="notifyMessageTextarea" rows="3"><?php echo htmlspecialchars($notifyDefaultMsgUi); ?></textarea>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small mb-1">Reply-To</label>
+                            <input type="text" class="form-control" name="notify_reply_to" value="<?php echo htmlspecialchars($currentUserEmail); ?>" placeholder="email@example.com">
                         </div>
 
                         <div class="mb-2">
@@ -2722,6 +2763,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         <label for="proponentMessage" class="form-label">Message</label>
                         <textarea class="form-control" id="proponentMessage" name="proponent_message" rows="4" required
                                   placeholder="Enter your message"><?php echo htmlspecialchars($proponentDefaultMessage); ?></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="proponentReplyTo" class="form-label">Reply-To</label>
+                        <input type="text" class="form-control" id="proponentReplyTo" name="proponent_reply_to"
+                               placeholder="email@example.com" value="<?php echo htmlspecialchars($currentUserEmail); ?>">
                     </div>
                     <div class="mb-3">
                         <label for="proponentCc" class="form-label">CC (comma-separated)</label>
