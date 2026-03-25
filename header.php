@@ -985,6 +985,26 @@ if (session_status() === PHP_SESSION_NONE) {
                     } catch (Exception $e) {
                     }
                 }
+
+                $proponentHeaderNotifications = [];
+                $proponentHeaderUnreadCount = 0;
+                if (function_exists('get_db') && isset($_SESSION['role']) && $_SESSION['role'] === 'proponent' && !empty($_SESSION['proponent_id'])) {
+                    try {
+                        require_once __DIR__ . '/proponent_notifications.php';
+                        $dbHeader3 = get_db();
+                        proponent_notifications_ensure_table($dbHeader3);
+
+                        $stmtProponentUnread = $dbHeader3->prepare('SELECT COUNT(*) FROM proponent_notifications WHERE proponent_id = ? AND is_read = 0');
+                        $stmtProponentUnread->execute([$_SESSION['proponent_id']]);
+                        $proponentHeaderUnreadCount = (int)$stmtProponentUnread->fetchColumn();
+
+                        $stmtProponentNotif = $dbHeader3->prepare('SELECT id, title, message, link, is_read, created_at FROM proponent_notifications WHERE proponent_id = ? ORDER BY created_at DESC LIMIT 10');
+                        $stmtProponentNotif->execute([$_SESSION['proponent_id']]);
+                        $proponentHeaderNotifications = $stmtProponentNotif->fetchAll(PDO::FETCH_ASSOC);
+                    } catch (Exception $e) {
+                        // If notifications table is missing or query fails, silently ignore
+                    }
+                }
                 ?>
 
                 <div class="nav-user-info">
@@ -1011,6 +1031,43 @@ if (session_status() === PHP_SESSION_NONE) {
                                     <?php foreach ($headerNotifications as $n): ?>
                                         <li class="px-0 py-0 small">
                                             <a href="<?php echo !empty($n['link']) ? 'notification_open.php?id=' . (int)$n['id'] : '#'; ?>"
+                                               class="d-block px-3 py-2 text-reset text-decoration-none <?php echo empty($n['is_read']) ? 'fw-semibold notif-unread' : ''; ?>">
+                                                <div class="d-flex justify-content-between">
+                                                    <span><?php echo htmlspecialchars($n['title']); ?></span>
+                                                    <span class="text-muted" style="font-size: 0.75rem;">
+                                                        <?php echo htmlspecialchars(date('m/d/Y H:i', strtotime($n['created_at']))); ?>
+                                                    </span>
+                                                </div>
+                                                <div class="text-muted" style="font-size: 0.8rem;">
+                                                    <?php echo nl2br(htmlspecialchars($n['message'])); ?>
+                                                </div>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <li class="px-3 py-2 small text-muted">No notifications yet.</li>
+                                <?php endif; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'proponent'): ?>
+                        <div class="dropdown me-3">
+                            <button class="btn btn-light position-relative" type="button" id="proponentNotifMenu" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
+                                <i class="fas fa-bell"></i>
+                                <span id="proponentNotifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: <?php echo ($proponentHeaderUnreadCount > 0) ? 'inline-block' : 'none'; ?>;">
+                                    <?php echo $proponentHeaderUnreadCount > 0 ? $proponentHeaderUnreadCount : ''; ?>
+                                </span>
+                            </button>
+                            <ul id="proponentNotifList" class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="proponentNotifMenu" style="width: 320px; max-height: 320px; overflow-y: auto;">
+                                <li class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                                    <strong>Notifications</strong>
+                                    <a href="proponent_notifications_all.php" class="small">See all</a>
+                                </li>
+                                <?php if (!empty($proponentHeaderNotifications)): ?>
+                                    <?php foreach ($proponentHeaderNotifications as $n): ?>
+                                        <li class="px-0 py-0 small">
+                                            <a href="<?php echo !empty($n['link']) ? 'proponent_notification_open.php?id=' . (int)$n['id'] : '#'; ?>"
                                                class="d-block px-3 py-2 text-reset text-decoration-none <?php echo empty($n['is_read']) ? 'fw-semibold notif-unread' : ''; ?>">
                                                 <div class="d-flex justify-content-between">
                                                     <span><?php echo htmlspecialchars($n['title']); ?></span>

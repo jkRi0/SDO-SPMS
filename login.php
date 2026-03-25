@@ -60,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role_name'];
             $_SESSION['supplier_id'] = $user['supplier_id'];
+            $_SESSION['proponent_id'] = $user['proponent_id'];
             $_SESSION['session_id'] = $sid;
 
             create_log($db, $user['id'], 'login', 'user', $user['id'], 'Successful login');

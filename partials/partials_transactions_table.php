@@ -4,6 +4,7 @@
 
 $role = $_SESSION['role'] ?? '';
 $supplierId = $_SESSION['supplier_id'] ?? null;
+$proponentId = $_SESSION['proponent_id'] ?? null;
 ?>
 
 <div class="card table-wrapper">

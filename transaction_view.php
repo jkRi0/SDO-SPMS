@@ -696,6 +696,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $warning = 'Proponent email not found - notification not sent to proponent.';
                 }
 
+                // Create proponent notification in system
+                if (!empty($transaction['proponent_id'])) {
+                    try {
+                        require_once __DIR__ . '/proponent_notifications.php';
+                        $link = 'transaction_view.php?id=' . $transaction['id'];
+                        create_proponent_notification_once($db, $transaction['proponent_id'], $transaction['id'], $title, $message, $link, 120, $roleDeptForDefaults);
+                    } catch (Exception $e) {
+                        // Silently ignore notification creation errors
+                    }
+                }
+
                 // Persist per-department defaults for proponent email
                 $stmtSetTitle = $db->prepare('INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?) 
                                              ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');

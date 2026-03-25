@@ -11,6 +11,9 @@
     <script src="assets/vendor/xlsx/xlsx.full.min.js"></script>
 
     <script>
+        // Disable notification polling on transaction view page to prevent network flooding
+        var isTransactionViewPage = window.location.pathname.includes('transaction_view.php');
+        
         document.addEventListener('DOMContentLoaded', function () {
             // Auto-dismiss success alerts after 5 seconds, but NOT error alerts
             setTimeout(function() {
@@ -521,7 +524,7 @@
             // Auto-refresh supplier notifications in header bell
             var notifBadge = document.getElementById('notifBadge');
             var notifList = document.getElementById('notifList');
-            if (notifBadge && notifList) {
+            if (notifBadge && notifList && !isTransactionViewPage) {
                 function refreshNotifications() {
                     if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
                         return;
@@ -602,7 +605,7 @@
             // Auto-refresh department notifications in header bell
             var deptNotifBadge = document.getElementById('deptNotifBadge');
             var deptNotifList = document.getElementById('deptNotifList');
-            if (deptNotifBadge && deptNotifList) {
+            if (deptNotifBadge && deptNotifList && !isTransactionViewPage) {
                 function refreshDeptNotifications() {
                     if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
                         return;
@@ -675,6 +678,85 @@
 
                 refreshDeptNotifications();
                 setInterval(refreshDeptNotifications, window.POLL_INTERVALS.HEADER_DEPT_NOTIFICATIONS);
+            }
+
+            // Auto-refresh proponent notifications in header bell
+            var proponentNotifBadge = document.getElementById('proponentNotifBadge');
+            var proponentNotifList = document.getElementById('proponentNotifList');
+            if (proponentNotifBadge && proponentNotifList && !isTransactionViewPage) {
+                function refreshProponentNotifications() {
+                    if (window.SMART_POLLING_ENABLED && (document.visibilityState !== 'visible' || !document.hasFocus())) {
+                        return;
+                    }
+
+                    fetch('api/api_proponent_notifications.php', { cache: 'no-store' })
+                        .then(function (res) { return res.json(); })
+                        .then(function (data) {
+                            if (!data || !data.success) return;
+
+                            var unread = data.unread_count || 0;
+                            if (unread > 0) {
+                                proponentNotifBadge.style.display = 'inline-block';
+                                proponentNotifBadge.textContent = String(unread);
+                            } else {
+                                proponentNotifBadge.style.display = 'none';
+                                proponentNotifBadge.textContent = '';
+                            }
+
+                            var items = data.notifications || [];
+
+                            while (proponentNotifList.children.length > 1) {
+                                proponentNotifList.removeChild(proponentNotifList.lastChild);
+                            }
+
+                            if (items.length === 0) {
+                                var emptyLi = document.createElement('li');
+                                emptyLi.className = 'px-3 py-2 small text-muted';
+                                emptyLi.textContent = 'No notifications yet.';
+                                proponentNotifList.appendChild(emptyLi);
+                                return;
+                            }
+
+                            items.forEach(function (n) {
+                                var li = document.createElement('li');
+                                li.className = 'px-0 py-0 small';
+
+                                var a = document.createElement('a');
+                                a.href = n.link ? ('proponent_notification_open.php?id=' + encodeURIComponent(n.id)) : '#';
+                                a.className = 'd-block px-3 py-2 text-reset text-decoration-none' + (n.is_read ? '' : ' fw-semibold notif-unread');
+
+                                var topRow = document.createElement('div');
+                                topRow.className = 'd-flex justify-content-between';
+
+                                var spanTitle = document.createElement('span');
+                                spanTitle.textContent = n.title || '';
+                                var spanTime = document.createElement('span');
+                                spanTime.className = 'text-muted';
+                                spanTime.style.fontSize = '0.75rem';
+                                spanTime.textContent = n.created_at || '';
+
+                                topRow.appendChild(spanTitle);
+                                topRow.appendChild(spanTime);
+
+                                var msgDiv = document.createElement('div');
+                                msgDiv.className = 'text-muted';
+                                msgDiv.style.fontSize = '0.8rem';
+                                msgDiv.textContent = n.message || '';
+
+                                a.appendChild(topRow);
+                                a.appendChild(msgDiv);
+
+                                li.appendChild(a);
+                                proponentNotifList.appendChild(li);
+                            });
+                        })
+                        .catch(function () {
+                            // ignore errors
+                        });
+                }
+
+                refreshProponentNotifications();
+                setInterval(refreshProponentNotifications, window.POLL_INTERVALS.HEADER_DEPT_NOTIFICATIONS);
             }
 
             // Auto-refresh admin feedback dropdown (admin role only)

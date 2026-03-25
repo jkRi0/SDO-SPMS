@@ -439,6 +439,12 @@ $approved = $counts['approved'];
         <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
     </div>
 
+<?php elseif ($role === 'proponent'): ?>
+    <h8 class="mb-3">My Transactions</h8>
+    <div id="transactionsContainer">
+        <?php include __DIR__ . '/partials/partials_transactions_table.php'; ?>
+    </div>
+
 <?php else: ?>
     <div class="alert alert-info">
         No specific dashboard implemented for this role yet.

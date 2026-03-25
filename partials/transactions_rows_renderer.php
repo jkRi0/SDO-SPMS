@@ -2,6 +2,7 @@
 
 $role = $_SESSION['role'] ?? '';
 $supplierId = $_SESSION['supplier_id'] ?? null;
+$proponentId = $_SESSION['proponent_id'] ?? null;
 
 $where = [];
 $params = [];
@@ -9,6 +10,9 @@ $params = [];
 if ($role === 'supplier' && $supplierId) {
     $where[] = 't.supplier_id = ?';
     $params[] = $supplierId;
+} elseif ($role === 'proponent' && $proponentId) {
+    $where[] = 't.proponent_id = ?';
+    $params[] = $proponentId;
 }
 
 try {
